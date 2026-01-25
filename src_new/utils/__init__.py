@@ -6,6 +6,21 @@ This module contains utility functions used across the pipeline:
 - Upgrade name parsing
 - Configuration loading
 - Logging setup
+- Validation of extracted parquet files
+- Documentation generation
 """
 
-__all__ = []
+from .validation import OutputValidator
+from .documentation import (
+    generate_data_dictionary,
+    generate_replay_report,
+    generate_batch_summary,
+)
+
+
+__all__ = [
+    'OutputValidator',
+    'generate_data_dictionary',
+    'generate_replay_report',
+    'generate_batch_summary',
+]
