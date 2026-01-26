@@ -103,6 +103,11 @@ class WideTableBuilder:
                 unit_counts = self.calculate_unit_counts(units)
                 self.add_unit_counts_to_row(row, f'p{player_num}', unit_counts)
 
+        # Add messages
+        messages = extracted_state.get('messages', [])
+        if 'Messages' in row:
+            row['Messages'] = self._format_messages(messages)
+
         return row
 
     def add_unit_to_row(
@@ -316,6 +321,30 @@ class WideTableBuilder:
             return False
 
         return True
+
+    def _format_messages(self, messages: List[Dict[str, Any]]) -> Any:
+        """
+        Format messages for storage in the Messages column.
+
+        Args:
+            messages: List of message dictionaries from state extractor
+
+        Returns:
+            - NaN if no messages
+            - String if one message
+            - List of strings if multiple messages
+        """
+        if not messages:
+            return np.nan
+
+        # Extract just the message text
+        message_texts = [msg.get('message', '') for msg in messages]
+
+        # Return string if single message, list if multiple
+        if len(message_texts) == 1:
+            return message_texts[0]
+        else:
+            return message_texts
 
     def get_row_summary(self, row: Dict[str, Any]) -> Dict[str, Any]:
         """

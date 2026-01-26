@@ -8,6 +8,7 @@ files with proper compression and schema handling.
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 import logging
+import json
 
 import pandas as pd
 import pyarrow as pa
@@ -236,6 +237,14 @@ class ParquetWriter:
                     df[col] = df[col].astype('string')
                 elif dtype == 'bool':
                     df[col] = df[col].astype('boolean')
+                elif dtype == 'object':
+                    # Special handling for object columns that may contain lists
+                    # (like Messages column which can be NaN, string, or list of strings)
+                    # Convert lists to JSON strings for parquet compatibility
+                    if col == 'Messages':
+                        df[col] = df[col].apply(self._serialize_messages_for_parquet)
+                    else:
+                        df[col] = df[col].astype('object')
                 else:
                     # Default to object
                     logger.warning(f"Unknown dtype '{dtype}' for column '{col}', using object")
@@ -245,6 +254,57 @@ class ParquetWriter:
                 logger.warning(f"Failed to convert column '{col}' to {dtype}: {e}")
 
         return df
+
+    def _serialize_messages_for_parquet(self, value):
+        """
+        Serialize Messages column values for parquet storage.
+
+        PyArrow parquet doesn't support mixed types (strings and lists) in the same column,
+        so we convert lists to JSON strings while keeping NaN and plain strings as-is.
+
+        Args:
+            value: Message value (NaN, string, or list of strings)
+
+        Returns:
+            NaN, string, or JSON-serialized string
+        """
+        if pd.isna(value):
+            return value
+        elif isinstance(value, str):
+            return value
+        elif isinstance(value, list):
+            # Convert list to JSON string
+            return json.dumps(value)
+        else:
+            # Fallback for unexpected types
+            return str(value)
+
+    def _deserialize_messages_from_parquet(self, value):
+        """
+        Deserialize Messages column values after reading from parquet.
+
+        Converts JSON strings back to lists while keeping NaN and plain strings as-is.
+
+        Args:
+            value: Message value from parquet (NaN, string, or JSON string)
+
+        Returns:
+            NaN, string, or list of strings
+        """
+        if pd.isna(value):
+            return value
+        elif isinstance(value, str):
+            # Try to parse as JSON (it might be a list)
+            if value.startswith('['):
+                try:
+                    return json.loads(value)
+                except json.JSONDecodeError:
+                    # Not valid JSON, return as-is
+                    return value
+            else:
+                return value
+        else:
+            return value
 
     def read_parquet(self, parquet_path: Path) -> pd.DataFrame:
         """
@@ -267,6 +327,11 @@ class ParquetWriter:
         logger.info(f"Reading parquet from {parquet_path}")
         df = pd.read_parquet(parquet_path)
         logger.info(f"  Loaded {len(df)} rows, {len(df.columns)} columns")
+
+        # Deserialize Messages column if present
+        if 'Messages' in df.columns:
+            df['Messages'] = df['Messages'].apply(self._deserialize_messages_from_parquet)
+            logger.info("  Deserialized Messages column from parquet")
 
         return df
 

@@ -44,6 +44,7 @@ class SchemaManager:
         base_columns = [
             ('game_loop', 'int64', 'Current game loop (frame) number'),
             ('timestamp_seconds', 'float64', 'Time in seconds since game start (game_loop / 22.4)'),
+            ('Messages', 'object', 'Ally chat messages sent at this game loop (NaN if none, string if one, list of strings if multiple)'),
         ]
 
         for col_name, dtype, description in base_columns:
@@ -53,7 +54,7 @@ class SchemaManager:
                 self.column_docs[col_name] = {
                     'description': description,
                     'type': dtype,
-                    'missing_value': 'N/A',
+                    'missing_value': 'N/A' if col_name != 'Messages' else 'NaN',
                 }
 
     def build_schema_from_replay(

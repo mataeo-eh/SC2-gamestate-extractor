@@ -319,12 +319,19 @@ class ReplayExtractionPipeline:
 
             logger.info(f"Extraction complete. Extracted {len(rows)} rows, {len(all_messages)} messages")
 
-        # Generate output file paths
+        # Generate output file paths with new directory structure
         replay_name = replay_path.stem
+        parquet_dir = output_dir / 'parquet'
+        json_dir = output_dir / 'json'
+
+        # Create directories if they don't exist
+        parquet_dir.mkdir(parents=True, exist_ok=True)
+        json_dir.mkdir(parents=True, exist_ok=True)
+
         output_files = {
-            'game_state': output_dir / f"{replay_name}_game_state.parquet",
-            'messages': output_dir / f"{replay_name}_messages.parquet",
-            'schema': output_dir / f"{replay_name}_schema.json",
+            'game_state': parquet_dir / f"{replay_name}_game_state.parquet",
+            'messages': parquet_dir / f"{replay_name}_messages.parquet",
+            'schema': json_dir / f"{replay_name}_schema.json",
         }
 
         # Write game state parquet
