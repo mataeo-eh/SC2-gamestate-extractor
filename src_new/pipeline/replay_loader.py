@@ -11,10 +11,13 @@ This component handles:
 
 from typing import Optional, Tuple
 import logging
+from pathlib import Path
 
 from pysc2 import run_configs
 from pysc2.lib import replay
+from pysc2.run_configs.lib import Version
 from s2clientprotocol import sc2api_pb2 as sc_pb
+from s2clientprotocol import common_pb2
 
 
 logger = logging.getLogger(__name__)
@@ -60,7 +63,7 @@ class ReplayLoader:
         self.run_config = None
         self.controller = None
 
-    def load_replay(self, replay_path: str) -> Tuple[bytes, replay.ReplayVersion]:
+    def load_replay(self, replay_path: str) -> Tuple[bytes, Version]:
         """
         Load replay data and detect version.
 
@@ -76,12 +79,16 @@ class ReplayLoader:
         """
         logger.info(f"Loading replay: {replay_path}")
 
+        # Convert to absolute path to avoid pysc2 path resolution issues
+        replay_path_abs = str(Path(replay_path).resolve())
+        logger.info(f"Absolute path: {replay_path_abs}")
+
         # Get initial run config
         run_config = run_configs.get()
 
         try:
             # Load replay data
-            self.replay_data = run_config.replay_data(replay_path)
+            self.replay_data = run_config.replay_data(replay_path_abs)
 
             # Get replay version
             self.replay_version = replay.get_replay_version(self.replay_data)
@@ -122,7 +129,7 @@ class ReplayLoader:
         logger.info(f"Players: {len(info.player_info)}")
 
         for i, player_info in enumerate(info.player_info):
-            race_name = sc_pb.Race.Name(player_info.player_info.race_actual)
+            race_name = common_pb2.Race.Name(player_info.player_info.race_actual)
             logger.info(f"  Player {i+1}: {race_name}, "
                        f"APM: {player_info.player_apm}, "
                        f"MMR: {player_info.player_mmr}")

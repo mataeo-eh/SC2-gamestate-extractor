@@ -12,6 +12,7 @@ import logging
 from pysc2 import run_configs
 from pysc2.lib import replay
 from s2clientprotocol import sc2api_pb2 as sc_pb
+from s2clientprotocol import common_pb2
 
 from ..pipeline.replay_loader import ReplayLoader as PipelineReplayLoader
 
@@ -178,7 +179,7 @@ class ReplayLoader:
         for i, player_info in enumerate(info_proto.player_info):
             player_data = {
                 'player_id': i + 1,
-                'race': sc_pb.Race.Name(player_info.player_info.race_actual),
+                'race': common_pb2.Race.Name(player_info.player_info.race_actual),
                 'apm': player_info.player_apm,
                 'mmr': player_info.player_mmr,
                 'result': sc_pb.Result.Name(player_info.player_result.result),

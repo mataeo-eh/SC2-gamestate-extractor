@@ -11,7 +11,7 @@ This component handles:
 from typing import Generator, Optional
 import logging
 
-from s2clientprotocol import sc_pb2
+from s2clientprotocol import sc2api_pb2 as sc_pb
 
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ class GameLoopIterator:
             if obs.player_result:
                 logger.info("Game ended")
                 for result in obs.player_result:
-                    result_name = sc_pb2.Result.Name(result.result)
+                    result_name = sc_pb.Result.Name(result.result)
                     logger.info(f"  Player {result.player_id}: {result_name}")
                 self.game_ended = True
                 break

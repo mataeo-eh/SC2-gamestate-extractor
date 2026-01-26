@@ -9,6 +9,8 @@ from typing import Dict, Any, Optional, List
 from pathlib import Path
 import logging
 
+from absl import flags
+
 from ..extraction.replay_loader import ReplayLoader
 from ..extraction.state_extractor import StateExtractor
 from ..extraction.schema_manager import SchemaManager
@@ -448,5 +450,9 @@ def process_replay_quick(
         >>> if result['success']:
         >>>     print(f"Processed {result['stats']['rows_written']} rows")
     """
+    # Initialize absl flags if not already parsed (required for pysc2)
+    if not flags.FLAGS.is_parsed():
+        flags.FLAGS.mark_as_parsed()
+
     pipeline = ReplayExtractionPipeline(config)
     return pipeline.process_replay(replay_path, output_dir)
