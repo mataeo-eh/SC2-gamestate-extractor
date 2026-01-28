@@ -84,6 +84,18 @@ class ParallelReplayProcessor:
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
+        replays_list_copy = replay_paths.copy()
+        replay_paths = []
+        for replay_path in replays_list_copy:
+            stem = replay_path.stem
+            suffix = ".parquet"
+            processed_name = f"{stem}_game_state{suffix}"
+            processed_path = output_dir / processed_name
+            if processed_path.exists():
+                print(f"File: {stem} already processed. Skipping.")
+                continue
+            replay_paths.append(replay_path)
+
         # Initialize results
         results = {
             'successful': [],
