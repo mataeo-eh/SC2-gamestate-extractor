@@ -23,7 +23,7 @@ pipeline = ReplayExtractionPipeline()
 # Process a replay
 result = pipeline.process_replay(
     replay_path=Path("replays/example.SC2Replay"),
-    output_dir=Path("data/processed")
+    output_dir=Path("data/quickstart")
 )
 
 # Check result
@@ -45,7 +45,7 @@ from src_new.pipeline.extraction_pipeline import process_replay_quick
 # Process with one function call
 result = process_replay_quick(
     replay_path=Path("replays/example.SC2Replay"),
-    output_dir=Path("data/processed")
+    output_dir=Path("data/quickstart")
 )
 
 print(f"Processed in {result['stats']['processing_time_seconds']:.2f}s")
@@ -77,7 +77,7 @@ config = {
 pipeline = ReplayExtractionPipeline(config)
 result = pipeline.process_replay(
     replay_path=Path("replays/example.SC2Replay"),
-    output_dir=Path("data/processed")
+    output_dir=Path("data/quickstart")
 )
 ```
 
@@ -127,7 +127,7 @@ replay_paths = [
 
 results = processor.process_replay_batch(
     replay_paths=replay_paths,
-    output_dir=Path("data/processed")
+    output_dir=Path("data/quickstart")
 )
 
 # Check results
@@ -171,7 +171,7 @@ processor = ParallelReplayProcessor()
 # Process replays recursively in nested directories
 results = processor.process_replay_directory_recursive(
     replay_dir=Path("replays/"),
-    output_dir=Path("data/processed"),
+    output_dir=Path("data/quickstart"),
     pattern="**/*.SC2Replay"  # Recursive pattern
 )
 ```
@@ -185,7 +185,7 @@ from src_new.pipeline.parallel_processor import process_directory_quick
 # Process directory with one function call
 results = process_directory_quick(
     replay_dir=Path("replays/"),
-    output_dir=Path("data/processed"),
+    output_dir=Path("data/quickstart"),
     num_workers=8
 )
 
