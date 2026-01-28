@@ -460,6 +460,20 @@ def process_replay_quick(
     # Initialize absl flags if not already parsed (required for pysc2)
     if not flags.FLAGS.is_parsed():
         flags.FLAGS.mark_as_parsed()
+    if config == None:
+        config = {
+            # Observation settings
+            'show_cloaked': True,
+            'show_burrowed_shadows': True,
+            'show_placeholders': True,
+
+            # Processing settings
+            'processing_mode': 'two_pass',  # or 'single_pass'
+            'step_size': 1,  # Game loops per step
+
+            # Output settings
+            'compression': 'snappy',  # options: 'snappy' 'gzip', 'brotli', 'zstd'
+        }
 
     pipeline = ReplayExtractionPipeline(config)
     return pipeline.process_replay(replay_path, output_dir)

@@ -390,6 +390,20 @@ def process_directory_quick(
         >>> results = process_directory_quick(Path("replays/"))
         >>> print(f"Processed {results['successful_count']} of {results['total_replays']} replays")
     """
+    if config == None:
+        config = {
+            # Observation settings
+            'show_cloaked': True,
+            'show_burrowed_shadows': True,
+            'show_placeholders': True,
+
+            # Processing settings
+            'processing_mode': 'two_pass',  # or 'single_pass'
+            'step_size': 1,  # Game loops per step
+
+            # Output settings
+            'compression': 'snappy',  # options: 'snappy' 'gzip', 'brotli', 'zstd'
+        }
     output_dir = output_dir or Path('data/processed')
 
     processor = ParallelReplayProcessor(config, num_workers)
