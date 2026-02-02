@@ -4,7 +4,7 @@ ParallelReplayProcessor: Process multiple SC2 replays in parallel.
 This component provides batch processing capabilities with multiprocessing
 for efficient processing of large replay datasets.
 """
-
+from tqdm import tqdm
 from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -125,7 +125,7 @@ class ParallelReplayProcessor:
 
             # Process completed jobs
             completed = 0
-            for future in as_completed(future_to_replay):
+            for future in tqdm(as_completed(future_to_replay), total=len(replay_paths), desc="Processing replays"):
                 replay_path = future_to_replay[future]
                 completed += 1
 
