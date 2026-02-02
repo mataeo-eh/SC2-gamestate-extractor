@@ -289,6 +289,12 @@ class ReplayExtractionPipeline:
                     controller.step(self.step_size)
                     obs = controller.observe()
 
+                    # Check if replay has ended
+                    from pysc2.lib.protocol import Status
+                    if obs.player_result:  # player_result is populated when game ends
+                        logger.info(f"Replay ended at loop {game_loop} (expected {max_loops})")
+                        break # Break while loop after game ended
+
                     # Update game loop
                     game_loop = obs.observation.game_loop
 
