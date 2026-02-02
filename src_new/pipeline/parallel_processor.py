@@ -84,16 +84,21 @@ class ParallelReplayProcessor:
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
+        # Make a copy of the replays list to iterate through it
         replays_list_copy = replay_paths.copy()
-        replay_paths = []
+        replay_paths = [] # make the list empty so it can be populated with un-parsed replays
         for replay_path in replays_list_copy:
             stem = replay_path.stem
             suffix = ".parquet"
-            processed_name = f"{stem}_game_state{suffix}"
-            processed_path = output_dir / processed_name
-            if processed_path.exists():
-                print(f"File: {stem} already processed. Skipping.")
-                continue
+            processed_name = f"{stem}_game_state{suffix}" # Build the file name to check for
+
+            # Check recursively in output_dir and all subdirectories with rglob
+            matching_files = list(output_dir.rglob(processed_name))
+            if matching_files:
+                print(f"File: {stem} already processed (found at {matching_files[0].relative_to(output_dir)}). Skipping.")
+                continue # Move onto next replay if current replay has already been parsed
+
+            # Add the not yet processed replay path to the list to be processed
             replay_paths.append(replay_path)
 
         # Initialize results
