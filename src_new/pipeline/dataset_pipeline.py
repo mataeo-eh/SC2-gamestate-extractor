@@ -32,6 +32,7 @@ def upload_to_kaggle():
         api.dataset_create_version(
             folder=download_path,
             version_notes="Added parsed data from replays",
+            dir_mode='zip',
             quiet=False
         )
     except Exception as e:
