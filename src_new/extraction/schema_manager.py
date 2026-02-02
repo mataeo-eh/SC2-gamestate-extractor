@@ -95,6 +95,14 @@ class SchemaManager:
                     controller.step(1)
                     obs = controller.observe()
 
+
+                    # Check if replay has ended
+                    if obs.player_result:
+                        # player_result only appears at the end of the match when one player has won
+                        logger.info(f"Schema scan complete - replay ended at loop {game_loop} (expected {max_loops})")
+                        break
+
+
                     # Extract state
                     state = state_extractor.extract_observation(obs, game_loop)
 
