@@ -83,13 +83,6 @@ class ReplayLoader:
         replay_path_abs = str(Path(replay_path).resolve())
         logger.info(f"Absolute path: {replay_path_abs}")
 
-        # Parse flags before running initial config
-        from absl import flags
-        import sys
-
-        FLAGS = flags.FLAGS
-        FLAGS(sys.argv)  # Parse flags
-
         # Get initial run config
         run_config = run_configs.get()
 
