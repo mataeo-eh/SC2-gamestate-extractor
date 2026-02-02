@@ -352,6 +352,15 @@ def _worker_process_replay(
     import time
     import logging
 
+    # Initialize FLAGS for pysc2 in this worker process
+    from absl import flags
+    from pysc2 import run_configs
+    FLAGS = flags.FLAGS
+    try:
+        FLAGS(['worker'], known_only=True)
+    except:
+        pass  # FLAGS already parsed, ignore
+
     # Configure logging for worker process
     # Each worker needs its own logger
     worker_logger = logging.getLogger(__name__)
