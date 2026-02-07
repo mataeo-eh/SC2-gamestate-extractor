@@ -21,7 +21,8 @@ def upload_to_kaggle():
         dataset_name = "mataeoanderson/sc2-replay-data"
         download_path = ROOT / "data" / "quickstart"
 
-        api.dataset_download_files(dataset_name, path=download_path, unzip=True)
+        # Note: If you want to download existing files, uncomment the line below. Otherwise the dataset version will be created containing only the new files you add.
+        #api.dataset_download_files(dataset_name, path=download_path, unzip=True)
 
         # 2. Add your new parsed replay data
         # (your parsing code that generates new files)

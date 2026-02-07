@@ -217,9 +217,9 @@ class StateExtractor:
         messages = []
 
         # Extract chat messages from observation
-        # Note: Messages are in obs.observation.chat
-        if hasattr(obs.observation, 'chat'):
-            for msg in obs.observation.chat:
+        # Note: Chat messages are on ResponseObservation directly, not on Observation
+        if hasattr(obs, 'chat'):
+            for msg in obs.chat:
                 messages.append({
                     'game_loop': obs.observation.game_loop,
                     'player_id': msg.player_id,

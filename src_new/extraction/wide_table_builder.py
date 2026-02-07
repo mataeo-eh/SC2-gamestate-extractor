@@ -32,7 +32,23 @@ class WideTableBuilder:
             schema: SchemaManager instance defining columns
         """
         self.schema = schema
+        # Player name mapping: {player_num: sanitized_name} e.g. {1: "really", 2: "what"}
+        self.player_names: Dict[int, str] = {}
         logger.info("WideTableBuilder initialized")
+
+    def set_player_names(self, player_names: Dict[int, str]) -> None:
+        """
+        Store a mapping of player numbers to sanitized bot/player names.
+
+        Args:
+            player_names: Dict mapping player number to raw name,
+                          e.g. {1: "Really", 2: "What!"}
+        """
+        from .schema_manager import sanitize_name
+        self.player_names = {
+            num: sanitize_name(name) for num, name in player_names.items()
+        }
+        logger.info(f"Player names set: {self.player_names}")
 
     def build_row(self, extracted_state: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -129,9 +145,14 @@ class WideTableBuilder:
         # TODO: Test case - Add unit data to row
         # TODO: Test case - Handle dead units properly
         """
+        # Strip existing player prefix from unit_id (e.g., "p1_marine_001" -> "marine_001")
+        stripped_id = '_'.join(unit_id.split('_')[1:]) if unit_id.startswith('p') else unit_id
+        player_num = int(player[1:])  # "p1" -> 1
+        bot_name = self.player_names.get(player_num, player)
+
         # If unit is killed, only set state column
         if unit_data.get('state') == 'killed':
-            state_col = f'{player}_{unit_id}_state'
+            state_col = f'{player}_{bot_name}_{stripped_id}_state'
             if state_col in row:
                 row[state_col] = 'killed'
             return
@@ -146,7 +167,7 @@ class WideTableBuilder:
         ]
 
         for attr in unit_columns:
-            col_name = f'{player}_{unit_id}_{attr}'
+            col_name = f'{player}_{bot_name}_{stripped_id}_{attr}'
             if col_name in row:
                 row[col_name] = unit_data.get(attr, self.schema.get_missing_value(col_name))
 
@@ -168,6 +189,11 @@ class WideTableBuilder:
 
         # TODO: Test case - Add building lifecycle data
         """
+        # Strip existing player prefix from building_id (e.g., "p1_barracks_001" -> "barracks_001")
+        stripped_id = '_'.join(building_id.split('_')[1:]) if building_id.startswith('p') else building_id
+        player_num = int(player[1:])  # "p1" -> 1
+        bot_name = self.player_names.get(player_num, player)
+
         building_columns = [
             'x', 'y', 'z',
             'status', 'progress',
@@ -175,7 +201,7 @@ class WideTableBuilder:
         ]
 
         for attr in building_columns:
-            col_name = f'{player}_{building_id}_{attr}'
+            col_name = f'{player}_{bot_name}_{stripped_id}_{attr}'
             if col_name in row:
                 row[col_name] = building_data.get(attr, self.schema.get_missing_value(col_name))
 

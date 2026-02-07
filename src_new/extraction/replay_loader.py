@@ -179,6 +179,7 @@ class ReplayLoader:
         for i, player_info in enumerate(info_proto.player_info):
             player_data = {
                 'player_id': i + 1,
+                'player_name': player_info.player_info.player_name,
                 'race': common_pb2.Race.Name(player_info.player_info.race_actual),
                 'apm': player_info.player_apm,
                 'mmr': player_info.player_mmr,

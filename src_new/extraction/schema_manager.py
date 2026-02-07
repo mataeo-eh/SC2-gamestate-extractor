@@ -9,11 +9,30 @@ from typing import List, Dict, Any, Set, Optional
 from pathlib import Path
 import json
 import logging
+import re
 
 import numpy as np
 
 
 logger = logging.getLogger(__name__)
+
+
+def sanitize_name(name: str) -> str:
+    """
+    Sanitize a player/bot name for use in column names.
+
+    Lowercases, replaces non-alphanumeric characters with underscores,
+    strips leading/trailing underscores, and falls back to 'unknown' if empty.
+
+    Args:
+        name: Raw player name string
+
+    Returns:
+        Sanitized name safe for column naming
+    """
+    sanitized = re.sub(r'[^a-z0-9]', '_', name.lower())
+    sanitized = sanitized.strip('_')
+    return sanitized or 'unknown'
 
 
 class SchemaManager:
@@ -34,10 +53,26 @@ class SchemaManager:
         self._seen_units: Set[str] = set()
         self._seen_buildings: Set[str] = set()
 
+        # Player name mapping: {player_num: sanitized_name} e.g. {1: "really", 2: "what"}
+        self.player_names: Dict[int, str] = {}
+
         # Base columns that always exist
         self._add_base_columns()
 
         logger.info("SchemaManager initialized")
+
+    def set_player_names(self, player_names: Dict[int, str]) -> None:
+        """
+        Store a mapping of player numbers to sanitized bot/player names.
+
+        Args:
+            player_names: Dict mapping player number to raw name,
+                          e.g. {1: "Really", 2: "What!"}
+        """
+        self.player_names = {
+            num: sanitize_name(name) for num, name in player_names.items()
+        }
+        logger.info(f"Player names set: {self.player_names}")
 
     def _add_base_columns(self):
         """Add base columns that exist in every row."""
@@ -83,6 +118,14 @@ class SchemaManager:
 
         with replay_loader.start_sc2_instance() as controller:
             metadata = replay_loader.get_replay_info(controller)
+
+            # Extract player names from metadata and set on schema manager
+            player_names = {
+                p['player_id']: p.get('player_name', '')
+                for p in metadata.get('players', [])
+            }
+            self.set_player_names(player_names)
+
             replay_loader.start_replay(controller, observed_player_id=1)
 
             # Iterate through replay to discover entities
@@ -178,8 +221,13 @@ class SchemaManager:
             ('state', 'string', 'Unit state (built/existing/killed)'),
         ]
 
+        # Strip existing player prefix from unit_id (e.g., "p1_marine_001" -> "marine_001")
+        stripped_id = '_'.join(unit_id.split('_')[1:]) if unit_id.startswith('p') else unit_id
+        player_num = int(player[1:])  # "p1" -> 1
+        bot_name = self.player_names.get(player_num, player)
+
         for col_suffix, dtype, description in unit_columns:
-            col_name = f'{player}_{unit_id}_{col_suffix}'
+            col_name = f'{player}_{bot_name}_{stripped_id}_{col_suffix}'
 
             if col_name not in self.columns:
                 self.columns.append(col_name)
@@ -215,8 +263,13 @@ class SchemaManager:
             ('destroyed_loop', 'int64', 'Game loop when building destroyed'),
         ]
 
+        # Strip existing player prefix from building_id (e.g., "p1_barracks_001" -> "barracks_001")
+        stripped_id = '_'.join(building_id.split('_')[1:]) if building_id.startswith('p') else building_id
+        player_num = int(player[1:])  # "p1" -> 1
+        bot_name = self.player_names.get(player_num, player)
+
         for col_suffix, dtype, description in building_columns:
-            col_name = f'{player}_{building_id}_{col_suffix}'
+            col_name = f'{player}_{bot_name}_{stripped_id}_{col_suffix}'
 
             if col_name not in self.columns:
                 self.columns.append(col_name)

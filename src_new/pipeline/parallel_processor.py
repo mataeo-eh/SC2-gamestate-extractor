@@ -30,7 +30,8 @@ class ParallelReplayProcessor:
     def __init__(
         self,
         config: Optional[Dict[str, Any]] = None,
-        num_workers: Optional[int] = None
+        num_workers: Optional[int] = None,
+        log_file_path: Optional[str] = None
     ):
         """
         Initialize the parallel processor.
@@ -38,9 +39,11 @@ class ParallelReplayProcessor:
         Args:
             config: Optional configuration dictionary (passed to ReplayExtractionPipeline)
             num_workers: Number of parallel workers (default: CPU count)
+            log_file_path: Absolute path to the log file (passed to worker processes for logging)
         """
         self.config = config or {}
         self.num_workers = num_workers or multiprocessing.cpu_count()
+        self.log_file_path = log_file_path
 
         logger.info(f"ParallelReplayProcessor initialized with {self.num_workers} workers")
 
@@ -123,7 +126,8 @@ class ParallelReplayProcessor:
                     _worker_process_replay,
                     replay_path,
                     output_dir,
-                    self.config
+                    self.config,
+                    self.log_file_path
                 ): replay_path
                 for replay_path in replay_paths
             }
@@ -330,7 +334,8 @@ class ParallelReplayProcessor:
 def _worker_process_replay(
     replay_path: Path,
     output_dir: Path,
-    config: Dict[str, Any]
+    config: Dict[str, Any],
+    log_file_path: Optional[str] = None
 ) -> Tuple[bool, float, Optional[str]]:
     """
     Worker function for parallel replay processing.
@@ -343,6 +348,7 @@ def _worker_process_replay(
         replay_path: Path to replay file
         output_dir: Output directory
         config: Configuration dictionary
+        log_file_path: Absolute path to the shared log file for worker logging
 
     Returns:
         Tuple of (success, processing_time, error_message):
@@ -357,6 +363,12 @@ def _worker_process_replay(
     import time
     import logging
 
+    # Configure logging for this worker process (must happen before any log calls)
+    # On Windows, spawned processes do not inherit the parent's logging config.
+    if log_file_path:
+        from src_new.pipeline.logging_config import setup_worker_logging
+        setup_worker_logging(log_file_path)
+
     # Initialize FLAGS for pysc2 in this worker process
     from absl import flags
     from pysc2 import run_configs
@@ -366,8 +378,6 @@ def _worker_process_replay(
     except:
         pass  # FLAGS already parsed, ignore
 
-    # Configure logging for worker process
-    # Each worker needs its own logger
     worker_logger = logging.getLogger(__name__)
 
     start_time = time.time()
@@ -389,7 +399,7 @@ def _worker_process_replay(
     except Exception as e:
         processing_time = time.time() - start_time
         error_message = f"{type(e).__name__}: {str(e)}"
-        worker_logger.error(f"Worker failed for {replay_path.name}: {error_message}")
+        worker_logger.exception(f"Worker failed for {replay_path.name}: {error_message}")
         return (False, processing_time, error_message)
 
 
@@ -398,7 +408,8 @@ def process_directory_quick(
     replay_dir: Path,
     output_dir: Optional[Path] = None,
     num_workers: Optional[int] = None,
-    config: Optional[Dict[str, Any]] = None
+    config: Optional[Dict[str, Any]] = None,
+    log_file_path: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Convenience function to process a directory of replays.
@@ -408,6 +419,7 @@ def process_directory_quick(
         output_dir: Output directory (default: data/processed)
         num_workers: Number of parallel workers (default: CPU count)
         config: Optional configuration dictionary
+        log_file_path: Absolute path to the shared log file (passed to workers)
 
     Returns:
         Batch processing results
@@ -432,5 +444,5 @@ def process_directory_quick(
         }
     output_dir = output_dir or Path('data/processed')
 
-    processor = ParallelReplayProcessor(config, num_workers)
+    processor = ParallelReplayProcessor(config, num_workers, log_file_path=log_file_path)
     return processor.process_replay_directory(replay_dir, output_dir)

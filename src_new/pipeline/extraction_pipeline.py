@@ -271,6 +271,17 @@ class ReplayExtractionPipeline:
             # Get replay metadata
             metadata = self.replay_loader.get_replay_info(controller)
 
+            # Extract player names and pass to wide_table_builder
+            player_names = {
+                p['player_id']: p.get('player_name', '')
+                for p in metadata.get('players', [])
+            }
+            if self.wide_table_builder is not None:
+                self.wide_table_builder.set_player_names(player_names)
+            # Also set on schema_manager (needed for single-pass mode where
+            # schema building happens dynamically during extraction)
+            self.schema_manager.set_player_names(player_names)
+
             # Start replay playback
             self.replay_loader.start_replay(controller, observed_player_id=1, disable_fog=True)
 
