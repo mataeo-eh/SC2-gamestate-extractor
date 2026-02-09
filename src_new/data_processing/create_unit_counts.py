@@ -337,6 +337,6 @@ def main(input_dir, output_dir, naming_pattern="_game_state", print_output=False
 if __name__ == "__main__":
     main(
         input_dir="data/quickstart/parquet",
-        output_dir="data/quickstart/features",
+        output_dir="data/quickstart/parquet",
         print_output=True,
     )

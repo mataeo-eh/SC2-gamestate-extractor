@@ -68,7 +68,7 @@ BUILDING_TYPES = {
 }
 
 # Worker types (economic units, excluded from army clustering)
-WORKER_TYPES = {"scv", "probe", "drone"}
+WORKER_TYPES = {"scv", "probe", "drone", "mule"}
 
 # Base structure types (used to find starting positions)
 BASE_TYPES = {
@@ -960,7 +960,7 @@ def main(input_dir, output_dir, print_output=False, file_extension=".parquet", n
 
 if __name__ == "__main__":
     main(
-        input_dir="data/quickstart/features",
-        output_dir="data/quickstart/army_features",
+        input_dir="data/quickstart/parquet",
+        output_dir="data/quickstart/features",
         print_output=True,
     )
