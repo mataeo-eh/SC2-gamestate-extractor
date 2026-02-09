@@ -22,7 +22,7 @@ MAIN_LOG_FORMAT = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
 WORKER_LOG_FORMAT = "%(asctime)s - %(levelname)s - [%(processName)s] - %(name)s - %(message)s"
 
 
-def setup_logging(log_dir: str = "logs") -> str:
+def setup_logging(log_dir: str = "logs/data_pipeline") -> str:
     """
     Configure logging for the main pipeline process.
 
