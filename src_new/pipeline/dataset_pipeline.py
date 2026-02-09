@@ -5,7 +5,7 @@ import json
 
 ROOT = Path(__file__).resolve().parents[2]
 
-def upload_to_kaggle():
+def upload_to_kaggle(dataset_name, download_path):
     """
     Returns:
         success (bool): Whether the upload was successful
@@ -18,9 +18,6 @@ def upload_to_kaggle():
         api.authenticate()
 
         # 1. Download current dataset to a local folder
-        dataset_name = "mataeoanderson/sc2-replay-data"
-        download_path = ROOT / "data" / "quickstart"
-
         # Note: If you want to download existing files, uncomment the line below. Otherwise the dataset version will be created containing only the new files you add.
         #api.dataset_download_files(dataset_name, path=download_path, unzip=True)
 
@@ -31,7 +28,7 @@ def upload_to_kaggle():
 
         # 3. Create a new version with all files (old + new)
         api.dataset_create_version(
-            folder=download_path,
+            folder=str(download_path),
             version_notes="Added parsed data from replays",
             dir_mode='zip',
             quiet=False
@@ -39,21 +36,27 @@ def upload_to_kaggle():
     except Exception as e:
         print(f"Error during Kaggle upload: {e}")
         return False, str(e)
-    return True
+    return True, "Success"
 
-def create_metadata_file():
+def create_metadata_file(dataset_name, download_path, Title = "StarCraft II Bot Replay Features"):
     """Create a metadata file required by Kaggle datasets."""
-    download_path = ROOT / "data" / "quickstart"
     metadata = {
-    "title": "StarCraft II Bot Replay Features",
-    "id": "mataeoanderson/sc2-replay-data",  # slug for your dataset
+    "title": Title,
+    "id": dataset_name,  # slug for your dataset
     "licenses": [{"name": "MIT"}]  # or other license
     }
-    with open(os.path.join(download_path, "dataset-metadata.json"), "w") as f:
+    with open(download_path / "dataset-metadata.json", "w") as f:
         json.dump(metadata, f)
 
-
+def main(dataset_name, download_path, Title = "StarCraft II Bot Replay Features"):
+    if not (download_path/"dataset-metadata.json").exists():
+        create_metadata_file(dataset_name, download_path, Title)
+    success, message = upload_to_kaggle(dataset_name, download_path)
+    if success:
+        print("Dataset uploaded successfully!")
+    else:
+        print(f"Failed to upload dataset: {message}")
 
 if __name__ == "__main__":
-    upload_to_kaggle()
+    main(dataset_name = "mataeoanderson/sc2-replay-data", download_path = ROOT / "data" / "quickstart")
     
