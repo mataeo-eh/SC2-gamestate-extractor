@@ -32,6 +32,7 @@ from tqdm import tqdm
 from sklearn.cluster import DBSCAN
 
 from src_new.pipeline.logging_config import setup_logging
+from src_new.utils.needs_processing import needs_processing
 
 # ---------------------------------------------------------------------------
 # Module-level logger
@@ -923,19 +924,28 @@ def main(input_dir, output_dir, print_output=False, file_extension=".parquet", n
         print(f"Found {len(parquet_files)} files to process")
 
     # Process files with progress bar
-    processed_files = []
+    newly_processed = []
+    skipped_files = []
     failed_files = []
 
     for filepath in tqdm(parquet_files, desc="Processing files", unit="file"):
+
+        
+        out_filepath = output_path / filepath.name
+        if not needs_processing(filepath, out_filepath):
+            logger.debug(f"Skipping {filepath.name} (already processed)")
+            skipped_files.append(filepath.name)
+            continue
+
         tqdm.write(f"  Processing: {filepath.name}")
+
         try:
             df_out = process_single_file(filepath)
 
             # Write to output directory with the same filename
-            out_filepath = output_path / filepath.name
             df_out.to_parquet(out_filepath, index=False)
 
-            processed_files.append(filepath.name)
+            newly_processed.append(filepath.name)
         except Exception as e:
             logger.warning(f"Failed to process {filepath.name}: {e}")
             failed_files.append(filepath.name)
@@ -943,13 +953,15 @@ def main(input_dir, output_dir, print_output=False, file_extension=".parquet", n
                 print(f"  WARNING: Failed to process {filepath.name}: {e}")
 
     # Summary logging
-    logger.info(f"Processing complete. {len(processed_files)} succeeded, {len(failed_files)} failed.")
+    logger.info(f"Processing complete. {len(skipped_files)} skipped, {len(newly_processed)} succeeded, {len(failed_files)} failed.")
     if print_output:
-        print(f"\nProcessing complete. {len(processed_files)} succeeded, {len(failed_files)} failed.")
+        print(f"\nProcessing complete. {len(skipped_files)} skipped, {len(newly_processed)} succeeded, {len(failed_files)} failed.")
 
     # DEBUG-level summary with filenames
-    if processed_files:
-        logger.debug("Successfully processed files:\n  " + "\n  ".join(processed_files))
+    if skipped_files:
+        logger.debug("Skipped files (already processed):\n  " + "\n  ".join(skipped_files))
+    if newly_processed:
+        logger.debug("Successfully processed files:\n  " + "\n  ".join(newly_processed))
     if failed_files:
         logger.debug("Failed files:\n  " + "\n  ".join(failed_files))
 

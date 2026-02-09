@@ -25,6 +25,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from src_new.pipeline.logging_config import setup_logging
+from src_new.utils.needs_processing import needs_processing
 
 # ---------------------------------------------------------------------------
 # Module-level logger
@@ -37,6 +38,12 @@ def drop_columns(input_dir, output_dir):
     Loads a parquet file, drops all columns except the engineered features, and saves the result to a new parquet file in the "discretized" directory.
     """
     for file in tqdm(Path(input_dir).glob("*.parquet"), desc="Discretizing datasets"):
+
+        out_filepath = output_dir / file.name
+        if not needs_processing(file, out_filepath):
+            logger.debug(f"Skipping {file.name} (already processed)")
+            continue
+
         df = pd.read_parquet(file)
         
         # Define the columns to keep (the engineered features added in engineer_army_features.py)
