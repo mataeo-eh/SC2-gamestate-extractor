@@ -30,8 +30,8 @@ class EconomyExtractor:
 
             # Print economy state
             print(f"Resources: {economy_data['minerals']}m, {economy_data['vespene']}g")
-            print(f"Supply: {economy_data['food_used']}/{economy_data['food_cap']}")
-            print(f"Workers: {economy_data['food_workers']}, Idle: {economy_data['idle_worker_count']}")
+            print(f"Supply: {economy_data['supply_used']}/{economy_data['supply_cap']}")
+            print(f"Workers: {economy_data['workers']}, Idle: {economy_data['idle_workers']}")
     """
 
     def __init__(self, player_id: int):
@@ -57,14 +57,14 @@ class EconomyExtractor:
                 'minerals': 450,
                 'vespene': 200,
 
-                # Supply (food)
-                'food_used': 45,
-                'food_cap': 60,
+                # Supply
+                'supply_used': 45,
+                'supply_cap': 60,
                 'food_army': 30,
-                'food_workers': 15,
+                'workers': 15,
 
                 # Worker and army counts
-                'idle_worker_count': 2,
+                'idle_workers': 2,
                 'army_count': 30,
 
                 # Collection totals
@@ -106,19 +106,20 @@ class EconomyExtractor:
             collection_rate_vespene = score_details.collection_rate_vespene
 
             # Build result dictionary
+            # Keys match the names expected by wide_table_builder and schema_manager
             economy_data = {
                 # Current resources
                 'minerals': minerals,
                 'vespene': vespene,
 
-                # Supply (food)
-                'food_used': food_used,
-                'food_cap': food_cap,
+                # Supply (named to match schema: supply_used, supply_cap)
+                'supply_used': food_used,
+                'supply_cap': food_cap,
                 'food_army': food_army,
-                'food_workers': food_workers,
+                'workers': food_workers,
 
                 # Worker and army counts
-                'idle_worker_count': idle_worker_count,
+                'idle_workers': idle_worker_count,
                 'army_count': army_count,
 
                 # Collection totals
@@ -147,11 +148,11 @@ class EconomyExtractor:
         return {
             'minerals': 0,
             'vespene': 0,
-            'food_used': 0,
-            'food_cap': 0,
+            'supply_used': 0,
+            'supply_cap': 0,
             'food_army': 0,
-            'food_workers': 0,
-            'idle_worker_count': 0,
+            'workers': 0,
+            'idle_workers': 0,
             'army_count': 0,
             'collected_minerals': 0,
             'collected_vespene': 0,
@@ -170,9 +171,9 @@ class EconomyExtractor:
             Formatted string summary
         """
         summary = f"Resources: {economy_data['minerals']}m, {economy_data['vespene']}g | "
-        summary += f"Supply: {economy_data['food_used']}/{economy_data['food_cap']} "
-        summary += f"(Army: {economy_data['food_army']}, Workers: {economy_data['food_workers']}) | "
-        summary += f"Idle Workers: {economy_data['idle_worker_count']} | "
+        summary += f"Supply: {economy_data['supply_used']}/{economy_data['supply_cap']} "
+        summary += f"(Army: {economy_data['food_army']}, Workers: {economy_data['workers']}) | "
+        summary += f"Idle Workers: {economy_data['idle_workers']} | "
         summary += f"Collection: {economy_data['collection_rate_minerals']:.0f}m/min, "
         summary += f"{economy_data['collection_rate_vespene']:.0f}g/min"
         return summary

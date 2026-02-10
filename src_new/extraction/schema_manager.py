@@ -126,7 +126,7 @@ class SchemaManager:
             }
             self.set_player_names(player_names)
 
-            replay_loader.start_replay(controller, observed_player_id=1)
+            replay_loader.start_replay(controller, observed_player_id=1, disable_fog=True)
 
             # Iterate through replay to discover entities
             game_loop = 0

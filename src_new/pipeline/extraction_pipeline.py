@@ -204,8 +204,10 @@ class ReplayExtractionPipeline:
         # Create wide table builder with schema
         self.wide_table_builder = WideTableBuilder(self.schema_manager)
 
-        # Reset state extractor after schema building
-        self.state_extractor.reset()
+        # Reset only per-frame state between passes, preserving tag-to-ID mappings
+        # so that pass 2 uses the same readable IDs as pass 1 (schema scan).
+        # This prevents column name mismatches between schema and data.
+        self.state_extractor.reset_frame_state()
 
         # PASS 2: Extract data
         logger.info("Pass 2: Extracting data...")

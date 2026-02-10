@@ -244,6 +244,24 @@ class StateExtractor:
 
         logger.info("StateExtractor reset")
 
+    def reset_frame_state(self):
+        """Reset only per-frame state, preserving tag-to-ID mappings and counters.
+
+        Used between two-pass processing so pass 2 reuses the same readable IDs
+        that were assigned during pass 1 (schema scan). This ensures column names
+        in the schema (from pass 1) match exactly with the data (from pass 2).
+        """
+        for extractor in self.unit_extractors.values():
+            extractor.reset_frame_state()
+        for extractor in self.building_extractors.values():
+            extractor.reset_frame_state()
+        # Economy and upgrade extractors are stateless, no frame state to reset
+
+        self.unit_tracker.reset()
+        self.building_tracker.reset()
+
+        logger.info("StateExtractor frame state reset (preserved tag-to-ID mappings)")
+
 
 class UnitTracker:
     """

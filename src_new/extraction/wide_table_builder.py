@@ -358,7 +358,7 @@ class WideTableBuilder:
         Returns:
             - NaN if no messages
             - String if one message
-            - List of strings if multiple messages
+            - JSON-serialized string if multiple messages
         """
         if not messages:
             return np.nan
@@ -366,11 +366,14 @@ class WideTableBuilder:
         # Extract just the message text
         message_texts = [msg.get('message', '') for msg in messages]
 
-        # Return string if single message, list if multiple
+        # Always return a string to avoid mixed types in parquet column.
+        # Single message: return as plain string.
+        # Multiple messages: return as JSON-serialized string.
         if len(message_texts) == 1:
             return message_texts[0]
         else:
-            return message_texts
+            import json
+            return json.dumps(message_texts)
 
     def get_row_summary(self, row: Dict[str, Any]) -> Dict[str, Any]:
         """

@@ -462,3 +462,12 @@ class BuildingExtractor:
         self.completion_timestamps.clear()
         self.destruction_timestamps.clear()
         self.previous_build_progress.clear()
+
+    def reset_frame_state(self):
+        """Reset only per-frame state, preserving tag-to-ID mappings and counters.
+
+        Used between two-pass processing so pass 2 reuses the same readable IDs
+        that were assigned during pass 1 (schema scan).
+        """
+        self.previous_tags.clear()
+        self.previous_build_progress.clear()
