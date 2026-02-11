@@ -184,6 +184,38 @@ class StateExtractor:
         upgrades = extractor.extract(obs)
         return upgrades
 
+    def extract_perspective_dependent(self, obs, game_loop: int, observed_player_id: int) -> Dict[str, Any]:
+        """
+        Extract only perspective-dependent data (economy + upgrades) for the observed player.
+
+        This is used during the P2 economy pass: the replay is replayed from player 2's
+        perspective, and this method extracts economy and upgrades that player_common and
+        raw_data.player.upgrade_ids expose for that perspective.  Units and buildings are
+        NOT re-extracted because they are perspective-independent (use unit.owner).
+
+        Args:
+            obs: SC2 observation from controller.observe()
+            game_loop: Current game loop number
+            observed_player_id: The player whose perspective the replay is running from (1 or 2)
+
+        Returns:
+            Dictionary with perspective-dependent state:
+            {
+                'game_loop': int,
+                'p<N>_economy': dict,
+                'p<N>_upgrades': dict,
+            }
+        """
+        state = {'game_loop': game_loop}
+
+        # Economy and upgrades from player_common / score_details / raw_data.player
+        # reflect the observed_player_id, so we assign them to that player.
+        key_prefix = f'p{observed_player_id}'
+        state[f'{key_prefix}_economy'] = self.extract_economy(obs, player_id=observed_player_id)
+        state[f'{key_prefix}_upgrades'] = self.extract_upgrades(obs, player_id=observed_player_id)
+
+        return state
+
     def extract_messages(self, obs) -> List[Dict[str, Any]]:
         """
         Extract chat messages at this timestep.

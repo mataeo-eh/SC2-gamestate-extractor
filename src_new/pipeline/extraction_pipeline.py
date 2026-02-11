@@ -252,7 +252,12 @@ class ReplayExtractionPipeline:
         Extract game state and write to parquet files.
 
         This performs the actual iteration through the replay, state extraction,
-        and parquet writing.
+        and parquet writing.  It runs the replay twice:
+          - Pass A (observed_player_id=1): full extraction (units, buildings,
+            P1 economy, P1 upgrades, messages).  P2 economy/upgrades from this
+            pass are WRONG (they reflect P1's perspective) and will be overwritten.
+          - Pass B (observed_player_id=2): extracts ONLY P2 economy and P2
+            upgrades, then patches them into the rows built during Pass A.
 
         Args:
             replay_path: Path to replay file
@@ -284,14 +289,20 @@ class ReplayExtractionPipeline:
             # schema building happens dynamically during extraction)
             self.schema_manager.set_player_names(player_names)
 
-            # Start replay playback
+            # ------------------------------------------------------------------
+            # Pass A: observed_player_id=1  (full extraction)
+            # P1 economy/upgrades are correct.  P2 economy/upgrades are wrong
+            # (perspective-dependent data reflects P1).  Units and buildings for
+            # BOTH players are correct because they use unit.owner filtering
+            # with disable_fog=True.
+            # ------------------------------------------------------------------
             self.replay_loader.start_replay(controller, observed_player_id=1, disable_fog=True)
 
             # Process each game loop
             game_loop = 0
             max_loops = metadata['game_duration_loops']
 
-            logger.info(f"Processing {max_loops} game loops (step size: {self.step_size})...")
+            logger.info(f"Pass A (player 1 perspective): Processing {max_loops} game loops (step size: {self.step_size})...")
 
             # Track progress
             progress_interval = max(1, max_loops // 20)  # Report every 5%
@@ -305,7 +316,7 @@ class ReplayExtractionPipeline:
                     # Check if replay has ended
                     from pysc2.lib.protocol import Status
                     if obs.player_result:  # player_result is populated when game ends
-                        logger.info(f"Replay ended at loop {game_loop} (expected {max_loops})")
+                        logger.info(f"Pass A: Replay ended at loop {game_loop} (expected {max_loops})")
                         break # Break while loop after game ended
 
                     # Update game loop
@@ -329,14 +340,22 @@ class ReplayExtractionPipeline:
                     # Progress reporting
                     if game_loop % progress_interval == 0:
                         progress = (game_loop / max_loops) * 100
-                        logger.info(f"  Progress: {progress:.1f}% (loop {game_loop}/{max_loops})")
+                        logger.info(f"  Pass A progress: {progress:.1f}% (loop {game_loop}/{max_loops})")
 
                 except Exception as e:
-                    logger.warning(f"Error at game loop {game_loop}: {e}")
+                    logger.warning(f"Error at game loop {game_loop} (Pass A): {e}")
                     # Continue processing - don't fail entire replay for one frame
                     continue
 
-            logger.info(f"Extraction complete. Extracted {len(rows)} rows, {len(all_messages)} messages")
+            logger.info(f"Pass A complete. Extracted {len(rows)} rows, {len(all_messages)} messages")
+
+            # ------------------------------------------------------------------
+            # Pass B: observed_player_id=2  (P2 economy + upgrades only)
+            # Re-play the replay from player 2's perspective to get correct
+            # player_common and score_details for P2.  Overwrites the incorrect
+            # P2 economy/upgrade columns that were filled during Pass A.
+            # ------------------------------------------------------------------
+            self._patch_p2_economy(controller, rows, max_loops)
 
         # Generate output file paths with new directory structure
         replay_name = replay_path.stem
@@ -385,6 +404,103 @@ class ReplayExtractionPipeline:
                 'messages_written': len(all_messages),
             },
         }
+
+    def _patch_p2_economy(
+        self,
+        controller,
+        rows: List[Dict[str, Any]],
+        max_loops: int,
+    ) -> None:
+        """
+        Run a second replay pass from player 2's perspective to fix P2 economy and upgrades.
+
+        During Pass A (observed_player_id=1), the P2 economy and upgrade columns
+        were filled with P1's perspective-dependent data (player_common,
+        score_details, raw_data.player.upgrade_ids all reflect the observed
+        player).  This method replays from P2's perspective and overwrites those
+        columns with correct values.
+
+        Rows are matched by game_loop value (not by index) to handle any
+        differences in step counts between passes.
+
+        Args:
+            controller: Active SC2 controller (still within the context manager)
+            rows: List of row dicts from Pass A — modified in place
+            max_loops: Total game duration in loops
+        """
+        logger.info("Pass B (player 2 perspective): Extracting P2 economy and upgrades...")
+
+        # Build a lookup from game_loop -> row for efficient patching
+        row_by_game_loop: Dict[int, Dict[str, Any]] = {}
+        for row in rows:
+            gl = row.get('game_loop')
+            if gl is not None:
+                row_by_game_loop[gl] = row
+
+        # Reset P2 upgrade extractor state so it tracks upgrades fresh for the
+        # new perspective.  P2 economy extractor is stateless (no reset needed).
+        self.state_extractor.upgrade_extractors[2].reset()
+
+        # Start replay from player 2's perspective
+        self.replay_loader.start_replay(controller, observed_player_id=2, disable_fog=True)
+
+        game_loop = 0
+        patched_count = 0
+        progress_interval = max(1, max_loops // 20)
+
+        # The P2 economy columns that will be overwritten in each row
+        p2_economy_columns = [
+            'p2_minerals', 'p2_vespene',
+            'p2_supply_used', 'p2_supply_cap',
+            'p2_workers', 'p2_idle_workers',
+        ]
+
+        while game_loop < max_loops:
+            try:
+                controller.step(self.step_size)
+                obs = controller.observe()
+
+                if obs.player_result:
+                    logger.info(f"Pass B: Replay ended at loop {game_loop} (expected {max_loops})")
+                    break
+
+                game_loop = obs.observation.game_loop
+
+                # Extract only P2 economy + upgrades from this observation
+                p2_state = self.state_extractor.extract_perspective_dependent(
+                    obs, game_loop, observed_player_id=2
+                )
+
+                # Patch the matching row from Pass A
+                target_row = row_by_game_loop.get(game_loop)
+                if target_row is not None:
+                    # Overwrite P2 economy columns
+                    p2_economy = p2_state.get('p2_economy', {})
+                    for col in p2_economy_columns:
+                        attr = col.replace('p2_', '', 1)  # e.g. 'p2_minerals' -> 'minerals'
+                        if attr in p2_economy:
+                            target_row[col] = p2_economy[attr]
+
+                    # Overwrite P2 upgrade columns
+                    # The wide_table_builder maps upgrades via add_upgrades_to_row;
+                    # replicate its logic here to patch upgrade columns directly.
+                    p2_upgrades = p2_state.get('p2_upgrades', {})
+                    self.wide_table_builder.add_upgrades_to_row(
+                        target_row, 'p2', p2_upgrades
+                    )
+
+                    patched_count += 1
+
+                # Progress reporting
+                if game_loop % progress_interval == 0:
+                    progress = (game_loop / max_loops) * 100
+                    logger.info(f"  Pass B progress: {progress:.1f}% (loop {game_loop}/{max_loops})")
+
+            except Exception as e:
+                logger.warning(f"Error at game loop {game_loop} (Pass B): {e}")
+                continue
+
+        logger.info(f"Pass B complete. Patched P2 economy/upgrades in {patched_count}/{len(rows)} rows")
 
     def get_config(self) -> Dict[str, Any]:
         """
