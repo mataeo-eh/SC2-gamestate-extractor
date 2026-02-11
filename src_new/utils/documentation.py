@@ -219,7 +219,7 @@ def generate_data_dictionary(schema: Any, output_path: Path) -> None:
                 elif 'health' in suffix or 'shields' in suffix or 'energy' in suffix:
                     lines.append(f"- **Range**: 0 to max_value")
                 elif suffix == 'state':
-                    lines.append(f"- **Valid Values**: created, alive, cancelled, dead, built, existing, killed")
+                    lines.append(f"- **Note**: Lifecycle states are embedded in attribute columns (unit_started, building, completed, destroyed)")
 
                 lines.append("")
 
@@ -230,8 +230,9 @@ def generate_data_dictionary(schema: Any, output_path: Path) -> None:
     if building_cols:
         lines.append("## Building Columns\n")
         lines.append("Building tracking with position, status, and progress.\n")
-        lines.append("**Note**: Each building has multiple columns (x, y, z, status, progress, started_loop, completed_loop, destroyed_loop).")
-        lines.append("Building columns use NaN when the building does not exist at a given game loop.\n")
+        lines.append("**Note**: Each building has attribute columns (x, y, z, health, etc.). Lifecycle state is embedded in these columns.")
+        lines.append("Building columns use NaN when the building does not exist at a given game loop.")
+        lines.append("Lifecycle strings (building_started, completed, destroyed, cancelled) appear in ALL columns on transition frames.\n")
 
         # Show examples from first few buildings
         sample_buildings = set()
@@ -266,13 +267,10 @@ def generate_data_dictionary(schema: Any, output_path: Path) -> None:
                     lines.append(f"- **Range**: 0 to map_dimension")
                 elif suffix == 'z':
                     lines.append(f"- **Range**: 0+ (height above ground)")
-                elif suffix == 'status':
-                    lines.append(f"- **Valid Values**: started, building, completed, destroyed")
-                elif suffix == 'progress':
-                    lines.append(f"- **Range**: 0-100")
-                    lines.append(f"- **Constraint**: Monotonically increasing (never decreases)")
-                elif 'loop' in suffix:
-                    lines.append(f"- **Range**: 0 to game_duration_loops")
+                elif 'health' in suffix or 'shields' in suffix or 'energy' in suffix:
+                    lines.append(f"- **Range**: 0 to max_value")
+                elif suffix == 'build_progress':
+                    lines.append(f"- **Range**: 0.0 to 1.0")
 
                 lines.append("")
 

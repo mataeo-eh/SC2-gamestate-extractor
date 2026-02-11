@@ -113,12 +113,8 @@ class StateExtractor:
             player_id: Player ID (1 or 2)
 
         Returns:
-            Dictionary mapping unit IDs to unit data
-
-        # TODO: Test case - Extract units from observation
-        # TODO: Test case - Track unit creation (state='built')
-        # TODO: Test case - Track unit death (state='killed')
-        # TODO: Test case - Track existing units (state='existing')
+            Dictionary mapping unit IDs to unit data with '_lifecycle' key
+            indicating lifecycle state (unit_started/building/completed/existing/destroyed)
         """
         extractor = self.unit_extractors[player_id]
         units = extractor.extract(obs)
@@ -133,15 +129,9 @@ class StateExtractor:
             player_id: Player ID (1 or 2)
 
         Returns:
-            Dictionary mapping building IDs to building data including:
-            - Position (x, y, z)
-            - Status ('started', 'building', 'completed', 'destroyed')
-            - Progress (0-100)
-            - Construction timestamps
-
-        # TODO: Test case - Extract building lifecycle
-        # TODO: Test case - Track building construction progress
-        # TODO: Test case - Handle cancelled buildings
+            Dictionary mapping building IDs to building data with '_lifecycle' key
+            indicating lifecycle state (building_started/under_construction/completed/
+            existing/destroyed/cancelled)
         """
         extractor = self.building_extractors[player_id]
         buildings = extractor.extract(obs)

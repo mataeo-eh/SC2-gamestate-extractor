@@ -3,17 +3,35 @@ WideTableBuilder: Transforms extracted state into wide-format rows.
 
 This component takes the extracted game state and converts it into wide-format
 rows suitable for parquet storage and ML pipelines.
+
+Lifecycle state embedding:
+- Unit attribute columns contain lifecycle state strings at transition gameloops
+  ("unit_started", "building", "completed", "destroyed") instead of separate
+  lifecycle columns.
+- Building attribute columns contain lifecycle state strings at transition gameloops
+  ("building_started", "completed", "destroyed", "cancelled"). During construction,
+  buildings capture real data (position, health) since this is strategically meaningful.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Set
 import logging
 
 import numpy as np
 
-from .schema_manager import SchemaManager
+from .schema_manager import SchemaManager, UNIT_BASE_ATTRIBUTES, UNIT_SHIELD_ATTRIBUTES, \
+    UNIT_ENERGY_ATTRIBUTES, BUILDING_BASE_ATTRIBUTES, BUILDING_SHIELD_ATTRIBUTES, \
+    BUILDING_ENERGY_ATTRIBUTES
 
 
 logger = logging.getLogger(__name__)
+
+
+# Lifecycle states where ALL unit attribute columns should be filled with the state string
+UNIT_LIFECYCLE_OVERRIDE_STATES = {'unit_started', 'building', 'completed', 'destroyed'}
+
+# Lifecycle states where ALL building attribute columns should be filled with the state string
+# (not 'under_construction' - buildings get real data during construction)
+BUILDING_LIFECYCLE_OVERRIDE_STATES = {'building_started', 'completed', 'destroyed', 'cancelled'}
 
 
 class WideTableBuilder:
@@ -58,18 +76,7 @@ class WideTableBuilder:
             extracted_state: State dictionary from StateExtractor.extract_observation()
 
         Returns:
-            Dictionary with all columns, NaN for missing values:
-            {
-                'game_loop': int,
-                'timestamp_seconds': float,
-                'p1_marine_001_x': float or NaN,
-                'p1_marine_001_y': float or NaN,
-                ...
-            }
-
-        # TODO: Test case - Build row from extracted state
-        # TODO: Test case - Handle missing units (NaN values)
-        # TODO: Test case - Validate row has all schema columns
+            Dictionary with all columns, NaN for missing values.
         """
         # Initialize row with all columns as missing values
         row = {}
@@ -126,6 +133,22 @@ class WideTableBuilder:
 
         return row
 
+    def _get_column_prefix(self, player: str, entity_id: str) -> str:
+        """
+        Build the column name prefix for a unit or building.
+
+        Args:
+            player: Player prefix (e.g., 'p1', 'p2')
+            entity_id: Entity identifier (e.g., 'p1_marine_001')
+
+        Returns:
+            Column prefix string (e.g., 'p1_botname_marine_001')
+        """
+        stripped_id = '_'.join(entity_id.split('_')[1:]) if entity_id.startswith('p') else entity_id
+        player_num = int(player[1:])
+        bot_name = self.player_names.get(player_num, player)
+        return f'{player}_{bot_name}_{stripped_id}'
+
     def add_unit_to_row(
         self,
         row: Dict[str, Any],
@@ -134,42 +157,44 @@ class WideTableBuilder:
         unit_data: Dict[str, Any]
     ) -> None:
         """
-        Add unit data to row.
+        Add unit data to row with lifecycle state embedded in attribute columns.
+
+        Lifecycle behavior:
+        - 'unit_started': ALL attribute columns filled with "unit_started"
+        - 'building': ALL attribute columns filled with "building"
+        - 'completed': ALL attribute columns filled with "completed"
+        - 'existing': Real data values written to attribute columns
+        - 'destroyed': ALL attribute columns filled with "destroyed"
+        - (no lifecycle / unit not in schema): columns remain NaN
 
         Args:
             row: Row dictionary to modify
             player: Player prefix (e.g., 'p1', 'p2')
             unit_id: Unit identifier
-            unit_data: Unit data dictionary
-
-        # TODO: Test case - Add unit data to row
-        # TODO: Test case - Handle dead units properly
+            unit_data: Unit data dictionary (with '_lifecycle' key)
         """
-        # Strip existing player prefix from unit_id (e.g., "p1_marine_001" -> "marine_001")
-        stripped_id = '_'.join(unit_id.split('_')[1:]) if unit_id.startswith('p') else unit_id
-        player_num = int(player[1:])  # "p1" -> 1
-        bot_name = self.player_names.get(player_num, player)
+        prefix = self._get_column_prefix(player, unit_id)
+        lifecycle = unit_data.get('_lifecycle', 'existing')
 
-        # If unit is killed, only set state column
-        if unit_data.get('state') == 'killed':
-            state_col = f'{player}_{bot_name}_{stripped_id}_state'
-            if state_col in row:
-                row[state_col] = 'killed'
+        # Determine which attribute suffixes exist for this unit in the schema
+        attr_suffixes = self._get_unit_attr_suffixes_in_schema(prefix, row)
+
+        if not attr_suffixes:
+            # This unit has no columns in the schema (e.g., never completed)
             return
 
-        # Add all unit attributes
-        unit_columns = [
-            'x', 'y', 'z',
-            'health', 'health_max',
-            'shields', 'shields_max',
-            'energy', 'energy_max',
-            'state',
-        ]
-
-        for attr in unit_columns:
-            col_name = f'{player}_{bot_name}_{stripped_id}_{attr}'
-            if col_name in row:
-                row[col_name] = unit_data.get(attr, self.schema.get_missing_value(col_name))
+        if lifecycle in UNIT_LIFECYCLE_OVERRIDE_STATES:
+            # Fill ALL attribute columns with the lifecycle state string
+            for suffix in attr_suffixes:
+                col_name = f'{prefix}_{suffix}'
+                if col_name in row:
+                    row[col_name] = lifecycle
+        else:
+            # 'existing' - write real data
+            for suffix in attr_suffixes:
+                col_name = f'{prefix}_{suffix}'
+                if col_name in row and suffix in unit_data:
+                    row[col_name] = unit_data[suffix]
 
     def add_building_to_row(
         self,
@@ -179,31 +204,91 @@ class WideTableBuilder:
         building_data: Dict[str, Any]
     ) -> None:
         """
-        Add building data to row.
+        Add building data to row with lifecycle state embedded in attribute columns.
+
+        Lifecycle behavior:
+        - 'building_started': ALL attribute columns filled with "building_started"
+        - 'under_construction': Real data written (position, health during construction)
+        - 'completed': ALL attribute columns filled with "completed"
+        - 'existing': Real data values written to attribute columns
+        - 'destroyed': ALL attribute columns filled with "destroyed"
+        - 'cancelled': ALL attribute columns filled with "cancelled"
 
         Args:
             row: Row dictionary to modify
             player: Player prefix
             building_id: Building identifier
-            building_data: Building data dictionary
-
-        # TODO: Test case - Add building lifecycle data
+            building_data: Building data dictionary (with '_lifecycle' key)
         """
-        # Strip existing player prefix from building_id (e.g., "p1_barracks_001" -> "barracks_001")
-        stripped_id = '_'.join(building_id.split('_')[1:]) if building_id.startswith('p') else building_id
-        player_num = int(player[1:])  # "p1" -> 1
-        bot_name = self.player_names.get(player_num, player)
+        prefix = self._get_column_prefix(player, building_id)
+        lifecycle = building_data.get('_lifecycle', 'existing')
 
-        building_columns = [
-            'x', 'y', 'z',
-            'status', 'progress',
-            'started_loop', 'completed_loop', 'destroyed_loop',
-        ]
+        # Determine which attribute suffixes exist for this building in the schema
+        attr_suffixes = self._get_building_attr_suffixes_in_schema(prefix, row)
 
-        for attr in building_columns:
-            col_name = f'{player}_{bot_name}_{stripped_id}_{attr}'
+        if not attr_suffixes:
+            return
+
+        if lifecycle in BUILDING_LIFECYCLE_OVERRIDE_STATES:
+            # Fill ALL attribute columns with the lifecycle state string
+            for suffix in attr_suffixes:
+                col_name = f'{prefix}_{suffix}'
+                if col_name in row:
+                    row[col_name] = lifecycle
+        else:
+            # 'under_construction' or 'existing' - write real data
+            for suffix in attr_suffixes:
+                col_name = f'{prefix}_{suffix}'
+                if col_name in row and suffix in building_data:
+                    row[col_name] = building_data[suffix]
+
+    def _get_unit_attr_suffixes_in_schema(self, prefix: str, row: Dict[str, Any]) -> List[str]:
+        """
+        Get the list of attribute suffixes for a unit that exist in the schema.
+
+        Checks base attributes plus conditional shield/energy attributes.
+
+        Args:
+            prefix: Column name prefix (e.g., 'p1_botname_marine_001')
+            row: Row dictionary (to check which columns exist)
+
+        Returns:
+            List of attribute suffix strings that have columns in the schema
+        """
+        suffixes = []
+        all_possible = (
+            UNIT_BASE_ATTRIBUTES
+            + UNIT_SHIELD_ATTRIBUTES
+            + UNIT_ENERGY_ATTRIBUTES
+        )
+        for suffix, _, _ in all_possible:
+            col_name = f'{prefix}_{suffix}'
             if col_name in row:
-                row[col_name] = building_data.get(attr, self.schema.get_missing_value(col_name))
+                suffixes.append(suffix)
+        return suffixes
+
+    def _get_building_attr_suffixes_in_schema(self, prefix: str, row: Dict[str, Any]) -> List[str]:
+        """
+        Get the list of attribute suffixes for a building that exist in the schema.
+
+        Args:
+            prefix: Column name prefix
+            row: Row dictionary
+
+        Returns:
+            List of attribute suffix strings that have columns in the schema
+        """
+        suffixes = []
+        all_possible = (
+            BUILDING_BASE_ATTRIBUTES
+            + BUILDING_SHIELD_ATTRIBUTES
+            + BUILDING_ENERGY_ATTRIBUTES
+        )
+        for suffix, _, _ in all_possible:
+            col_name = f'{prefix}_{suffix}'
+            if col_name in row:
+                suffixes.append(suffix)
+        return suffixes
 
     def add_economy_to_row(
         self,
@@ -282,16 +367,14 @@ class WideTableBuilder:
             units: Dictionary of units from extracted state
 
         Returns:
-            Dictionary mapping unit type names to counts:
-            {'Marine': 25, 'Medivac': 3, ...}
-
-        # TODO: Test case - Calculate unit counts correctly
+            Dictionary mapping unit type names to counts.
         """
         counts = {}
 
         for unit_id, unit_data in units.items():
-            # Skip killed units
-            if unit_data.get('state') == 'killed':
+            # Skip destroyed/building units for count
+            lifecycle = unit_data.get('_lifecycle', 'existing')
+            if lifecycle in ('destroyed', 'unit_started', 'building'):
                 continue
 
             # Get unit type
@@ -318,7 +401,6 @@ class WideTableBuilder:
                 rows.append(row)
             except Exception as e:
                 logger.error(f"Error building row for game_loop {state.get('game_loop', '?')}: {e}")
-                # Continue with next state
 
         return rows
 
@@ -367,8 +449,6 @@ class WideTableBuilder:
         message_texts = [msg.get('message', '') for msg in messages]
 
         # Always return a string to avoid mixed types in parquet column.
-        # Single message: return as plain string.
-        # Multiple messages: return as JSON-serialized string.
         if len(message_texts) == 1:
             return message_texts[0]
         else:

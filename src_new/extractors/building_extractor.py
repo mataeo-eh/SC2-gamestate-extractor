@@ -5,8 +5,15 @@ This component handles:
 - Extracting building information from raw observation data
 - Tracking building tags (persistent IDs) across frames
 - Assigning human-readable IDs to buildings
-- Detecting building state changes (started, building, completed, destroyed)
-- Managing building lifecycle tracking including construction timestamps
+- Detecting building lifecycle transitions (building_started, under construction,
+  completed, destroyed, cancelled)
+- Managing building lifecycle tracking with embedded lifecycle state in attribute columns
+- Conditional attribute extraction (shields only for Protoss, energy only for casters)
+
+Building lifecycle differs from units:
+- During construction, buildings capture REAL data (x, y, health) because position
+  and health during construction is strategically meaningful.
+- Buildings that start but never complete still appear in the dataset (unlike units).
 """
 
 from typing import Dict, Set, Optional
@@ -135,21 +142,16 @@ class BuildingExtractor:
     comprehensive building state information including construction progress for
     ground truth data.
 
-    Example usage:
-        extractor = BuildingExtractor(player_id=1)
+    Lifecycle states are embedded into attribute columns:
+    - "building_started": On the gameloop where construction starts, ALL attribute columns
+    - Real data during construction: Position, health etc. are captured (strategically meaningful)
+    - "completed": On the completion gameloop, ALL attribute columns
+    - Real data after completion: Normal attribute data
+    - "destroyed": On destruction gameloop, ALL attribute columns, then NaN permanently
+    - "cancelled": On cancellation gameloop, ALL attribute columns, then NaN permanently
 
-        for obs in game_loop_iterator:
-            buildings_data = extractor.extract(obs)
-
-            # Print building counts
-            counts = extractor.get_building_counts(buildings_data)
-            print(f"Buildings: {counts}")
-
-            # Access specific building
-            if 'p1_barracks_001' in buildings_data:
-                barracks = buildings_data['p1_barracks_001']
-                print(f"Barracks at ({barracks['x']}, {barracks['y']})")
-                print(f"Construction: {barracks['build_progress']*100:.1f}%")
+    Unlike units, buildings that start but never complete STILL appear in the dataset.
+    Only applicable attributes are included (shields for Protoss, energy for casters).
     """
 
     def __init__(self, player_id: int):
@@ -173,48 +175,47 @@ class BuildingExtractor:
         # Track buildings that have been seen (for "destroyed" detection)
         self.all_seen_tags: Set[int] = set()
 
-        # Track construction completion timestamps
-        self.completion_timestamps: Dict[int, int] = {}  # tag -> game_loop when completed
-
-        # Track destruction timestamps
-        self.destruction_timestamps: Dict[int, int] = {}  # tag -> game_loop when destroyed
+        # Track which tags have ever reached build_progress >= 1.0 (completed)
+        self.completed_tags: Set[int] = set()
 
         # Track previous build progress for completion detection
-        self.previous_build_progress: Dict[int, float] = {}  # tag -> build_progress
+        self.previous_build_progress: Dict[int, float] = {}
+
+        # Track which tags are confirmed dead/destroyed
+        self.dead_tags: Set[int] = set()
+
+        # Track which buildings were under construction when they disappeared
+        # (for cancelled vs destroyed heuristic)
+        self.was_under_construction: Dict[int, bool] = {}
+
+        # Track which readable_ids have shields and/or energy (discovered during pass 1)
+        self.building_attributes: Dict[str, Set[str]] = {}
 
     def extract(self, obs) -> Dict[str, Dict]:
         """
         Extract all building data from observation.
 
+        Lifecycle is embedded in the data dict via the '_lifecycle' key:
+        - 'building_started': First frame a building appears with build_progress near 0
+        - 'under_construction': Building is being built (real data is still captured)
+        - 'completed': The frame where build_progress transitions to >= 1.0
+        - 'existing': Already completed in a previous frame
+        - 'destroyed': Building was destroyed (was in dead_units or disappeared after completion)
+        - 'cancelled': Building was cancelled (disappeared while under construction,
+                       not in dead_units)
+
         Args:
             obs: SC2 observation from controller.observe()
 
         Returns:
-            Dictionary mapping readable IDs to building data:
-            {
-                'p1_barracks_001': {
-                    'tag': 12345,
-                    'unit_type_id': 21,
-                    'unit_type_name': 'Barracks',
-                    'x': 100.5,
-                    'y': 80.3,
-                    'z': 8.0,
-                    'health': 1000.0,
-                    'health_max': 1000.0,
-                    'shields': 0.0,
-                    'shields_max': 0.0,
-                    'build_progress': 0.75,
-                    'state': 'building',  # 'started', 'building', 'completed', 'destroyed'
-                    'started_loop': 500,
-                    'completed_loop': None,  # or game_loop when completed
-                    'destroyed_loop': None,  # or game_loop when destroyed
-                },
-                ...
-            }
+            Dictionary mapping readable IDs to building data dicts.
         """
         raw_data = obs.observation.raw_data
         game_loop = obs.observation.game_loop
         buildings_data = {}
+
+        # Collect dead unit tags for this frame for cancelled vs destroyed detection
+        dead_unit_tags = set(raw_data.event.dead_units)
 
         # Get current frame's building tags
         current_tags = set()
@@ -241,33 +242,25 @@ class BuildingExtractor:
 
             readable_id = self.tag_to_readable_id[tag]
 
-            # Determine building state
-            state = self._determine_state(tag, unit, game_loop)
+            # Determine lifecycle state
+            lifecycle = self._determine_lifecycle(tag, unit)
 
-            # Check for construction completion
-            if tag not in self.completion_timestamps and unit.build_progress >= 1.0:
-                prev_progress = self.previous_build_progress.get(tag, 0.0)
-                if prev_progress < 1.0:
-                    self.completion_timestamps[tag] = game_loop
+            # Track completion
+            if unit.build_progress >= 1.0:
+                self.completed_tags.add(tag)
+
+            # Track construction state for cancelled detection
+            self.was_under_construction[tag] = unit.build_progress < 1.0
 
             # Update build progress tracking
             self.previous_build_progress[tag] = unit.build_progress
-
-            # Determine timestamps
-            started_loop = None
-            if tag in self.tag_to_readable_id:
-                # Building was first seen in some previous frame
-                # We don't track exact start time, but this could be enhanced
-                started_loop = None  # Could track this if needed
-
-            completed_loop = self.completion_timestamps.get(tag, None)
-            destroyed_loop = self.destruction_timestamps.get(tag, None)
 
             # Extract building data
             building_data = {
                 'tag': tag,
                 'unit_type_id': unit.unit_type,
                 'unit_type_name': get_building_type_name(unit.unit_type),
+                '_lifecycle': lifecycle,
 
                 # Position
                 'x': unit.pos.x,
@@ -278,67 +271,78 @@ class BuildingExtractor:
                 # Vitals
                 'health': unit.health,
                 'health_max': unit.health_max,
-                'shields': unit.shield,
-                'shields_max': unit.shield_max,
-                'energy': unit.energy,
-                'energy_max': unit.energy_max,
 
-                # Construction state
+                # Construction
                 'build_progress': unit.build_progress,
-                'state': state,
-
-                # Timestamps
-                'started_loop': started_loop,
-                'completed_loop': completed_loop,
-                'destroyed_loop': destroyed_loop,
 
                 # Additional state info
-                'is_flying': unit.is_flying,  # For lifted Terran buildings
-                'is_burrowed': unit.is_burrowed,  # For burrowed structures
+                'is_flying': unit.is_flying,
+                'is_burrowed': unit.is_burrowed,
 
                 # Combat/Defense
                 'attack_upgrade_level': unit.attack_upgrade_level,
                 'armor_upgrade_level': unit.armor_upgrade_level,
-                'shield_upgrade_level': unit.shield_upgrade_level,
 
                 # Additional
                 'radius': unit.radius,
                 'order_count': len(unit.orders),
             }
 
+            # Conditionally add shields (Protoss only - shield_max > 0)
+            if unit.shield_max > 0:
+                building_data['shields'] = unit.shield
+                building_data['shields_max'] = unit.shield_max
+                building_data['shield_upgrade_level'] = unit.shield_upgrade_level
+
+            # Conditionally add energy (casters only - energy_max > 0)
+            if unit.energy_max > 0:
+                building_data['energy'] = unit.energy
+                building_data['energy_max'] = unit.energy_max
+
+            # Record which attributes this building has (for schema building)
+            if readable_id not in self.building_attributes:
+                attr_set = set()
+                if unit.shield_max > 0:
+                    attr_set.update(['shields', 'shields_max', 'shield_upgrade_level'])
+                if unit.energy_max > 0:
+                    attr_set.update(['energy', 'energy_max'])
+                self.building_attributes[readable_id] = attr_set
+
             buildings_data[readable_id] = building_data
 
-        # Detect destroyed buildings (in previous frame but not current)
-        destroyed_tags = self.previous_tags - current_tags
-        for destroyed_tag in destroyed_tags:
-            if destroyed_tag in self.tag_to_readable_id:
-                readable_id = self.tag_to_readable_id[destroyed_tag]
+        # Detect destroyed/cancelled buildings (in previous frame but not current)
+        disappeared_tags = self.previous_tags - current_tags
+        for disappeared_tag in disappeared_tags:
+            if disappeared_tag in self.tag_to_readable_id:
+                readable_id = self.tag_to_readable_id[disappeared_tag]
 
-                # Record destruction timestamp if not already recorded
-                if destroyed_tag not in self.destruction_timestamps:
-                    self.destruction_timestamps[destroyed_tag] = game_loop
+                # Determine if destroyed or cancelled:
+                # - If in dead_units event: destroyed
+                # - If was under construction and NOT in dead_units: cancelled (heuristic)
+                # - If was completed and NOT in dead_units: destroyed (disappeared)
+                was_building = self.was_under_construction.get(disappeared_tag, False)
+                in_dead_units = disappeared_tag in dead_unit_tags
 
-                # Add destroyed building with "destroyed" state
+                if was_building and not in_dead_units:
+                    lifecycle = 'cancelled'
+                else:
+                    lifecycle = 'destroyed'
+
+                self.dead_tags.add(disappeared_tag)
                 buildings_data[readable_id] = {
-                    'tag': destroyed_tag,
-                    'state': 'destroyed',
-                    'destroyed_loop': game_loop,
+                    'tag': disappeared_tag,
+                    '_lifecycle': lifecycle,
                 }
 
-        # Also check explicit dead units from event
-        for dead_tag in raw_data.event.dead_units:
+        # Also check explicit dead units from event for buildings we track
+        for dead_tag in dead_unit_tags:
             if dead_tag in self.tag_to_readable_id and dead_tag in self.all_seen_tags:
                 readable_id = self.tag_to_readable_id[dead_tag]
-
-                # Record destruction timestamp if not already recorded
-                if dead_tag not in self.destruction_timestamps:
-                    self.destruction_timestamps[dead_tag] = game_loop
-
+                self.dead_tags.add(dead_tag)
                 if readable_id not in buildings_data:
                     buildings_data[readable_id] = {
                         'tag': dead_tag,
-                        'state': 'destroyed',
-                        'destroyed_loop': game_loop,
+                        '_lifecycle': 'destroyed',
                     }
 
         # Update previous tags for next iteration
@@ -372,36 +376,60 @@ class BuildingExtractor:
 
         return readable_id
 
-    def _determine_state(self, tag: int, unit, game_loop: int) -> str:
+    def _determine_lifecycle(self, tag: int, unit) -> str:
         """
-        Determine the current state of a building.
+        Determine the lifecycle state of a building for the current frame.
+
+        Lifecycle states:
+        - 'building_started': First appearance with build_progress near 0
+        - 'under_construction': Being built (build_progress < 1.0, not first frame)
+        - 'completed': The frame where build_progress transitions to >= 1.0
+        - 'existing': Already completed in a previous frame
 
         Args:
             tag: Building tag
             unit: Unit proto
-            game_loop: Current game loop
 
         Returns:
-            State string: 'started', 'building', 'completed', or 'destroyed'
+            Lifecycle state string
         """
-        # If build_progress is 0, it was just started
-        if unit.build_progress == 0.0:
-            return 'started'
+        is_new = tag not in self.previous_tags
 
-        # If build_progress is between 0 and 1, it's being built
-        if 0.0 < unit.build_progress < 1.0:
-            return 'building'
+        # If building is already known to be completed
+        if tag in self.completed_tags:
+            return 'existing'
 
-        # If build_progress is 1.0, it's completed
-        if unit.build_progress >= 1.0:
+        # Building just appeared
+        if is_new:
+            if unit.build_progress >= 1.0:
+                # Building appeared already complete (e.g., game start buildings)
+                return 'completed'
+            else:
+                return 'building_started'
+
+        # Building existed in previous frame
+        prev_progress = self.previous_build_progress.get(tag, 0.0)
+
+        if unit.build_progress >= 1.0 and prev_progress < 1.0:
+            # Just completed this frame
             return 'completed'
+        elif unit.build_progress < 1.0:
+            return 'under_construction'
+        else:
+            return 'existing'
 
-        # Default to building state
-        return 'building'
+    def get_building_attributes_for_id(self, readable_id: str) -> Set[str]:
+        """
+        Get the set of conditional attributes for a given building readable_id.
+
+        Returns:
+            Set of attribute keys like {'shields', 'shields_max', 'energy', ...}
+        """
+        return self.building_attributes.get(readable_id, set())
 
     def get_building_counts(self, buildings_data: Dict[str, Dict]) -> Dict[str, int]:
         """
-        Get count of buildings by type (excluding destroyed buildings).
+        Get count of buildings by type (excluding destroyed/cancelled buildings).
 
         Args:
             buildings_data: Output from extract()
@@ -413,8 +441,9 @@ class BuildingExtractor:
         counts = {}
 
         for building_data in buildings_data.values():
-            # Skip destroyed buildings
-            if building_data.get('state') == 'destroyed':
+            # Skip destroyed/cancelled buildings
+            lifecycle = building_data.get('_lifecycle', 'existing')
+            if lifecycle in ('destroyed', 'cancelled'):
                 continue
 
             building_type_name = building_data.get('unit_type_name')
@@ -425,31 +454,27 @@ class BuildingExtractor:
 
     def get_building_by_state(self, buildings_data: Dict[str, Dict]) -> Dict[str, list]:
         """
-        Get buildings grouped by their state.
+        Get buildings grouped by their lifecycle state.
 
         Args:
             buildings_data: Output from extract()
 
         Returns:
-            Dictionary mapping states to lists of building readable IDs:
-            {
-                'started': ['p1_barracks_003'],
-                'building': ['p1_barracks_004', 'p1_supplydepot_010'],
-                'completed': ['p1_commandcenter_001', ...],
-                'destroyed': ['p1_barracks_001']
-            }
+            Dictionary mapping lifecycle states to lists of building readable IDs.
         """
         by_state = {
-            'started': [],
-            'building': [],
+            'building_started': [],
+            'under_construction': [],
             'completed': [],
-            'destroyed': []
+            'existing': [],
+            'destroyed': [],
+            'cancelled': [],
         }
 
         for readable_id, building_data in buildings_data.items():
-            state = building_data.get('state', 'completed')
-            if state in by_state:
-                by_state[state].append(readable_id)
+            lifecycle = building_data.get('_lifecycle', 'existing')
+            if lifecycle in by_state:
+                by_state[lifecycle].append(readable_id)
 
         return by_state
 
@@ -459,9 +484,11 @@ class BuildingExtractor:
         self.building_type_counters.clear()
         self.previous_tags.clear()
         self.all_seen_tags.clear()
-        self.completion_timestamps.clear()
-        self.destruction_timestamps.clear()
+        self.completed_tags.clear()
         self.previous_build_progress.clear()
+        self.dead_tags.clear()
+        self.was_under_construction.clear()
+        self.building_attributes.clear()
 
     def reset_frame_state(self):
         """Reset only per-frame state, preserving tag-to-ID mappings and counters.
@@ -471,3 +498,5 @@ class BuildingExtractor:
         """
         self.previous_tags.clear()
         self.previous_build_progress.clear()
+        self.dead_tags.clear()
+        self.was_under_construction.clear()

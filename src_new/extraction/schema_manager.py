@@ -3,6 +3,13 @@ SchemaManager: Manages wide-table column schema and documentation.
 
 This component handles schema generation, column ordering, data types,
 and documentation for the wide-format parquet output.
+
+Key behaviors:
+- Only creates columns for units that actually complete (not cancelled/interrupted)
+- Creates columns for ALL buildings (even cancelled ones, since position is meaningful)
+- Conditionally includes shields (Protoss only) and energy (casters only) per entity
+- No separate lifecycle columns (status, progress, started_loop, completed_loop,
+  destroyed_loop) - lifecycle state is embedded in attribute columns
 """
 
 from typing import List, Dict, Any, Set, Optional
@@ -35,12 +42,79 @@ def sanitize_name(name: str) -> str:
     return sanitized or 'unknown'
 
 
+# Base attribute columns for units (always present)
+UNIT_BASE_ATTRIBUTES = [
+    ('x', 'object', 'X-coordinate'),
+    ('y', 'object', 'Y-coordinate'),
+    ('z', 'object', 'Z-coordinate (height)'),
+    ('facing', 'object', 'Facing direction'),
+    ('health', 'object', 'Current health'),
+    ('health_max', 'object', 'Maximum health'),
+    ('build_progress', 'object', 'Build progress (0.0 to 1.0)'),
+    ('is_flying', 'object', 'Whether unit is flying'),
+    ('is_burrowed', 'object', 'Whether unit is burrowed'),
+    ('is_hallucination', 'object', 'Whether unit is a hallucination'),
+    ('weapon_cooldown', 'object', 'Weapon cooldown'),
+    ('attack_upgrade_level', 'object', 'Attack upgrade level'),
+    ('armor_upgrade_level', 'object', 'Armor upgrade level'),
+    ('radius', 'object', 'Unit radius'),
+    ('cargo_space_taken', 'object', 'Cargo space taken'),
+    ('cargo_space_max', 'object', 'Maximum cargo space'),
+    ('order_count', 'object', 'Number of queued orders'),
+]
+
+# Conditional attribute columns for units (added only when applicable)
+UNIT_SHIELD_ATTRIBUTES = [
+    ('shields', 'object', 'Current shields (Protoss only)'),
+    ('shields_max', 'object', 'Maximum shields (Protoss only)'),
+    ('shield_upgrade_level', 'object', 'Shield upgrade level (Protoss only)'),
+]
+
+UNIT_ENERGY_ATTRIBUTES = [
+    ('energy', 'object', 'Current energy (casters only)'),
+    ('energy_max', 'object', 'Maximum energy (casters only)'),
+]
+
+# Base attribute columns for buildings (always present)
+BUILDING_BASE_ATTRIBUTES = [
+    ('x', 'object', 'X-coordinate'),
+    ('y', 'object', 'Y-coordinate'),
+    ('z', 'object', 'Z-coordinate'),
+    ('facing', 'object', 'Facing direction'),
+    ('health', 'object', 'Current health'),
+    ('health_max', 'object', 'Maximum health'),
+    ('build_progress', 'object', 'Build progress (0.0 to 1.0)'),
+    ('is_flying', 'object', 'Whether building is flying (lifted Terran)'),
+    ('is_burrowed', 'object', 'Whether building is burrowed'),
+    ('attack_upgrade_level', 'object', 'Attack upgrade level'),
+    ('armor_upgrade_level', 'object', 'Armor upgrade level'),
+    ('radius', 'object', 'Building radius'),
+    ('order_count', 'object', 'Number of queued orders'),
+]
+
+# Conditional attribute columns for buildings
+BUILDING_SHIELD_ATTRIBUTES = [
+    ('shields', 'object', 'Current shields (Protoss only)'),
+    ('shields_max', 'object', 'Maximum shields (Protoss only)'),
+    ('shield_upgrade_level', 'object', 'Shield upgrade level (Protoss only)'),
+]
+
+BUILDING_ENERGY_ATTRIBUTES = [
+    ('energy', 'object', 'Current energy (casters only)'),
+    ('energy_max', 'object', 'Maximum energy (casters only)'),
+]
+
+
 class SchemaManager:
     """
     Manages wide-table column schema and documentation.
 
     This class dynamically builds the schema by scanning replays and provides
     comprehensive documentation for all columns.
+
+    Column dtype is 'object' for all unit/building attribute columns because
+    they can contain either numeric data (float) or lifecycle state strings
+    (e.g., "unit_started", "building", "completed", "destroyed").
     """
 
     def __init__(self):
@@ -104,12 +178,13 @@ class SchemaManager:
         This performs a full pass through the replay to discover all unit types,
         building types, and other dynamic columns that will be needed.
 
+        After the scan, only units that actually completed (build_progress >= 1.0)
+        will have columns created. Buildings always get columns (even if cancelled).
+
         Args:
             replay_path: Path to replay file
             replay_loader: ReplayLoader instance
             state_extractor: StateExtractor instance
-
-        # TODO: Test case - Generate schema from sample replay
         """
         logger.info(f"Pre-scanning replay to build schema: {replay_path}")
 
@@ -138,54 +213,63 @@ class SchemaManager:
                     controller.step(1)
                     obs = controller.observe()
 
-
                     # Check if replay has ended
                     if obs.player_result:
-                        # player_result only appears at the end of the match when one player has won
                         logger.info(f"Schema scan complete - replay ended at loop {game_loop} (expected {max_loops})")
                         break
-
 
                     # Extract state
                     state = state_extractor.extract_observation(obs, game_loop)
 
-                    # Discover units and buildings
-                    self._discover_entities_from_state(state)
-
+                    # We don't add columns yet - just let the extractors track everything
                     game_loop = obs.observation.game_loop
 
                 except Exception as e:
                     logger.warning(f"Error during schema scan at loop {game_loop}: {e}")
                     break
 
+        # Now build the schema based on what was discovered during the scan
+        self._build_columns_from_extractors(state_extractor)
+
         logger.info(f"Schema built with {len(self.columns)} columns")
         logger.info(f"  Units discovered: {len(self._seen_units)}")
         logger.info(f"  Buildings discovered: {len(self._seen_buildings)}")
 
-    def _discover_entities_from_state(self, state: Dict[str, Any]) -> None:
+    def _build_columns_from_extractors(self, state_extractor: Any) -> None:
         """
-        Discover entities from extracted state and add to schema.
+        Build column schema from extractor state after pass 1 completes.
+
+        Only creates columns for:
+        - Units that actually completed (build_progress reached 1.0)
+        - All buildings (even cancelled ones)
+
+        Conditionally includes shields/energy based on what the extractor observed.
 
         Args:
-            state: Extracted state dictionary
+            state_extractor: StateExtractor instance (after pass 1)
         """
-        # Discover units
         for player_num in [1, 2]:
-            units_key = f'p{player_num}_units'
-            if units_key in state:
-                for unit_id, unit_data in state[units_key].items():
-                    if unit_id not in self._seen_units:
-                        self._seen_units.add(unit_id)
-                        self.add_unit_columns(f'p{player_num}', unit_id, unit_data)
+            player = f'p{player_num}'
 
-        # Discover buildings
-        for player_num in [1, 2]:
-            buildings_key = f'p{player_num}_buildings'
-            if buildings_key in state:
-                for building_id, building_data in state[buildings_key].items():
-                    if building_id not in self._seen_buildings:
-                        self._seen_buildings.add(building_id)
-                        self.add_building_columns(f'p{player_num}', building_id, building_data)
+            # Get unit extractor for this player
+            unit_extractor = state_extractor.unit_extractors[player_num]
+            completed_ids = unit_extractor.get_completed_readable_ids()
+
+            # Add columns only for completed units
+            for readable_id in sorted(completed_ids):
+                if readable_id not in self._seen_units:
+                    self._seen_units.add(readable_id)
+                    extra_attrs = unit_extractor.get_unit_attributes_for_id(readable_id)
+                    self.add_unit_columns(player, readable_id, extra_attrs)
+
+            # Get building extractor for this player - add ALL buildings
+            building_extractor = state_extractor.building_extractors[player_num]
+            for tag, readable_id in sorted(building_extractor.tag_to_readable_id.items(),
+                                            key=lambda x: x[1]):
+                if readable_id not in self._seen_buildings:
+                    self._seen_buildings.add(readable_id)
+                    extra_attrs = building_extractor.get_building_attributes_for_id(readable_id)
+                    self.add_building_columns(player, readable_id, extra_attrs)
 
         # Add economy columns (fixed schema)
         self._add_economy_columns()
@@ -193,33 +277,32 @@ class SchemaManager:
         # Add upgrade columns (dynamic but can be pre-defined)
         self._add_upgrade_columns()
 
-    def add_unit_columns(self, player: str, unit_id: str, unit_data: Dict) -> None:
+    def add_unit_columns(self, player: str, unit_id: str, extra_attrs: Set[str] = None) -> None:
         """
         Add columns for a specific unit.
 
+        No separate lifecycle columns (state, etc.) - lifecycle is embedded
+        in the attribute columns themselves.
+
         Args:
             player: Player prefix (e.g., 'p1', 'p2')
-            unit_id: Unit identifier (e.g., 'marine_001')
-            unit_data: Unit data dictionary for determining columns
-
-        # TODO: Test case - Add unit columns dynamically
+            unit_id: Unit identifier (e.g., 'p1_marine_001')
+            extra_attrs: Set of conditional attribute names this unit has
+                        (e.g., {'shields', 'shields_max', 'energy', 'energy_max'})
         """
-        # Get unit type name for documentation
-        unit_type_name = unit_data.get('unit_type_name', 'unknown')
+        if extra_attrs is None:
+            extra_attrs = set()
 
-        # Define unit columns
-        unit_columns = [
-            ('x', 'float64', 'X-coordinate'),
-            ('y', 'float64', 'Y-coordinate'),
-            ('z', 'float64', 'Z-coordinate (height)'),
-            ('health', 'float64', 'Current health'),
-            ('health_max', 'float64', 'Maximum health'),
-            ('shields', 'float64', 'Current shields'),
-            ('shields_max', 'float64', 'Maximum shields'),
-            ('energy', 'float64', 'Current energy'),
-            ('energy_max', 'float64', 'Maximum energy'),
-            ('state', 'string', 'Unit state (built/existing/killed)'),
-        ]
+        # Build the list of attribute columns for this unit
+        unit_columns = list(UNIT_BASE_ATTRIBUTES)
+
+        # Conditionally add shields
+        if any(a in extra_attrs for a in ['shields', 'shields_max', 'shield_upgrade_level']):
+            unit_columns.extend(UNIT_SHIELD_ATTRIBUTES)
+
+        # Conditionally add energy
+        if any(a in extra_attrs for a in ['energy', 'energy_max']):
+            unit_columns.extend(UNIT_ENERGY_ATTRIBUTES)
 
         # Strip existing player prefix from unit_id (e.g., "p1_marine_001" -> "marine_001")
         stripped_id = '_'.join(unit_id.split('_')[1:]) if unit_id.startswith('p') else unit_id
@@ -233,35 +316,37 @@ class SchemaManager:
                 self.columns.append(col_name)
                 self.dtypes[col_name] = dtype
                 self.column_docs[col_name] = {
-                    'description': f'{description} for {player} {unit_type_name} {unit_id}',
+                    'description': f'{description} for {player} {unit_id}',
                     'type': dtype,
-                    'missing_value': 'NaN' if dtype.startswith('float') or dtype.startswith('int') else 'null',
+                    'missing_value': 'NaN',
                 }
 
-    def add_building_columns(self, player: str, building_id: str, building_data: Dict) -> None:
+    def add_building_columns(self, player: str, building_id: str, extra_attrs: Set[str] = None) -> None:
         """
         Add columns for a specific building.
 
+        No separate lifecycle columns (status, progress, started_loop,
+        completed_loop, destroyed_loop) - lifecycle is embedded in the
+        attribute columns themselves.
+
         Args:
             player: Player prefix (e.g., 'p1', 'p2')
-            building_id: Building identifier
-            building_data: Building data dictionary
-
-        # TODO: Test case - Add building columns dynamically
+            building_id: Building identifier (e.g., 'p1_barracks_001')
+            extra_attrs: Set of conditional attribute names this building has
         """
-        building_type = building_data.get('building_type', 'unknown')
+        if extra_attrs is None:
+            extra_attrs = set()
 
-        # Define building columns
-        building_columns = [
-            ('x', 'float64', 'X-coordinate'),
-            ('y', 'float64', 'Y-coordinate'),
-            ('z', 'float64', 'Z-coordinate'),
-            ('status', 'string', 'Building status (started/building/completed/destroyed)'),
-            ('progress', 'int64', 'Construction progress (0-100)'),
-            ('started_loop', 'int64', 'Game loop when construction started'),
-            ('completed_loop', 'int64', 'Game loop when construction completed'),
-            ('destroyed_loop', 'int64', 'Game loop when building destroyed'),
-        ]
+        # Build the list of attribute columns for this building
+        building_columns = list(BUILDING_BASE_ATTRIBUTES)
+
+        # Conditionally add shields
+        if any(a in extra_attrs for a in ['shields', 'shields_max', 'shield_upgrade_level']):
+            building_columns.extend(BUILDING_SHIELD_ATTRIBUTES)
+
+        # Conditionally add energy
+        if any(a in extra_attrs for a in ['energy', 'energy_max']):
+            building_columns.extend(BUILDING_ENERGY_ATTRIBUTES)
 
         # Strip existing player prefix from building_id (e.g., "p1_barracks_001" -> "barracks_001")
         stripped_id = '_'.join(building_id.split('_')[1:]) if building_id.startswith('p') else building_id
@@ -275,9 +360,9 @@ class SchemaManager:
                 self.columns.append(col_name)
                 self.dtypes[col_name] = dtype
                 self.column_docs[col_name] = {
-                    'description': f'{description} for {player} {building_type} {building_id}',
+                    'description': f'{description} for {player} {building_id}',
                     'type': dtype,
-                    'missing_value': 'NaN' if dtype.startswith('float') or dtype.startswith('int') else 'null',
+                    'missing_value': 'NaN',
                 }
 
     def _add_economy_columns(self) -> None:
@@ -340,18 +425,7 @@ class SchemaManager:
         Generate data dictionary.
 
         Returns:
-            Dictionary mapping column names to documentation:
-            {
-                'column_name': {
-                    'description': str,
-                    'type': str,
-                    'example': Any,
-                    'missing_value': str,
-                },
-                ...
-            }
-
-        # TODO: Test case - Generate documentation
+            Dictionary mapping column names to documentation.
         """
         return self.column_docs.copy()
 
@@ -361,8 +435,6 @@ class SchemaManager:
 
         Args:
             output_path: Path to save schema JSON
-
-        # TODO: Test case - Save/load schema
         """
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -426,7 +498,7 @@ class SchemaManager:
         if dtype.startswith('float') or dtype.startswith('int'):
             return np.nan
         else:
-            return None
+            return np.nan  # Use NaN for object columns too (Parquet compatible)
 
     def add_unit_count_columns(self, unit_type: str) -> None:
         """
