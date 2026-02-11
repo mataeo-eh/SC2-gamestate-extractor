@@ -244,7 +244,16 @@ class ParquetWriter:
                     if col == 'Messages':
                         df[col] = df[col].apply(self._serialize_messages_for_parquet)
                     else:
-                        df[col] = df[col].astype('object')
+                        # Unit/building attribute columns contain mixed types:
+                        # numeric values (float) for real data AND lifecycle state
+                        # strings ("unit_started", "building", "completed", "destroyed",
+                        # "cancelled", "building_started", "under_construction").
+                        # PyArrow cannot handle mixed float+string columns, so convert
+                        # everything to pandas StringDtype. NaN values are preserved as
+                        # pd.NA (the missing value for StringDtype).
+                        df[col] = df[col].apply(
+                            lambda v: str(v) if pd.notna(v) else pd.NA
+                        ).astype('string')
                 else:
                     # Default to object
                     logger.warning(f"Unknown dtype '{dtype}' for column '{col}', using object")
