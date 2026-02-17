@@ -42,14 +42,14 @@ def sanitize_name(name: str) -> str:
     return sanitized or 'unknown'
 
 
-# Base attribute columns for units (always present)
+# Base attribute columns for units (always present).
+# Suffixes must match the column_suffix values in UNIT_FIELD_CONFIG
+# (src_new/extractors/unit_extractor.py).
 UNIT_BASE_ATTRIBUTES = [
-    ('x', 'object', 'X-coordinate'),
-    ('y', 'object', 'Y-coordinate'),
-    ('z', 'object', 'Z-coordinate (height)'),
+    ('pos_(X,Y,Z)', 'object', 'Position as (X, Y, Z) coordinate tuple'),
+    ('health', 'object', 'Health as current/max fraction string'),
     ('facing', 'object', 'Facing direction'),
-    ('health', 'object', 'Current health'),
-    ('health_max', 'object', 'Maximum health'),
+    ('radius', 'object', 'Unit radius'),
     ('build_progress', 'object', 'Build progress (0.0 to 1.0)'),
     ('is_flying', 'object', 'Whether unit is flying'),
     ('is_burrowed', 'object', 'Whether unit is burrowed'),
@@ -57,32 +57,29 @@ UNIT_BASE_ATTRIBUTES = [
     ('weapon_cooldown', 'object', 'Weapon cooldown'),
     ('attack_upgrade_level', 'object', 'Attack upgrade level'),
     ('armor_upgrade_level', 'object', 'Armor upgrade level'),
-    ('radius', 'object', 'Unit radius'),
     ('cargo_space_taken', 'object', 'Cargo space taken'),
     ('cargo_space_max', 'object', 'Maximum cargo space'),
     ('order_count', 'object', 'Number of queued orders'),
 ]
 
-# Conditional attribute columns for units (added only when applicable)
+# Conditional attribute columns for units (added only when applicable).
+# Suffixes must match the conditional column_suffix values in UNIT_FIELD_CONFIG.
 UNIT_SHIELD_ATTRIBUTES = [
-    ('shields', 'object', 'Current shields (Protoss only)'),
-    ('shields_max', 'object', 'Maximum shields (Protoss only)'),
+    ('shields', 'object', 'Shields as current/max fraction string (Protoss only)'),
     ('shield_upgrade_level', 'object', 'Shield upgrade level (Protoss only)'),
 ]
 
 UNIT_ENERGY_ATTRIBUTES = [
-    ('energy', 'object', 'Current energy (casters only)'),
-    ('energy_max', 'object', 'Maximum energy (casters only)'),
+    ('energy', 'object', 'Energy as current/max fraction string (casters only)'),
 ]
 
-# Base attribute columns for buildings (always present)
+# Base attribute columns for buildings (always present).
+# Suffixes must match the column_suffix values in BUILDING_FIELD_CONFIG
+# (src_new/extractors/building_extractor.py).
 BUILDING_BASE_ATTRIBUTES = [
-    ('x', 'object', 'X-coordinate'),
-    ('y', 'object', 'Y-coordinate'),
-    ('z', 'object', 'Z-coordinate'),
+    ('pos_(X,Y,Z)', 'object', 'Position as (X, Y, Z) coordinate tuple'),
+    ('health', 'object', 'Health as current/max fraction string'),
     ('facing', 'object', 'Facing direction'),
-    ('health', 'object', 'Current health'),
-    ('health_max', 'object', 'Maximum health'),
     ('build_progress', 'object', 'Build progress (0.0 to 1.0)'),
     ('is_flying', 'object', 'Whether building is flying (lifted Terran)'),
     ('is_burrowed', 'object', 'Whether building is burrowed'),
@@ -92,16 +89,15 @@ BUILDING_BASE_ATTRIBUTES = [
     ('order_count', 'object', 'Number of queued orders'),
 ]
 
-# Conditional attribute columns for buildings
+# Conditional attribute columns for buildings.
+# Suffixes must match the conditional column_suffix values in BUILDING_FIELD_CONFIG.
 BUILDING_SHIELD_ATTRIBUTES = [
-    ('shields', 'object', 'Current shields (Protoss only)'),
-    ('shields_max', 'object', 'Maximum shields (Protoss only)'),
+    ('shields', 'object', 'Shields as current/max fraction string (Protoss only)'),
     ('shield_upgrade_level', 'object', 'Shield upgrade level (Protoss only)'),
 ]
 
 BUILDING_ENERGY_ATTRIBUTES = [
-    ('energy', 'object', 'Current energy (casters only)'),
-    ('energy_max', 'object', 'Maximum energy (casters only)'),
+    ('energy', 'object', 'Energy as current/max fraction string (casters only)'),
 ]
 
 
@@ -296,12 +292,13 @@ class SchemaManager:
         # Build the list of attribute columns for this unit
         unit_columns = list(UNIT_BASE_ATTRIBUTES)
 
-        # Conditionally add shields
-        if any(a in extra_attrs for a in ['shields', 'shields_max', 'shield_upgrade_level']):
+        # Conditionally add shields (extra_attrs contains column_suffix strings
+        # from UNIT_FIELD_CONFIG, e.g. 'shields', 'shield_upgrade_level')
+        if any(a in extra_attrs for a in ['shields', 'shield_upgrade_level']):
             unit_columns.extend(UNIT_SHIELD_ATTRIBUTES)
 
         # Conditionally add energy
-        if any(a in extra_attrs for a in ['energy', 'energy_max']):
+        if 'energy' in extra_attrs:
             unit_columns.extend(UNIT_ENERGY_ATTRIBUTES)
 
         # Strip existing player prefix from unit_id (e.g., "p1_marine_001" -> "marine_001")
@@ -340,12 +337,13 @@ class SchemaManager:
         # Build the list of attribute columns for this building
         building_columns = list(BUILDING_BASE_ATTRIBUTES)
 
-        # Conditionally add shields
-        if any(a in extra_attrs for a in ['shields', 'shields_max', 'shield_upgrade_level']):
+        # Conditionally add shields (extra_attrs contains column_suffix strings
+        # from BUILDING_FIELD_CONFIG, e.g. 'shields', 'shield_upgrade_level')
+        if any(a in extra_attrs for a in ['shields', 'shield_upgrade_level']):
             building_columns.extend(BUILDING_SHIELD_ATTRIBUTES)
 
         # Conditionally add energy
-        if any(a in extra_attrs for a in ['energy', 'energy_max']):
+        if 'energy' in extra_attrs:
             building_columns.extend(BUILDING_ENERGY_ATTRIBUTES)
 
         # Strip existing player prefix from building_id (e.g., "p1_barracks_001" -> "barracks_001")

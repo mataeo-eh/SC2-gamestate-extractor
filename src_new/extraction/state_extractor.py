@@ -3,6 +3,14 @@ StateExtractor: Extracts all required game state from pysc2 observations.
 
 This component orchestrates the extraction of complete game state including
 units, buildings, economy, upgrades, and messages from SC2 observations.
+
+Supports two extraction approaches:
+- Single-observation mode: extract_observation() uses one obs for everything.
+  Used by legacy two-pass and single-pass pipelines where the replay is locked
+  to one player's perspective.
+- Observer mode: extract_observation_observer_mode() takes TWO observations
+  (one per player perspective) to get correct per-player economy/upgrades
+  while still extracting global units/buildings from a single obs.
 """
 
 from typing import Dict, Set, List, Optional, Any
@@ -25,6 +33,11 @@ class StateExtractor:
     This class orchestrates all the individual extractors (units, buildings,
     economy, upgrades) and provides a unified interface for extracting complete
     game state at each time step.
+
+    Provides three extraction entry points:
+    - extract_observation(): Full extraction from a single obs (legacy mode)
+    - extract_perspective_dependent(): Economy/upgrades only for one player (two-pass P2 fix)
+    - extract_observation_observer_mode(): Full extraction from two per-player obs (observer mode)
     """
 
     def __init__(self):
@@ -101,6 +114,80 @@ class StateExtractor:
 
         # Extract messages
         state['messages'] = self.extract_messages(obs)
+
+        return state
+
+    def extract_observation_observer_mode(
+        self,
+        obs_p1,
+        obs_p2,
+        game_loop: int,
+    ) -> Dict[str, Any]:
+        """
+        Extract complete state from observer mode observations.
+
+        In observer mode, the pipeline makes TWO observe() calls per game step:
+        one after switching perspective to player 1, and one after switching to
+        player 2.  Both observations share the same raw_data.units (global),
+        but have different player_common and score data (perspective-dependent).
+
+        This method uses obs_p1 for P1 economy/upgrades and obs_p2 for P2
+        economy/upgrades, while using obs_p1 (arbitrarily) for units/buildings
+        since raw_data.units is identical in both observations.
+
+        Args:
+            obs_p1: Observation after switching to player 1 perspective.
+                    Used for units, buildings, P1 economy, P1 upgrades, messages.
+            obs_p2: Observation after switching to player 2 perspective.
+                    Used for P2 economy and P2 upgrades.
+            game_loop: Current game loop number.
+
+        Returns:
+            Complete state dict with all players' data correctly populated:
+            {
+                'game_loop': int,
+                'p1_units': dict,
+                'p2_units': dict,
+                'p1_buildings': dict,
+                'p2_buildings': dict,
+                'p1_economy': dict,   # from obs_p1 (correct P1 perspective)
+                'p2_economy': dict,   # from obs_p2 (correct P2 perspective)
+                'p1_upgrades': dict,  # from obs_p1 (correct P1 perspective)
+                'p2_upgrades': dict,  # from obs_p2 (correct P2 perspective)
+                'messages': list,
+            }
+
+        Depends on / calls:
+            - extract_units() for both players (uses obs_p1)
+            - extract_buildings() for both players (uses obs_p1)
+            - extract_economy() with obs_p1 for P1, obs_p2 for P2
+            - extract_upgrades() with obs_p1 for P1, obs_p2 for P2
+            - extract_messages() (uses obs_p1)
+        """
+        state = {'game_loop': game_loop}
+
+        # Units and buildings come from obs_p1 — raw_data.units is identical
+        # regardless of which player perspective is active, so the choice of
+        # obs_p1 vs obs_p2 is arbitrary here.
+        state['p1_units'] = self.extract_units(obs_p1, player_id=1)
+        state['p2_units'] = self.extract_units(obs_p1, player_id=2)
+
+        state['p1_buildings'] = self.extract_buildings(obs_p1, player_id=1)
+        state['p2_buildings'] = self.extract_buildings(obs_p1, player_id=2)
+
+        # Economy is perspective-dependent (player_common / score_details).
+        # P1 economy must come from the P1-perspective observation,
+        # P2 economy must come from the P2-perspective observation.
+        state['p1_economy'] = self.extract_economy(obs_p1, player_id=1)
+        state['p2_economy'] = self.extract_economy(obs_p2, player_id=2)
+
+        # Upgrades are also perspective-dependent (raw_data.player.upgrade_ids
+        # reflects the observed player).
+        state['p1_upgrades'] = self.extract_upgrades(obs_p1, player_id=1)
+        state['p2_upgrades'] = self.extract_upgrades(obs_p2, player_id=2)
+
+        # Messages from obs_p1 — chat is global and identical in both obs
+        state['messages'] = self.extract_messages(obs_p1)
 
         return state
 

@@ -8,9 +8,15 @@ This component handles:
 - Detecting unit lifecycle transitions (unit_started, building, completed, destroyed)
 - Managing unit lifecycle tracking with embedded lifecycle state in attribute columns
 - Conditional attribute extraction (shields only for Protoss, energy only for casters)
+
+Field extraction is driven by UNIT_FIELD_CONFIG, a module-level list of dictionaries.
+Each entry defines a column suffix, an extract function, an optional condition, and
+whether the field is always present or conditional. Users can add, remove, or reorder
+entries in UNIT_FIELD_CONFIG to control which protobuf fields appear in the output
+without touching any extraction logic.
 """
 
-from typing import Dict, Set, Tuple, Optional
+from typing import Dict, Set, Tuple, Optional, List, Any, Callable
 import logging
 
 from pysc2.lib import units as pysc2_units
@@ -19,15 +25,19 @@ from pysc2.lib import units as pysc2_units
 logger = logging.getLogger(__name__)
 
 
-# Define which alliance values represent different player perspectives
+# ---------------------------------------------------------------------------
+# Alliance constants (used for filtering units by perspective)
+# ---------------------------------------------------------------------------
 ALLIANCE_SELF = 1
 ALLIANCE_ALLY = 2
 ALLIANCE_NEUTRAL = 3
 ALLIANCE_ENEMY = 4
 
 
+# ---------------------------------------------------------------------------
 # Building unit type IDs (these should be excluded from unit counts)
 # This is a comprehensive list of common building types
+# ---------------------------------------------------------------------------
 BUILDING_TYPES = {
     # Terran buildings
     18,   # CommandCenter
@@ -100,6 +110,156 @@ def get_unit_type_name(unit_type_id: int) -> str:
         return f"Unknown({unit_type_id})"
 
 
+# ---------------------------------------------------------------------------
+# UNIT_FIELD_CONFIG: Configurable field extraction definitions
+#
+# Each entry controls one output column per unit. To add or remove a field,
+# simply edit this list -- no other code changes are required.
+#
+# Keys per entry:
+#   column_suffix  (str)            -- suffix appended to the readable ID to
+#                                      form the output column name
+#   extract        (Callable)       -- lambda/function receiving a unit proto,
+#                                      returning the value to store
+#   always         (bool)           -- True  = always extract this field
+#                                      False = only extract when `condition`
+#                                              returns True
+#   condition      (Callable|None)  -- lambda/function receiving a unit proto,
+#                                      returning True when the field applies.
+#                                      Ignored when `always` is True.
+#   description    (str)            -- human-readable explanation of the field
+# ---------------------------------------------------------------------------
+UNIT_FIELD_CONFIG: List[Dict[str, Any]] = [
+    # -- Position (single column, tuple string) ----------------------------
+    {
+        'column_suffix': 'pos_(X,Y,Z)',
+        'extract': lambda unit: f"({unit.pos.x}, {unit.pos.y}, {unit.pos.z})",
+        'always': True,
+        'condition': None,
+        'description': 'Position as (X, Y, Z) coordinate tuple',
+    },
+    # -- Vitals ------------------------------------------------------------
+    {
+        'column_suffix': 'health',
+        'extract': lambda unit: f"{unit.health}/{unit.health_max}",
+        'always': True,
+        'condition': None,
+        'description': 'Health as current/max fraction string',
+    },
+    {
+        'column_suffix': 'shields',
+        'extract': lambda unit: f"{unit.shield}/{unit.shield_max}",
+        'always': False,
+        'condition': lambda unit: unit.shield_max > 0,
+        'description': 'Shields as current/max fraction string (Protoss only)',
+    },
+    {
+        'column_suffix': 'energy',
+        'extract': lambda unit: f"{unit.energy}/{unit.energy_max}",
+        'always': False,
+        'condition': lambda unit: unit.energy_max > 0,
+        'description': 'Energy as current/max fraction string (casters only)',
+    },
+    # -- Orientation / geometry --------------------------------------------
+    {
+        'column_suffix': 'facing',
+        'extract': lambda unit: unit.facing,
+        'always': True,
+        'condition': None,
+        'description': 'Facing direction in radians',
+    },
+    {
+        'column_suffix': 'radius',
+        'extract': lambda unit: unit.radius,
+        'always': True,
+        'condition': None,
+        'description': 'Unit collision radius',
+    },
+    # -- Build state -------------------------------------------------------
+    {
+        'column_suffix': 'build_progress',
+        'extract': lambda unit: unit.build_progress,
+        'always': True,
+        'condition': None,
+        'description': 'Build progress (0.0 to 1.0)',
+    },
+    # -- Status flags ------------------------------------------------------
+    {
+        'column_suffix': 'is_flying',
+        'extract': lambda unit: unit.is_flying,
+        'always': True,
+        'condition': None,
+        'description': 'Whether the unit is currently flying',
+    },
+    {
+        'column_suffix': 'is_burrowed',
+        'extract': lambda unit: unit.is_burrowed,
+        'always': True,
+        'condition': None,
+        'description': 'Whether the unit is currently burrowed',
+    },
+    {
+        'column_suffix': 'is_hallucination',
+        'extract': lambda unit: unit.is_hallucination,
+        'always': True,
+        'condition': None,
+        'description': 'Whether the unit is a hallucination',
+    },
+    # -- Combat ------------------------------------------------------------
+    {
+        'column_suffix': 'weapon_cooldown',
+        'extract': lambda unit: unit.weapon_cooldown,
+        'always': True,
+        'condition': None,
+        'description': 'Weapon cooldown remaining',
+    },
+    {
+        'column_suffix': 'attack_upgrade_level',
+        'extract': lambda unit: unit.attack_upgrade_level,
+        'always': True,
+        'condition': None,
+        'description': 'Attack upgrade level (0-3)',
+    },
+    {
+        'column_suffix': 'armor_upgrade_level',
+        'extract': lambda unit: unit.armor_upgrade_level,
+        'always': True,
+        'condition': None,
+        'description': 'Armor upgrade level (0-3)',
+    },
+    {
+        'column_suffix': 'shield_upgrade_level',
+        'extract': lambda unit: unit.shield_upgrade_level,
+        'always': False,
+        'condition': lambda unit: unit.shield_max > 0,
+        'description': 'Shield upgrade level (0-3, Protoss only)',
+    },
+    # -- Cargo -------------------------------------------------------------
+    {
+        'column_suffix': 'cargo_space_taken',
+        'extract': lambda unit: unit.cargo_space_taken,
+        'always': True,
+        'condition': None,
+        'description': 'Cargo space currently occupied',
+    },
+    {
+        'column_suffix': 'cargo_space_max',
+        'extract': lambda unit: unit.cargo_space_max,
+        'always': True,
+        'condition': None,
+        'description': 'Maximum cargo space available',
+    },
+    # -- Orders (derived) --------------------------------------------------
+    {
+        'column_suffix': 'order_count',
+        'extract': lambda unit: len(unit.orders),
+        'always': True,
+        'condition': None,
+        'description': 'Number of queued orders',
+    },
+]
+
+
 class UnitExtractor:
     """
     Extracts unit data from SC2 observations.
@@ -107,11 +267,15 @@ class UnitExtractor:
     This class tracks units across frames, assigns readable IDs, and extracts
     comprehensive unit state information for ground truth data.
 
+    Field extraction is driven entirely by UNIT_FIELD_CONFIG (module-level).
+    Adding or removing entries from that list changes which columns appear in
+    the output without modifying any code in this class.
+
     Lifecycle states are embedded into attribute columns:
     - "unit_started": On the gameloop where production starts, ALL attribute columns
     - "building": While the unit is being produced, ALL attribute columns
     - "completed": On the gameloop where the unit completes, ALL attribute columns
-    - Real data: After completion, columns capture real data (x, y, health, etc.)
+    - Real data: After completion, columns capture real data (pos, health, etc.)
     - "destroyed": On the gameloop where the unit is destroyed, ALL attribute columns
     - NaN: Before the unit exists and after it is destroyed
 
@@ -149,13 +313,20 @@ class UnitExtractor:
         # Track which tags are confirmed dead (destroyed)
         self.dead_tags: Set[int] = set()
 
-        # Track which readable_ids have shields and/or energy (discovered during pass 1)
-        # Maps readable_id -> set of extra attribute keys present
+        # Track which conditional column_suffix values apply to each unit.
+        # Maps readable_id -> set of column_suffix strings from conditional
+        # UNIT_FIELD_CONFIG entries (e.g. {'shields', 'shield_upgrade_level', 'energy'}).
+        # The schema_manager uses these sets to decide which extra columns to create.
         self.unit_attributes: Dict[str, Set[str]] = {}
 
     def extract(self, obs) -> Dict[str, Dict]:
         """
         Extract all unit data from observation.
+
+        Iterates through UNIT_FIELD_CONFIG to extract each configured field
+        instead of hardcoding individual protobuf field accesses. For each
+        config entry, the extract function is called if the entry is marked
+        as 'always' or if its 'condition' passes for the unit.
 
         Lifecycle is embedded in the data dict via the '_lifecycle' key:
         - 'unit_started': First frame a unit appears with build_progress == 0.0
@@ -173,6 +344,15 @@ class UnitExtractor:
 
         Returns:
             Dictionary mapping readable IDs to unit data dicts.
+
+        Depends on / calls:
+            - is_building() to filter out buildings
+            - get_unit_type_name() to resolve unit type IDs to names
+            - _assign_readable_id() for new units
+            - _determine_lifecycle() for lifecycle state
+            - _extract_fields() to run UNIT_FIELD_CONFIG against a unit
+            - _discover_conditional_attributes() to record which conditional
+              fields apply to a unit (for schema building)
         """
         raw_data = obs.observation.raw_data
         units_data = {}
@@ -212,62 +392,23 @@ class UnitExtractor:
             # Update previous build progress
             self.previous_build_progress[tag] = unit.build_progress
 
-            # Extract unit data
+            # Build the unit data dict from the configurable field definitions
             unit_data = {
                 'tag': tag,
                 'unit_type_id': unit.unit_type,
                 'unit_type_name': get_unit_type_name(unit.unit_type),
                 '_lifecycle': lifecycle,
-
-                # Position
-                'x': unit.pos.x,
-                'y': unit.pos.y,
-                'z': unit.pos.z,
-                'facing': unit.facing,
-
-                # Vitals
-                'health': unit.health,
-                'health_max': unit.health_max,
-
-                # Build progress (used internally, not written as separate column)
-                'build_progress': unit.build_progress,
-                'is_flying': unit.is_flying,
-                'is_burrowed': unit.is_burrowed,
-                'is_hallucination': unit.is_hallucination,
-
-                # Combat
-                'weapon_cooldown': unit.weapon_cooldown,
-                'attack_upgrade_level': unit.attack_upgrade_level,
-                'armor_upgrade_level': unit.armor_upgrade_level,
             }
 
-            # Conditionally add shields (Protoss only - shield_max > 0)
-            if unit.shield_max > 0:
-                unit_data['shields'] = unit.shield
-                unit_data['shields_max'] = unit.shield_max
-                unit_data['shield_upgrade_level'] = unit.shield_upgrade_level
+            # Extract all configured fields from the unit proto
+            unit_data.update(self._extract_fields(unit))
 
-            # Conditionally add energy (casters only - energy_max > 0)
-            if unit.energy_max > 0:
-                unit_data['energy'] = unit.energy
-                unit_data['energy_max'] = unit.energy_max
-
-            # Additional attributes
-            unit_data.update({
-                'radius': unit.radius,
-                'cargo_space_taken': unit.cargo_space_taken,
-                'cargo_space_max': unit.cargo_space_max,
-                'order_count': len(unit.orders),
-            })
-
-            # Record which attributes this unit has (for schema building)
+            # Record which conditional attributes this unit has (for schema building).
+            # Only discover on first encounter so the set is stable across frames.
             if readable_id not in self.unit_attributes:
-                attr_set = set()
-                if unit.shield_max > 0:
-                    attr_set.update(['shields', 'shields_max', 'shield_upgrade_level'])
-                if unit.energy_max > 0:
-                    attr_set.update(['energy', 'energy_max'])
-                self.unit_attributes[readable_id] = attr_set
+                self.unit_attributes[readable_id] = (
+                    self._discover_conditional_attributes(unit)
+                )
 
             units_data[readable_id] = unit_data
 
@@ -297,6 +438,73 @@ class UnitExtractor:
         self.previous_tags = current_tags
 
         return units_data
+
+    @staticmethod
+    def _extract_fields(unit) -> Dict[str, Any]:
+        """
+        Run every entry in UNIT_FIELD_CONFIG against a unit proto and return
+        the extracted values as a dict keyed by column_suffix.
+
+        For 'always' fields the extract function is called unconditionally.
+        For conditional fields the extract function is called only when the
+        condition lambda returns True; otherwise the field is omitted.
+
+        Args:
+            unit: A unit proto from raw_data.units
+
+        Returns:
+            Dict mapping column_suffix -> extracted value, e.g.
+            {'pos_(X,Y,Z)': '(42.5, 63.0, 11.98)', 'health': '45.0/45.0', ...}
+
+        Depends on / calls:
+            - UNIT_FIELD_CONFIG (module-level list)
+        """
+        fields: Dict[str, Any] = {}
+
+        for entry in UNIT_FIELD_CONFIG:
+            # Determine whether this field should be included for this unit
+            if entry['always']:
+                # Always-present field -- extract unconditionally
+                fields[entry['column_suffix']] = entry['extract'](unit)
+            else:
+                # Conditional field -- only extract when condition passes
+                condition_fn = entry.get('condition')
+                if condition_fn is not None and condition_fn(unit):
+                    fields[entry['column_suffix']] = entry['extract'](unit)
+
+        return fields
+
+    @staticmethod
+    def _discover_conditional_attributes(unit) -> Set[str]:
+        """
+        Determine which conditional UNIT_FIELD_CONFIG entries apply to a unit.
+
+        Returns the set of column_suffix values for conditional fields whose
+        condition passes. The schema_manager uses this set to decide which
+        extra columns (shields, energy, etc.) to create for this unit.
+
+        Args:
+            unit: A unit proto from raw_data.units
+
+        Returns:
+            Set of column_suffix strings for applicable conditional fields,
+            e.g. {'shields', 'shield_upgrade_level'} for a Protoss unit.
+
+        Depends on / calls:
+            - UNIT_FIELD_CONFIG (module-level list)
+        """
+        conditional_suffixes: Set[str] = set()
+
+        for entry in UNIT_FIELD_CONFIG:
+            # Only interested in conditional (non-always) entries
+            if entry['always']:
+                continue
+
+            condition_fn = entry.get('condition')
+            if condition_fn is not None and condition_fn(unit):
+                conditional_suffixes.add(entry['column_suffix'])
+
+        return conditional_suffixes
 
     def _assign_readable_id(self, unit_type_id: int, tag: int) -> str:
         """
@@ -392,10 +600,18 @@ class UnitExtractor:
 
     def get_unit_attributes_for_id(self, readable_id: str) -> Set[str]:
         """
-        Get the set of conditional attributes for a given unit readable_id.
+        Get the set of conditional column_suffix values for a given unit.
+
+        The returned set contains column_suffix strings from conditional
+        UNIT_FIELD_CONFIG entries that apply to this unit (e.g. 'shields',
+        'shield_upgrade_level', 'energy').  The schema_manager uses this to
+        decide which extra attribute columns to create.
+
+        Args:
+            readable_id: The human-readable unit ID (e.g. 'p1_marine_001')
 
         Returns:
-            Set of attribute keys like {'shields', 'shields_max', 'energy', ...}
+            Set of column_suffix strings for applicable conditional fields.
         """
         return self.unit_attributes.get(readable_id, set())
 

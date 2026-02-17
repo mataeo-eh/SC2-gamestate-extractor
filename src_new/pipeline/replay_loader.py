@@ -141,32 +141,113 @@ class ReplayLoader:
         controller,
         observed_player_id: int = 1,
         disable_fog: bool = False,
+        observer_mode: bool = False,
     ) -> None:
         """
-        Start replay playback from a specific player's perspective.
+        Start replay playback in either player-perspective or observer mode.
+
+        In observer mode, the replay is started without an observed_player_id,
+        which tells the SC2 engine to enter true observer mode. In this mode,
+        player_common and score become queryable per-player by switching
+        perspective with switch_player_perspective(). raw_data.units contains
+        ALL units with unit.owner distinguishing players.
+
+        In player-perspective mode (default), the replay is started from a
+        specific player's point of view, matching the original behavior.
 
         Args:
-            controller: SC2 controller instance
-            observed_player_id: Player ID to observe from (1 or 2)
-            disable_fog: Disable fog of war (use with caution)
+            controller: SC2 controller instance (from start_sc2_instance())
+            observed_player_id: Player ID to observe from (1 or 2).
+                                Ignored when observer_mode=True.
+            disable_fog: Disable fog of war. Automatically set to True
+                         when observer_mode=True for full unit attributes.
+            observer_mode: If True, start in observer mode without a fixed
+                           player perspective. Enables per-player querying
+                           via switch_player_perspective(). Default: False.
+
+        Raises:
+            ValueError: If load_replay() hasn't been called yet.
+
+        Depends on:
+            - load_replay() must be called first to populate self.replay_data
+            - controller from start_sc2_instance()
         """
         if self.replay_data is None:
             raise ValueError("No replay loaded. Call load_replay() first.")
 
-        logger.info(f"Starting replay playback (observing player {observed_player_id})...")
+        if observer_mode:
+            # Observer mode: omit observed_player_id entirely so the SC2
+            # engine enters true observer mode. Force disable_fog=True so
+            # we get full unit attributes for all players.
+            logger.info("Starting replay in OBSERVER MODE (no fixed player perspective)")
+            logger.info("  disable_fog forced to True for full unit attribute access")
 
-        # Configure replay start request
-        replay_request = sc_pb.RequestStartReplay(
-            replay_data=self.replay_data,
-            map_data=None,  # Map should be installed in SC2
-            options=self.interface,
-            observed_player_id=observed_player_id,
-            disable_fog=disable_fog,
-        )
+            replay_request = sc_pb.RequestStartReplay(
+                replay_data=self.replay_data,
+                map_data=None,  # Map should be installed in SC2
+                options=self.interface,
+                # observed_player_id is intentionally omitted to enter observer mode
+                disable_fog=True,
+            )
+        else:
+            # Player-perspective mode: original behavior, lock to one player
+            logger.info(f"Starting replay playback (observing player {observed_player_id})...")
+
+            replay_request = sc_pb.RequestStartReplay(
+                replay_data=self.replay_data,
+                map_data=None,  # Map should be installed in SC2
+                options=self.interface,
+                observed_player_id=observed_player_id,
+                disable_fog=disable_fog,
+            )
 
         # Start the replay
         controller.start_replay(replay_request)
-        logger.info(f"Replay started successfully")
+        logger.info("Replay started successfully")
+
+    def switch_player_perspective(self, controller, player_id: int) -> None:
+        """
+        Switch the observer's perspective to a specific player.
+
+        This sends a RequestObserverAction with ActionObserverPlayerPerspective
+        to the SC2 controller, changing which player's player_common, score,
+        and upgrade_ids are returned in subsequent observe() calls.
+
+        This method is only valid when the replay was started in observer mode
+        (observer_mode=True in start_replay). Calling this after starting in
+        player-perspective mode may produce unexpected results.
+
+        After calling this method, the caller should issue controller.observe()
+        to get an observation from the new player's perspective.
+
+        Args:
+            controller: SC2 controller instance (same one passed to start_replay)
+            player_id: The player ID to switch perspective to (typically 1 or 2)
+
+        Raises:
+            ValueError: If player_id is not a positive integer.
+
+        Depends on:
+            - start_replay() must have been called with observer_mode=True
+            - Uses sc2api_pb2.RequestObserverAction and ActionObserverPlayerPerspective
+        """
+        if player_id < 1:
+            raise ValueError(f"player_id must be a positive integer, got {player_id}")
+
+        logger.debug(f"Switching observer perspective to player {player_id}")
+
+        # Build the observer action to change player perspective
+        obs_action = sc_pb.RequestObserverAction(
+            actions=[sc_pb.ObserverAction(
+                player_perspective=sc_pb.ActionObserverPlayerPerspective(
+                    player_id=player_id
+                )
+            )]
+        )
+
+        # Send the perspective-switch action to the SC2 controller
+        controller.observer_action(obs_action)
+        logger.debug(f"Observer perspective switched to player {player_id}")
 
     def start_sc2_instance(self, want_rgb: bool = False):
         """

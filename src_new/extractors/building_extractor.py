@@ -11,9 +11,13 @@ This component handles:
 - Conditional attribute extraction (shields only for Protoss, energy only for casters)
 
 Building lifecycle differs from units:
-- During construction, buildings capture REAL data (x, y, health) because position
+- During construction, buildings capture REAL data (position, health) because position
   and health during construction is strategically meaningful.
 - Buildings that start but never complete still appear in the dataset (unlike units).
+
+Field extraction uses a declarative BUILDING_FIELD_CONFIG list, mirroring the approach
+in unit_extractor.py. Each field specifies a column suffix, extraction lambda, and
+whether it is always present or conditional (e.g., shields only for Protoss buildings).
 """
 
 from typing import Dict, Set, Optional
@@ -132,6 +136,106 @@ def get_building_type_name(unit_type_id: int) -> str:
         return pysc2_units.get_unit_type(unit_type_id).name
     except (KeyError, AttributeError):
         return f"Unknown({unit_type_id})"
+
+
+# ---------------------------------------------------------------------------
+# Declarative field extraction config for buildings
+# ---------------------------------------------------------------------------
+# Each entry describes one output column. The extract() method iterates this
+# list instead of hardcoding field accesses, making it easy to add or remove
+# fields without touching extraction logic.
+#
+# Keys per entry:
+#   column_suffix  – suffix appended to the readable ID to form the column name
+#   extract        – callable(unit) -> value to store
+#   always         – True if the field is present for every building; False if
+#                    gated by `condition`
+#   condition      – callable(unit) -> bool; evaluated only when always=False
+#   description    – human-readable explanation (for maintainers, not runtime)
+# ---------------------------------------------------------------------------
+BUILDING_FIELD_CONFIG = [
+    {
+        'column_suffix': 'pos_(X,Y,Z)',
+        'extract': lambda unit: f"({unit.pos.x}, {unit.pos.y}, {unit.pos.z})",
+        'always': True,
+        'description': 'Position as (X, Y, Z) coordinate tuple',
+    },
+    {
+        'column_suffix': 'health',
+        'extract': lambda unit: f"{unit.health}/{unit.health_max}",
+        'always': True,
+        'description': 'Health as current/max fraction string',
+    },
+    {
+        'column_suffix': 'shields',
+        'extract': lambda unit: f"{unit.shield}/{unit.shield_max}",
+        'condition': lambda unit: unit.shield_max > 0,
+        'always': False,
+        'description': 'Shields as current/max fraction string (Protoss buildings)',
+    },
+    {
+        'column_suffix': 'energy',
+        'extract': lambda unit: f"{unit.energy}/{unit.energy_max}",
+        'condition': lambda unit: unit.energy_max > 0,
+        'always': False,
+        'description': 'Energy as current/max fraction string (e.g., Nexus)',
+    },
+    {
+        'column_suffix': 'facing',
+        'extract': lambda unit: unit.facing,
+        'always': True,
+        'description': 'Facing direction in radians',
+    },
+    {
+        'column_suffix': 'build_progress',
+        'extract': lambda unit: unit.build_progress,
+        'always': True,
+        'description': 'Construction progress (0.0 to 1.0)',
+    },
+    {
+        'column_suffix': 'is_flying',
+        'extract': lambda unit: unit.is_flying,
+        'always': True,
+        'description': 'Whether building is flying (lifted Terran)',
+    },
+    {
+        'column_suffix': 'is_burrowed',
+        'extract': lambda unit: unit.is_burrowed,
+        'always': True,
+        'description': 'Whether building is burrowed',
+    },
+    {
+        'column_suffix': 'attack_upgrade_level',
+        'extract': lambda unit: unit.attack_upgrade_level,
+        'always': True,
+        'description': 'Attack upgrade level',
+    },
+    {
+        'column_suffix': 'armor_upgrade_level',
+        'extract': lambda unit: unit.armor_upgrade_level,
+        'always': True,
+        'description': 'Armor upgrade level',
+    },
+    {
+        'column_suffix': 'shield_upgrade_level',
+        'extract': lambda unit: unit.shield_upgrade_level,
+        'condition': lambda unit: unit.shield_max > 0,
+        'always': False,
+        'description': 'Shield upgrade level (Protoss buildings)',
+    },
+    {
+        'column_suffix': 'radius',
+        'extract': lambda unit: unit.radius,
+        'always': True,
+        'description': 'Building radius',
+    },
+    {
+        'column_suffix': 'order_count',
+        'extract': lambda unit: len(unit.orders),
+        'always': True,
+        'description': 'Number of queued orders',
+    },
+]
 
 
 class BuildingExtractor:
@@ -255,57 +359,39 @@ class BuildingExtractor:
             # Update build progress tracking
             self.previous_build_progress[tag] = unit.build_progress
 
-            # Extract building data
+            # Extract building data using field config
+            # Identity and lifecycle fields are always present; the rest come
+            # from BUILDING_FIELD_CONFIG so new fields can be added declaratively.
             building_data = {
                 'tag': tag,
                 'unit_type_id': unit.unit_type,
                 'unit_type_name': get_building_type_name(unit.unit_type),
                 '_lifecycle': lifecycle,
-
-                # Position
-                'x': unit.pos.x,
-                'y': unit.pos.y,
-                'z': unit.pos.z,
-                'facing': unit.facing,
-
-                # Vitals
-                'health': unit.health,
-                'health_max': unit.health_max,
-
-                # Construction
-                'build_progress': unit.build_progress,
-
-                # Additional state info
-                'is_flying': unit.is_flying,
-                'is_burrowed': unit.is_burrowed,
-
-                # Combat/Defense
-                'attack_upgrade_level': unit.attack_upgrade_level,
-                'armor_upgrade_level': unit.armor_upgrade_level,
-
-                # Additional
-                'radius': unit.radius,
-                'order_count': len(unit.orders),
             }
 
-            # Conditionally add shields (Protoss only - shield_max > 0)
-            if unit.shield_max > 0:
-                building_data['shields'] = unit.shield
-                building_data['shields_max'] = unit.shield_max
-                building_data['shield_upgrade_level'] = unit.shield_upgrade_level
+            # Iterate the field config to populate remaining columns
+            for field_config in BUILDING_FIELD_CONFIG:
+                suffix = field_config['column_suffix']
 
-            # Conditionally add energy (casters only - energy_max > 0)
-            if unit.energy_max > 0:
-                building_data['energy'] = unit.energy
-                building_data['energy_max'] = unit.energy_max
+                # For conditional fields, skip if the condition is not met
+                if not field_config.get('always', True):
+                    condition = field_config.get('condition')
+                    if condition and not condition(unit):
+                        continue
 
-            # Record which attributes this building has (for schema building)
+                # Extract the value using the config's lambda
+                building_data[suffix] = field_config['extract'](unit)
+
+            # Record which conditional attributes this building has (for schema
+            # building). Only needs to happen once per readable_id since a
+            # building's conditional capabilities don't change mid-game.
             if readable_id not in self.building_attributes:
                 attr_set = set()
-                if unit.shield_max > 0:
-                    attr_set.update(['shields', 'shields_max', 'shield_upgrade_level'])
-                if unit.energy_max > 0:
-                    attr_set.update(['energy', 'energy_max'])
+                for field_config in BUILDING_FIELD_CONFIG:
+                    if not field_config.get('always', True):
+                        condition = field_config.get('condition')
+                        if condition and condition(unit):
+                            attr_set.add(field_config['column_suffix'])
                 self.building_attributes[readable_id] = attr_set
 
             buildings_data[readable_id] = building_data
@@ -422,8 +508,17 @@ class BuildingExtractor:
         """
         Get the set of conditional attributes for a given building readable_id.
 
+        These are the column_suffix values from BUILDING_FIELD_CONFIG entries
+        where always=False and the condition was True for this building.
+
+        Args:
+            readable_id: Human-readable building ID (e.g., "p1_nexus_001")
+
         Returns:
-            Set of attribute keys like {'shields', 'shields_max', 'energy', ...}
+            Set of column suffix strings like {'shields', 'energy', 'shield_upgrade_level'}
+
+        Called by:
+            schema_manager to determine which conditional columns to create
         """
         return self.building_attributes.get(readable_id, set())
 

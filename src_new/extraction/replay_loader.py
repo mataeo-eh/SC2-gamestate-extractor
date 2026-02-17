@@ -193,31 +193,81 @@ class ReplayLoader:
 
         return metadata
 
-    def start_replay(self, controller, observed_player_id: int = 1, disable_fog: bool = False) -> None:
+    def start_replay(
+        self,
+        controller,
+        observed_player_id: int = 1,
+        disable_fog: bool = False,
+        observer_mode: bool = False,
+    ) -> None:
         """
-        Start replay playback from a specific player's perspective.
+        Start replay playback in either player-perspective or observer mode.
 
-        For ground truth extraction, you typically want disable_fog=False and will
-        switch between player perspectives manually.
+        In observer mode, the replay is started without a fixed player
+        perspective, enabling per-player querying of player_common, score,
+        and upgrade_ids via switch_player_perspective(). The observed_player_id
+        parameter is ignored when observer_mode=True.
+
+        In player-perspective mode (default), the replay is locked to one
+        player's point of view, preserving the original behavior.
 
         Args:
-            controller: SC2 controller instance
-            observed_player_id: Player ID to observe from (1 or 2)
-            disable_fog: Disable fog of war (use True for perfect information)
+            controller: SC2 controller instance (from start_sc2_instance())
+            observed_player_id: Player ID to observe from (1 or 2).
+                                Ignored when observer_mode=True.
+            disable_fog: Disable fog of war. Automatically set to True
+                         when observer_mode=True for full unit attributes.
+            observer_mode: If True, start in observer mode. Enables
+                           switch_player_perspective(). Default: False.
 
         Raises:
-            ValueError: If load_replay() hasn't been called
+            ValueError: If load_replay() hasn't been called.
+
+        Depends on:
+            - load_replay() must be called first
+            - Delegates to PipelineReplayLoader.start_replay()
         """
         if self.replay_data is None:
             raise ValueError("No replay loaded. Call load_replay() first.")
 
-        self._pipeline_loader.start_replay(
-            controller,
-            observed_player_id=observed_player_id,
-            disable_fog=disable_fog
-        )
+        if observer_mode:
+            # In observer mode, force disable_fog and ignore observed_player_id
+            self._pipeline_loader.start_replay(
+                controller,
+                observer_mode=True,
+                disable_fog=True,
+            )
+            logger.info("Replay started in observer mode (no fixed player perspective)")
+        else:
+            # Player-perspective mode: preserve original behavior
+            self._pipeline_loader.start_replay(
+                controller,
+                observed_player_id=observed_player_id,
+                disable_fog=disable_fog,
+            )
+            logger.info(f"Replay started for player {observed_player_id}")
 
-        logger.info(f"Replay started for player {observed_player_id}")
+    def switch_player_perspective(self, controller, player_id: int) -> None:
+        """
+        Switch the observer's perspective to a specific player.
+
+        Only valid when the replay was started with observer_mode=True.
+        After switching, call controller.observe() to get data from the
+        new player's perspective (player_common, score, upgrade_ids).
+
+        Args:
+            controller: SC2 controller instance (same one used in start_replay)
+            player_id: The player ID to switch to (typically 1 or 2)
+
+        Raises:
+            ValueError: If player_id is not a positive integer.
+
+        Depends on:
+            - start_replay() must have been called with observer_mode=True
+            - Delegates to PipelineReplayLoader.switch_player_perspective()
+        """
+        self._pipeline_loader.switch_player_perspective(controller, player_id)
+        logger.debug(f"Switched observer perspective to player {player_id}")
 
     def get_interface_options(self) -> sc_pb.InterfaceOptions:
         """
