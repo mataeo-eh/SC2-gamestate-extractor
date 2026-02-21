@@ -176,33 +176,48 @@ class ReplayLoader:
             raise ValueError("No replay loaded. Call load_replay() first.")
 
         if observer_mode:
-            # Observer mode: omit observed_player_id entirely so the SC2
-            # engine enters true observer mode. Force disable_fog=True so
-            # we get full unit attributes for all players.
-            logger.info("Starting replay in OBSERVER MODE (no fixed player perspective)")
-            logger.info("  disable_fog forced to True for full unit attribute access")
+            # Observer mode: no fixed player perspective. All units from both players
+            # are visible (disable_fog=True). Per-player economy and upgrades are
+            # fetched by switching perspective with switch_player_perspective() before
+            # each observe() call.
+            #
+            # Proto2 wire-encoding detail: omitting observed_player_id entirely sends
+            # no bytes for that field (proto2 skips default-value fields). The SC2
+            # binary requires the field to be present on the wire — its absence causes
+            # ResponseStartReplay.Error.MissingOptions (error code 6). Setting
+            # observed_player_id=0 explicitly forces \x10\x00 onto the wire, which
+            # the SC2 binary interprets as "no fixed perspective" (observer mode).
+            #
+            # realtime=False: skip the replay's built-in timing and process frames
+            # as fast as the CPU allows, which is required for efficient data extraction.
+            logger.info("Starting replay in OBSERVER MODE (observed_player_id=0, realtime=False)")
+            logger.info("  disable_fog=True — all units visible for both players")
 
             replay_request = sc_pb.RequestStartReplay(
                 replay_data=self.replay_data,
-                map_data=None,  # Map should be installed in SC2
                 options=self.interface,
-                # observed_player_id is intentionally omitted to enter observer mode
-                disable_fog=True,
+                observed_player_id=0,   # 0 on the wire = observer mode (must be explicit)
+                disable_fog=True,       # Full map visibility; all units with owner field
+                realtime=False,         # Process at CPU speed, not real-time
             )
+
+            # Use pysc2's standard start_replay — @valid_status allows this from
+            # Status.launched, which is the state after get_replay_info().
+            controller.start_replay(replay_request)
         else:
-            # Player-perspective mode: original behavior, lock to one player
+            # Player-perspective mode: lock to a specific player's point of view.
             logger.info(f"Starting replay playback (observing player {observed_player_id})...")
 
             replay_request = sc_pb.RequestStartReplay(
                 replay_data=self.replay_data,
-                map_data=None,  # Map should be installed in SC2
                 options=self.interface,
                 observed_player_id=observed_player_id,
                 disable_fog=disable_fog,
+                realtime=False,         # Process at CPU speed, not real-time
             )
 
-        # Start the replay
-        controller.start_replay(replay_request)
+            controller.start_replay(replay_request)
+
         logger.info("Replay started successfully")
 
     def switch_player_perspective(self, controller, player_id: int) -> None:
@@ -245,8 +260,10 @@ class ReplayLoader:
             )]
         )
 
-        # Send the perspective-switch action to the SC2 controller
-        controller.observer_action(obs_action)
+        # Send the perspective-switch action to the SC2 controller.
+        # Uses observer_actions() (plural) — the correct method name on
+        # pysc2's RemoteController class.
+        controller.observer_actions(obs_action)
         logger.debug(f"Observer perspective switched to player {player_id}")
 
     def start_sc2_instance(self, want_rgb: bool = False):
