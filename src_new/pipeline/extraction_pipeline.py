@@ -4,14 +4,7 @@ ReplayExtractionPipeline: Main pipeline for extracting ground truth from SC2 rep
 This component orchestrates all Phase 2 extraction components to process replays
 end-to-end, from loading the replay to writing parquet files.
 
-Supports three processing modes:
-- 'observer' (default, preferred): Single-pass observer mode. The replay is started
-  without a fixed player perspective, and at each game step the pipeline switches
-  perspective to each player to get correct per-player economy/upgrades data.
-- 'two_pass': Legacy fallback. Runs the replay twice — once from P1's perspective
-  for full extraction, then again from P2's perspective to patch P2 economy/upgrades.
-- 'single_pass': Dynamic schema mode with a single extraction pass. More memory-
-  efficient but may produce ragged columns.
+Supports observer mode: single-pass with per-player perspective switching.
 """
 
 from typing import Dict, Any, Optional, List
@@ -36,16 +29,17 @@ class ReplayExtractionPipeline:
 
     This class orchestrates the complete extraction workflow:
     1. Load replay with perfect information settings
-    2. Build schema (pre-scan pass or dynamic)
-    3. Iterate through game loops
-    4. Extract state at each loop (observer mode uses per-player perspective switching)
-    5. Build wide-format rows
-    6. Collect messages
-    7. Write parquet files
+    2. Build static schema columns from player names (economy, upgrades)
+    3. Iterate through game loops in observer mode
+    4. Extract state at each loop using per-player perspective switching
+    5. Add entity columns (units, buildings) on-demand as they are first seen
+    6. Build wide-format rows
+    7. Collect messages
+    8. Write parquet files
 
-    The preferred processing mode is 'observer', which uses a single replay pass
-    with per-player perspective switching to get correct economy/upgrade data for
-    both players. The legacy 'two_pass' mode is retained as a fallback.
+    Observer mode is the only supported processing path. It uses a single
+    replay pass with per-player perspective switching to get correct
+    economy/upgrade data for both players.
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -57,8 +51,6 @@ class ReplayExtractionPipeline:
                 - show_cloaked (bool): Show cloaked units (default: True)
                 - show_burrowed_shadows (bool): Show burrowed units (default: True)
                 - show_placeholders (bool): Show queued buildings (default: True)
-                - processing_mode (str): 'observer', 'two_pass', or 'single_pass'
-                    (default: 'observer')
                 - step_size (int): Game loops to step per iteration (default: 1)
                 - compression (str): Parquet compression codec (default: 'snappy')
                 - output_format (str): Output file naming format (default: 'standard')
@@ -74,11 +66,10 @@ class ReplayExtractionPipeline:
             compression=self.config.get('compression', 'snappy')
         )
 
-        # Pipeline configuration — 'observer' is preferred over legacy 'two_pass'
-        self.processing_mode = self.config.get('processing_mode', 'observer')
+        # Pipeline configuration
         self.step_size = self.config.get('step_size', 1)
 
-        logger.info(f"ReplayExtractionPipeline initialized (mode: {self.processing_mode})")
+        logger.info("ReplayExtractionPipeline initialized")
 
     def process_replay(
         self,
@@ -132,7 +123,6 @@ class ReplayExtractionPipeline:
 
         logger.info(f"Processing replay: {replay_path.name}")
         logger.info(f"  Output directory: {output_dir}")
-        logger.info(f"  Processing mode: {self.processing_mode}")
 
         start_time = time.time()
 
@@ -150,15 +140,8 @@ class ReplayExtractionPipeline:
             # Reset extractors for new replay
             self.state_extractor.reset()
 
-            # Choose processing mode
-            if self.processing_mode == 'observer':
-                processing_result = self._observer_mode_processing(replay_path, output_dir)
-            elif self.processing_mode == 'two_pass':
-                processing_result = self._two_pass_processing(replay_path, output_dir)
-            elif self.processing_mode == 'single_pass':
-                processing_result = self._single_pass_processing(replay_path, output_dir)
-            else:
-                raise ValueError(f"Invalid processing mode: {self.processing_mode}")
+            # Observer mode is the only supported processing path
+            processing_result = self._observer_mode_processing(replay_path, output_dir)
 
             # Calculate processing time
             processing_time = time.time() - start_time
@@ -191,134 +174,154 @@ class ReplayExtractionPipeline:
         """
         Observer mode: single replay pass with per-player perspective switching.
 
-        This is the preferred processing mode. The replay is started WITHOUT
-        observed_player_id (observer mode), and at each game step:
-        1. Step the replay forward
-        2. Switch perspective to player 1, observe -> get P1 economy/score/upgrades
-        3. Switch perspective to player 2, observe -> get P2 economy/score/upgrades
-        4. Units and buildings come from either observation (identical in both)
-        5. Build wide-format row and append
+        This is the only supported processing mode. The replay is started without
+        a fixed player perspective (observer mode). At each game step:
+        1. Step the replay forward one unit
+        2. Switch to P1 perspective and observe (P1 economy, units, buildings)
+        3. Switch to P2 perspective and observe (P2 economy, upgrades)
+        4. Extract complete state combining both observations
+        5. Add columns for any new entities seen this frame (dynamic schema)
+        6. Build wide-format row and append to rows list
 
-        This replaces the two-pass approach and gives correct per-player economy
-        data without re-running the replay.
-
-        The schema is still built via a separate pre-scan pass (using the legacy
-        player-perspective mode internally in SchemaManager), then the actual
-        data extraction happens in observer mode.
+        Schema is built in two stages:
+        - Static columns (economy, upgrades) are added once via build_base_schema()
+          after player names are known from replay metadata.
+        - Entity columns (units, buildings) are added on-demand via ensure_unit_columns()
+          and ensure_building_columns() the first time each entity is encountered.
 
         Args:
-            replay_path: Path to replay file
-            output_dir: Output directory
+            replay_path: Path to .SC2Replay file
+            output_dir: Directory for parquet/json output files
 
         Returns:
-            Processing result dictionary with output_files, metadata, and stats
+            Dict with keys: output_files, metadata, stats
 
         Depends on / calls:
-            - schema_manager.build_schema_from_replay() for schema pre-scan
-            - replay_loader.load_replay(), start_sc2_instance(), get_replay_info()
+            - replay_loader.load_replay()
+            - replay_loader.start_sc2_instance()
+            - replay_loader.get_replay_info()
+            - schema_manager.build_base_schema()
+            - WideTableBuilder(schema_manager)
+            - wide_table_builder.set_player_names()
             - replay_loader.start_replay(observer_mode=True)
-            - replay_loader.switch_player_perspective() for per-player observation
+            - replay_loader.switch_player_perspective()
             - state_extractor.extract_observation_observer_mode()
+            - schema_manager.ensure_unit_columns()
+            - schema_manager.ensure_building_columns()
             - wide_table_builder.build_row()
-            - parquet_writer.write_game_state(), write_messages()
+            - parquet_writer.write_game_state()
+            - parquet_writer.write_messages()
             - schema_manager.save_schema()
         """
         logger.info("Starting observer mode processing")
 
-        # --- Schema pre-scan ---
-        # build_schema_from_replay uses legacy player-perspective mode internally.
-        # It only needs to discover entity IDs, not extract accurate economy data.
-        logger.info("Schema scan: Building schema from replay...")
-        self.schema_manager.build_schema_from_replay(
-            replay_path,
-            self.replay_loader,
-            self.state_extractor,
-        )
-
-        # Create wide table builder with the completed schema
-        self.wide_table_builder = WideTableBuilder(self.schema_manager)
-
-        # Reset only per-frame state between schema scan and extraction pass,
-        # preserving tag-to-ID mappings so the same readable IDs are reused.
-        self.state_extractor.reset_frame_state()
-
-        # --- Observer mode extraction pass ---
-        # Load the replay fresh for the extraction pass
+        # Load replay before opening SC2 instance — this is the ONLY load,
+        # no pre-scan pass is needed.
         self.replay_loader.load_replay(replay_path)
 
-        # Storage for extracted data
         rows = []
         all_messages = []
 
         with self.replay_loader.start_sc2_instance() as controller:
-            # Get replay metadata
+            # Read replay metadata: player names, game duration, etc.
             metadata = self.replay_loader.get_replay_info(controller)
 
-            # Extract player names and pass to wide_table_builder and schema_manager
+            # Extract player names — available from replay file header,
+            # no replay scan required.
             player_names = {
                 p['player_id']: p.get('player_name', '')
                 for p in metadata.get('players', [])
             }
-            if self.wide_table_builder is not None:
-                self.wide_table_builder.set_player_names(player_names)
-            self.schema_manager.set_player_names(player_names)
 
-            # Start replay in observer mode — no observed_player_id is passed,
-            # and disable_fog is forced True internally.
+            # Build static schema columns: game_loop, economy, upgrades.
+            # Entity columns (units, buildings) are added dynamically below.
+            self.schema_manager.build_base_schema(player_names)
+
+            # Create WideTableBuilder now that static schema columns exist.
+            # WideTableBuilder reads schema.get_column_list() on each build_row() call,
+            # so columns added dynamically later are automatically included.
+            self.wide_table_builder = WideTableBuilder(self.schema_manager)
+            self.wide_table_builder.set_player_names(player_names)
+
+            # Start replay in observer mode — no fixed player perspective.
             self.replay_loader.start_replay(controller, observer_mode=True)
 
-            # Process each game loop
             game_loop = 0
             max_loops = metadata['game_duration_loops']
+            # Report progress approximately every 5%
+            progress_interval = max(1, max_loops // 20)
 
             logger.info(
                 f"Observer mode: Processing {max_loops} game loops "
                 f"(step size: {self.step_size})..."
             )
 
-            # Track progress — report approximately every 5%
-            progress_interval = max(1, max_loops // 20)
-
             while game_loop < max_loops:
                 try:
-                    # Step forward
+                    # Step replay forward one unit
                     controller.step(self.step_size)
 
-                    # Switch to player 1 perspective and observe
+                    # Get P1-perspective observation (units, buildings, P1 economy)
                     self.replay_loader.switch_player_perspective(controller, player_id=1)
                     obs_p1 = controller.observe()
 
-                    # Check if replay has ended (player_result is populated when game ends)
+                    # player_result is populated when the game ends
                     if obs_p1.player_result:
-                        logger.info(
-                            f"Observer mode: Replay ended at loop {game_loop} "
-                            f"(expected {max_loops})"
-                        )
+                        logger.info(f"Observer mode: Replay ended at loop {game_loop}")
                         break
 
-                    # Update game loop from the observation
                     game_loop = obs_p1.observation.game_loop
 
-                    # Switch to player 2 perspective and observe
+                    # Get P2-perspective observation (P2 economy, P2 upgrades)
                     self.replay_loader.switch_player_perspective(controller, player_id=2)
                     obs_p2 = controller.observe()
 
-                    # Extract complete state using observer mode method —
-                    # uses obs_p1 for units/buildings/P1 economy/P1 upgrades/messages
-                    # and obs_p2 for P2 economy/P2 upgrades
+                    # Combine both perspectives into a single state dict
                     state = self.state_extractor.extract_observation_observer_mode(
                         obs_p1, obs_p2, game_loop
                     )
 
-                    # Build wide-format row
+                    # --- Dynamic column creation ---
+                    # Add unit columns the first time each completed unit is seen.
+                    # Units still under construction (lifecycle != 'completed') do not
+                    # get columns until they finish — matching the pre-scan rule.
+                    for player_num in [1, 2]:
+                        player = f'p{player_num}'
+                        units = state.get(f'{player}_units', {})
+                        for readable_id, unit_data in units.items():
+                            if unit_data.get('_lifecycle') == 'completed':
+                                extra_attrs = (
+                                    self.state_extractor
+                                        .unit_extractors[player_num]
+                                        .get_unit_attributes_for_id(readable_id)
+                                )
+                                self.schema_manager.ensure_unit_columns(
+                                    player, readable_id, extra_attrs
+                                )
+
+                    # Add building columns on first appearance, regardless of lifecycle.
+                    # Even cancelled buildings have meaningful position data.
+                    for player_num in [1, 2]:
+                        player = f'p{player_num}'
+                        buildings = state.get(f'{player}_buildings', {})
+                        for readable_id, building_data in buildings.items():
+                            extra_attrs = (
+                                self.state_extractor
+                                    .building_extractors[player_num]
+                                    .get_building_attributes_for_id(readable_id)
+                            )
+                            self.schema_manager.ensure_building_columns(
+                                player, readable_id, extra_attrs
+                            )
+
+                    # Build wide-format row — schema is now complete for all entities
+                    # seen so far; future entities will get columns in later iterations.
                     row = self.wide_table_builder.build_row(state)
                     rows.append(row)
 
-                    # Collect messages
                     messages = state.get('messages', [])
                     all_messages.extend(messages)
 
-                    # Progress reporting
                     if game_loop % progress_interval == 0:
                         progress = (game_loop / max_loops) * 100
                         logger.info(
@@ -327,8 +330,9 @@ class ReplayExtractionPipeline:
                         )
 
                 except Exception as e:
-                    logger.warning(f"Error at game loop {game_loop} (observer mode): {e}")
-                    # Continue processing — don't fail entire replay for one frame
+                    logger.warning(
+                        f"Error at game loop {game_loop} (observer mode): {e}"
+                    )
                     continue
 
             logger.info(
@@ -337,12 +341,9 @@ class ReplayExtractionPipeline:
             )
 
         # --- Write output files ---
-        # Generate output file paths with directory structure
         replay_name = replay_path.stem
         parquet_dir = output_dir / 'parquet'
         json_dir = output_dir / 'json'
-
-        # Create directories if they don't exist
         parquet_dir.mkdir(parents=True, exist_ok=True)
         json_dir.mkdir(parents=True, exist_ok=True)
 
@@ -352,29 +353,20 @@ class ReplayExtractionPipeline:
             'schema': json_dir / f"{replay_name}_schema.json",
         }
 
-        # Write game state parquet
         logger.info(f"Writing game state to {output_files['game_state']}")
         self.parquet_writer.write_game_state(
-            rows,
-            output_files['game_state'],
-            self.schema_manager,
+            rows, output_files['game_state'], self.schema_manager
         )
 
-        # Write messages parquet (if any)
         if all_messages:
             logger.info(f"Writing messages to {output_files['messages']}")
-            self.parquet_writer.write_messages(
-                all_messages,
-                output_files['messages'],
-            )
+            self.parquet_writer.write_messages(all_messages, output_files['messages'])
         else:
             logger.info("No messages to write")
 
-        # Write schema JSON
         logger.info(f"Writing schema to {output_files['schema']}")
         self.schema_manager.save_schema(output_files['schema'])
 
-        # Return result
         return {
             'output_files': output_files,
             'metadata': metadata,
@@ -384,346 +376,6 @@ class ReplayExtractionPipeline:
                 'messages_written': len(all_messages),
             },
         }
-
-    def _two_pass_processing(
-        self,
-        replay_path: Path,
-        output_dir: Path
-    ) -> Dict[str, Any]:
-        """
-        Two-pass approach for consistent schema (legacy fallback).
-
-        NOTE: The preferred processing mode is 'observer', which achieves the
-        same result in a single replay pass using perspective switching. This
-        two-pass mode is retained as a fallback in case observer mode is not
-        supported by a specific SC2 version.
-
-        Pass 1: Scan replay to build complete schema
-        Pass 2: Extract and write data with consistent schema
-
-        This ensures all rows have the same columns, which is better for
-        downstream ML pipelines, but requires processing the replay twice.
-
-        Args:
-            replay_path: Path to replay file
-            output_dir: Output directory
-
-        Returns:
-            Processing result dictionary with output_files, metadata, and stats
-
-        # TODO: Test case - Two-pass processing produces consistent schema
-        # TODO: Test case - Verify no missing columns across rows
-        """
-        logger.info("Starting two-pass processing (legacy fallback)")
-
-        # PASS 1: Build schema
-        logger.info("Pass 1: Building schema...")
-        self.schema_manager.build_schema_from_replay(
-            replay_path,
-            self.replay_loader,
-            self.state_extractor
-        )
-
-        # Create wide table builder with schema
-        self.wide_table_builder = WideTableBuilder(self.schema_manager)
-
-        # Reset only per-frame state between passes, preserving tag-to-ID mappings
-        # so that pass 2 uses the same readable IDs as pass 1 (schema scan).
-        # This prevents column name mismatches between schema and data.
-        self.state_extractor.reset_frame_state()
-
-        # PASS 2: Extract data
-        logger.info("Pass 2: Extracting data...")
-        return self._extract_and_write(replay_path, output_dir)
-
-    def _single_pass_processing(
-        self,
-        replay_path: Path,
-        output_dir: Path
-    ) -> Dict[str, Any]:
-        """
-        Single-pass approach with dynamic schema.
-
-        Extract and write data in one pass, building schema dynamically
-        as new entities are discovered. More memory-efficient but may
-        result in ragged columns (different rows may have different columns).
-
-        Args:
-            replay_path: Path to replay file
-            output_dir: Output directory
-
-        Returns:
-            Processing result dictionary with output_files, metadata, and stats
-
-        # TODO: Test case - Single-pass processing completes successfully
-        # TODO: Test case - Verify dynamic schema updates during processing
-        """
-        logger.info("Starting single-pass processing")
-
-        # Create wide table builder with empty schema
-        # Schema will be built dynamically during extraction
-        self.wide_table_builder = WideTableBuilder(self.schema_manager)
-
-        return self._extract_and_write(replay_path, output_dir)
-
-    def _extract_and_write(
-        self,
-        replay_path: Path,
-        output_dir: Path
-    ) -> Dict[str, Any]:
-        """
-        Extract game state and write to parquet files.
-
-        This performs the actual iteration through the replay, state extraction,
-        and parquet writing.  It runs the replay twice:
-          - Pass A (observed_player_id=1): full extraction (units, buildings,
-            P1 economy, P1 upgrades, messages).  P2 economy/upgrades from this
-            pass are WRONG (they reflect P1's perspective) and will be overwritten.
-          - Pass B (observed_player_id=2): extracts ONLY P2 economy and P2
-            upgrades, then patches them into the rows built during Pass A.
-
-        Args:
-            replay_path: Path to replay file
-            output_dir: Output directory
-
-        Returns:
-            Processing result dictionary
-        """
-        # Load replay
-        self.replay_loader.load_replay(replay_path)
-
-        # Storage for extracted data
-        rows = []
-        all_messages = []
-
-        # Start SC2 instance and process replay
-        with self.replay_loader.start_sc2_instance() as controller:
-            # Get replay metadata
-            metadata = self.replay_loader.get_replay_info(controller)
-
-            # Extract player names and pass to wide_table_builder
-            player_names = {
-                p['player_id']: p.get('player_name', '')
-                for p in metadata.get('players', [])
-            }
-            if self.wide_table_builder is not None:
-                self.wide_table_builder.set_player_names(player_names)
-            # Also set on schema_manager (needed for single-pass mode where
-            # schema building happens dynamically during extraction)
-            self.schema_manager.set_player_names(player_names)
-
-            # ------------------------------------------------------------------
-            # Pass A: observed_player_id=1  (full extraction)
-            # P1 economy/upgrades are correct.  P2 economy/upgrades are wrong
-            # (perspective-dependent data reflects P1).  Units and buildings for
-            # BOTH players are correct because they use unit.owner filtering
-            # with disable_fog=True.
-            # ------------------------------------------------------------------
-            self.replay_loader.start_replay(controller, observed_player_id=1, disable_fog=True)
-
-            # Process each game loop
-            game_loop = 0
-            max_loops = metadata['game_duration_loops']
-
-            logger.info(f"Pass A (player 1 perspective): Processing {max_loops} game loops (step size: {self.step_size})...")
-
-            # Track progress
-            progress_interval = max(1, max_loops // 20)  # Report every 5%
-
-            while game_loop < max_loops:
-                try:
-                    # Step forward
-                    controller.step(self.step_size)
-                    obs = controller.observe()
-
-                    # Check if replay has ended
-                    from pysc2.lib.protocol import Status
-                    if obs.player_result:  # player_result is populated when game ends
-                        logger.info(f"Pass A: Replay ended at loop {game_loop} (expected {max_loops})")
-                        break # Break while loop after game ended
-
-                    # Update game loop
-                    game_loop = obs.observation.game_loop
-
-                    # Extract state
-                    state = self.state_extractor.extract_observation(obs, game_loop)
-
-                    # In single-pass mode, update schema dynamically
-                    if self.processing_mode == 'single_pass':
-                        self.schema_manager._discover_entities_from_state(state)
-
-                    # Build wide-format row
-                    row = self.wide_table_builder.build_row(state)
-                    rows.append(row)
-
-                    # Collect messages
-                    messages = state.get('messages', [])
-                    all_messages.extend(messages)
-
-                    # Progress reporting
-                    if game_loop % progress_interval == 0:
-                        progress = (game_loop / max_loops) * 100
-                        logger.info(f"  Pass A progress: {progress:.1f}% (loop {game_loop}/{max_loops})")
-
-                except Exception as e:
-                    logger.warning(f"Error at game loop {game_loop} (Pass A): {e}")
-                    # Continue processing - don't fail entire replay for one frame
-                    continue
-
-            logger.info(f"Pass A complete. Extracted {len(rows)} rows, {len(all_messages)} messages")
-
-            # ------------------------------------------------------------------
-            # Pass B: observed_player_id=2  (P2 economy + upgrades only)
-            # Re-play the replay from player 2's perspective to get correct
-            # player_common and score_details for P2.  Overwrites the incorrect
-            # P2 economy/upgrade columns that were filled during Pass A.
-            # ------------------------------------------------------------------
-            self._patch_p2_economy(controller, rows, max_loops)
-
-        # Generate output file paths with new directory structure
-        replay_name = replay_path.stem
-        parquet_dir = output_dir / 'parquet'
-        json_dir = output_dir / 'json'
-
-        # Create directories if they don't exist
-        parquet_dir.mkdir(parents=True, exist_ok=True)
-        json_dir.mkdir(parents=True, exist_ok=True)
-
-        output_files = {
-            'game_state': parquet_dir / f"{replay_name}_game_state.parquet",
-            'messages': parquet_dir / f"{replay_name}_messages.parquet",
-            'schema': json_dir / f"{replay_name}_schema.json",
-        }
-
-        # Write game state parquet
-        logger.info(f"Writing game state to {output_files['game_state']}")
-        self.parquet_writer.write_game_state(
-            rows,
-            output_files['game_state'],
-            self.schema_manager
-        )
-
-        # Write messages parquet (if any)
-        if all_messages:
-            logger.info(f"Writing messages to {output_files['messages']}")
-            self.parquet_writer.write_messages(
-                all_messages,
-                output_files['messages']
-            )
-        else:
-            logger.info("No messages to write")
-
-        # Write schema JSON
-        logger.info(f"Writing schema to {output_files['schema']}")
-        self.schema_manager.save_schema(output_files['schema'])
-
-        # Return result
-        return {
-            'output_files': output_files,
-            'metadata': metadata,
-            'stats': {
-                'total_loops': max_loops,
-                'rows_written': len(rows),
-                'messages_written': len(all_messages),
-            },
-        }
-
-    def _patch_p2_economy(
-        self,
-        controller,
-        rows: List[Dict[str, Any]],
-        max_loops: int,
-    ) -> None:
-        """
-        Run a second replay pass from player 2's perspective to fix P2 economy and upgrades.
-
-        During Pass A (observed_player_id=1), the P2 economy and upgrade columns
-        were filled with P1's perspective-dependent data (player_common,
-        score_details, raw_data.player.upgrade_ids all reflect the observed
-        player).  This method replays from P2's perspective and overwrites those
-        columns with correct values.
-
-        Rows are matched by game_loop value (not by index) to handle any
-        differences in step counts between passes.
-
-        Args:
-            controller: Active SC2 controller (still within the context manager)
-            rows: List of row dicts from Pass A — modified in place
-            max_loops: Total game duration in loops
-        """
-        logger.info("Pass B (player 2 perspective): Extracting P2 economy and upgrades...")
-
-        # Build a lookup from game_loop -> row for efficient patching
-        row_by_game_loop: Dict[int, Dict[str, Any]] = {}
-        for row in rows:
-            gl = row.get('game_loop')
-            if gl is not None:
-                row_by_game_loop[gl] = row
-
-        # Reset P2 upgrade extractor state so it tracks upgrades fresh for the
-        # new perspective.  P2 economy extractor is stateless (no reset needed).
-        self.state_extractor.upgrade_extractors[2].reset()
-
-        # Start replay from player 2's perspective
-        self.replay_loader.start_replay(controller, observed_player_id=2, disable_fog=True)
-
-        game_loop = 0
-        patched_count = 0
-        progress_interval = max(1, max_loops // 20)
-
-        # The P2 economy columns that will be overwritten in each row
-        p2_economy_columns = [
-            'p2_minerals', 'p2_vespene',
-            'p2_supply_used', 'p2_supply_cap',
-            'p2_workers', 'p2_idle_workers',
-        ]
-
-        while game_loop < max_loops:
-            try:
-                controller.step(self.step_size)
-                obs = controller.observe()
-
-                if obs.player_result:
-                    logger.info(f"Pass B: Replay ended at loop {game_loop} (expected {max_loops})")
-                    break
-
-                game_loop = obs.observation.game_loop
-
-                # Extract only P2 economy + upgrades from this observation
-                p2_state = self.state_extractor.extract_perspective_dependent(
-                    obs, game_loop, observed_player_id=2
-                )
-
-                # Patch the matching row from Pass A
-                target_row = row_by_game_loop.get(game_loop)
-                if target_row is not None:
-                    # Overwrite P2 economy columns
-                    p2_economy = p2_state.get('p2_economy', {})
-                    for col in p2_economy_columns:
-                        attr = col.replace('p2_', '', 1)  # e.g. 'p2_minerals' -> 'minerals'
-                        if attr in p2_economy:
-                            target_row[col] = p2_economy[attr]
-
-                    # Overwrite P2 upgrade columns
-                    # The wide_table_builder maps upgrades via add_upgrades_to_row;
-                    # replicate its logic here to patch upgrade columns directly.
-                    p2_upgrades = p2_state.get('p2_upgrades', {})
-                    self.wide_table_builder.add_upgrades_to_row(
-                        target_row, 'p2', p2_upgrades
-                    )
-
-                    patched_count += 1
-
-                # Progress reporting
-                if game_loop % progress_interval == 0:
-                    progress = (game_loop / max_loops) * 100
-                    logger.info(f"  Pass B progress: {progress:.1f}% (loop {game_loop}/{max_loops})")
-
-            except Exception as e:
-                logger.warning(f"Error at game loop {game_loop} (Pass B): {e}")
-                continue
-
-        logger.info(f"Pass B complete. Patched P2 economy/upgrades in {patched_count}/{len(rows)} rows")
 
     def get_config(self) -> Dict[str, Any]:
         """
@@ -742,11 +394,6 @@ class ReplayExtractionPipeline:
             config: New configuration dictionary
         """
         self.config.update(config)
-
-        # Update processing mode if changed
-        if 'processing_mode' in config:
-            self.processing_mode = config['processing_mode']
-            logger.info(f"Processing mode updated to: {self.processing_mode}")
 
         # Update step size if changed
         if 'step_size' in config:
@@ -826,7 +473,6 @@ def process_replay_quick(
             'show_placeholders': True,
 
             # Processing settings
-            'processing_mode': 'observer',  # preferred; fallback: 'two_pass'
             'step_size': 1,  # Game loops per step
 
             # Output settings

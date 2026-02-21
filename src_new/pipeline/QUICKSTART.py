@@ -125,7 +125,7 @@ def example_3_custom_configuration():
         'show_placeholders': True,
 
         # Processing settings
-        'processing_mode': 'single_pass',  # Faster mode
+        'processing_mode': 'observer',  # Only supported mode
         'step_size': 10,  # Sample every 10 game loops
 
         # Output settings
@@ -142,7 +142,7 @@ def example_3_custom_configuration():
 
     if result['success']:
         print("SUCCESS with custom config!")
-        print(f"  Mode: single-pass with step_size=10")
+        print(f"  Mode: observer with step_size=10")
         print(f"  Time: {result['stats']['processing_time_seconds']:.2f}s")
         print(f"  Rows: {result['stats']['rows_written']}")
 
@@ -163,7 +163,7 @@ def example_4_advanced_batch():
 
     # Create processor
     processor = ParallelReplayProcessor(
-        config={'processing_mode': 'two_pass'},
+        config={'processing_mode': 'observer'},
         num_workers=8
     )
 

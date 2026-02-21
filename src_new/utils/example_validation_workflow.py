@@ -225,7 +225,7 @@ def example_6_batch_summary():
         'failed': 1,
         'total_time_seconds': 123.5,
         'config': {
-            'processing_mode': 'two_pass',
+            'processing_mode': 'observer',
             'step_size': 1,
             'compression': 'snappy',
         },

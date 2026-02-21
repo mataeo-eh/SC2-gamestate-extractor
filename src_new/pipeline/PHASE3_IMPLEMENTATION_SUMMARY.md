@@ -12,9 +12,7 @@ Phase 3 implementation is complete. Two core pipeline modules have been created 
 
 **Key Features**:
 - Orchestrates all Phase 2 components (ReplayLoader, StateExtractor, SchemaManager, WideTableBuilder, ParquetWriter)
-- Supports two processing modes:
-  - **Two-pass mode**: Scans replay twice for consistent schema (recommended for ML)
-  - **Single-pass mode**: Faster processing with dynamic schema
+- Uses observer mode (the only supported processing mode) for perfect-information extraction
 - Configurable step size for sampling game loops
 - Comprehensive error handling and logging
 - Progress reporting during processing
@@ -22,9 +20,7 @@ Phase 3 implementation is complete. Two core pipeline modules have been created 
 
 **Key Methods**:
 - `process_replay()`: Main entry point for processing a replay
-- `_two_pass_processing()`: Schema-first approach for consistent columns
-- `_single_pass_processing()`: Dynamic schema for faster processing
-- `_extract_and_write()`: Core extraction and writing logic
+- `_observer_mode_processing()`: Core extraction using the observer API
 - `validate_replay()`: Quick validation without full processing
 
 **Configuration Options**:
@@ -33,7 +29,7 @@ config = {
     'show_cloaked': True,           # Show cloaked units
     'show_burrowed_shadows': True,  # Show burrowed units
     'show_placeholders': True,      # Show queued buildings
-    'processing_mode': 'two_pass',  # or 'single_pass'
+    'processing_mode': 'observer',  # Only supported mode
     'step_size': 1,                 # Game loops per step
     'compression': 'snappy',        # Parquet compression
 }
@@ -121,32 +117,17 @@ ReplayExtractionPipeline
 
 ## Processing Workflow
 
-### Two-Pass Mode (Default)
+### Observer Mode
 
-**Pass 1: Schema Building**
-1. Load replay
-2. Iterate through all game loops
-3. Discover all units, buildings, upgrades
-4. Build complete schema with all columns
-
-**Pass 2: Data Extraction**
-1. Reset state extractor
-2. Load replay again
-3. Iterate through game loops
-4. Extract state at each loop
-5. Build wide-format rows (all rows have same columns)
-6. Write to parquet with consistent schema
-
-### Single-Pass Mode
+Observer mode is the only supported processing mode.
 
 1. Load replay
-2. Initialize empty schema
+2. Initialize schema
 3. For each game loop:
-   - Extract state
-   - Discover new entities and add columns dynamically
+   - Extract state via observer API
    - Build wide-format row
    - Append to rows list
-4. Write to parquet (rows may have different columns)
+4. Write to parquet
 
 ## Usage Examples
 
@@ -199,8 +180,7 @@ src_new/
 ## Performance Characteristics
 
 ### Single Replay Processing
-- Two-pass mode: ~30-60 seconds per replay
-- Single-pass mode: ~15-30 seconds per replay
+- Observer mode: ~30-60 seconds per replay
 - Memory usage: ~200-500 MB per worker
 
 ### Batch Processing
@@ -255,8 +235,7 @@ Test cases to implement:
 - Verify output files created
 - Validate output file naming
 - Check data integrity
-- Two-pass produces consistent schema
-- Single-pass completes successfully
+- Observer mode produces consistent schema
 - Error handling for invalid replays
 
 **parallel_processor.py**:
@@ -274,8 +253,7 @@ Test cases to implement:
 Phase 3 is considered complete when:
 - [x] ReplayExtractionPipeline class implemented
 - [x] process_replay() method orchestrates end-to-end workflow
-- [x] Two-pass processing mode implemented
-- [x] Single-pass processing mode implemented
+- [x] Observer mode processing implemented
 - [x] ParallelReplayProcessor class implemented
 - [x] process_replay_batch() handles parallel execution
 - [x] process_replay_directory() finds and processes replays

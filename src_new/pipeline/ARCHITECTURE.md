@@ -20,8 +20,7 @@
 │  (Main end-to-end orchestrator - Phase 3)                       │
 │                                                                  │
 │  - process_replay()                                             │
-│  - _two_pass_processing()                                       │
-│  - _single_pass_processing()                                    │
+│  - _observer_mode_processing()                                  │
 └─────────┬───────────────────────────────────────────────────────┘
           │
           │ Coordinates these components:
@@ -93,68 +92,9 @@
 
 ## Data Flow
 
-### Two-Pass Processing Mode
+### Observer Mode Processing
 
-```
-Pass 1: Schema Discovery
-─────────────────────────
-Replay File
-    │
-    ▼
-ReplayLoader.load_replay()
-    │
-    ▼
-ReplayLoader.start_sc2_instance()
-    │
-    ▼
-For each game loop:
-    controller.step()
-    │
-    ▼
-    controller.observe()
-    │
-    ▼
-    StateExtractor.extract_observation()
-    │
-    ▼
-    SchemaManager._discover_entities_from_state()
-    │
-    └─> Builds column list dynamically
-
-Pass 2: Data Extraction
-────────────────────────
-ReplayLoader.load_replay() (again)
-    │
-    ▼
-StateExtractor.reset()
-    │
-    ▼
-ReplayLoader.start_sc2_instance()
-    │
-    ▼
-For each game loop:
-    controller.step()
-    │
-    ▼
-    controller.observe()
-    │
-    ▼
-    StateExtractor.extract_observation()
-    │
-    ▼
-    WideTableBuilder.build_row()
-    │   (uses complete schema from Pass 1)
-    │
-    └─> Consistent wide-format rows
-    │
-    ▼
-ParquetWriter.write_game_state()
-    │
-    ▼
-Output files created
-```
-
-### Single-Pass Processing Mode
+Observer mode is the only supported processing mode. It uses the SC2 observer API to extract perfect-information game state at each game loop.
 
 ```
 Replay File
@@ -175,14 +115,10 @@ For each game loop:
     ▼
     StateExtractor.extract_observation()
     │
-    ├─> SchemaManager._discover_entities_from_state()
-    │   (updates schema dynamically)
-    │
     ▼
     WideTableBuilder.build_row()
-    │   (may have different columns per row)
     │
-    └─> Wide-format rows (ragged schema)
+    └─> Wide-format rows
     │
     ▼
 ParquetWriter.write_game_state()
@@ -250,7 +186,7 @@ Returns batch results dictionary
 - **Error handling**: Handle missing data gracefully
 
 ### SchemaManager
-- **Input**: Extracted states (Pass 1) or pre-built schema
+- **Input**: Extracted states or pre-built schema
 - **Output**: Column definitions, data types, documentation
 - **Responsibility**: Define and manage wide-table schema
 - **Error handling**: Handle dynamic schema updates
@@ -287,7 +223,7 @@ ReplayExtractionPipeline(config)
     │   - show_placeholders
     │
     ├─> processing_mode
-    │   - two_pass / single_pass
+    │   - observer
     │
     ├─> step_size
     │   - Game loops to step
@@ -333,13 +269,8 @@ ReplayExtractionPipeline(config)
 
 ## Memory Management
 
-### Two-Pass Mode
-- **Pass 1**: Only schema in memory (~100 KB - 1 MB)
-- **Pass 2**: Accumulates rows in memory (~100-500 MB)
-- **Peak**: All rows before writing to parquet
-
-### Single-Pass Mode
-- **During**: Accumulates rows dynamically (~100-500 MB)
+### Observer Mode
+- **During**: Accumulates rows in memory (~100-500 MB)
 - **Peak**: All rows before writing to parquet
 
 ### Parallel Processing

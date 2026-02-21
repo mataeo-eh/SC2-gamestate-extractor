@@ -362,6 +362,14 @@ class UnitExtractor:
 
         # Process all units
         for unit in raw_data.units:
+            # Filter: Skip neutral units (mineral patches, vespene geysers,
+            # destructible rocks, Xel'Naga towers, etc.). These are map
+            # elements, not player-owned game units, and should not appear
+            # as columns in the output parquet files. Neutral units have
+            # alliance == 3 (ALLIANCE_NEUTRAL) in the SC2 API.
+            if unit.alliance == ALLIANCE_NEUTRAL:
+                continue
+
             # Filter: Only process units owned by this player
             if unit.owner != self.player_id:
                 continue
@@ -650,12 +658,3 @@ class UnitExtractor:
         self.dead_tags.clear()
         self.unit_attributes.clear()
 
-    def reset_frame_state(self):
-        """Reset only per-frame state, preserving tag-to-ID mappings and counters.
-
-        Used between two-pass processing so pass 2 reuses the same readable IDs
-        that were assigned during pass 1 (schema scan).
-        """
-        self.previous_tags.clear()
-        self.previous_build_progress.clear()
-        self.dead_tags.clear()

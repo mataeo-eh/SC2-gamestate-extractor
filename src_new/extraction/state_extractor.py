@@ -4,13 +4,10 @@ StateExtractor: Extracts all required game state from pysc2 observations.
 This component orchestrates the extraction of complete game state including
 units, buildings, economy, upgrades, and messages from SC2 observations.
 
-Supports two extraction approaches:
-- Single-observation mode: extract_observation() uses one obs for everything.
-  Used by legacy two-pass and single-pass pipelines where the replay is locked
-  to one player's perspective.
-- Observer mode: extract_observation_observer_mode() takes TWO observations
-  (one per player perspective) to get correct per-player economy/upgrades
-  while still extracting global units/buildings from a single obs.
+The primary extraction entry point is extract_observation_observer_mode(),
+which takes two per-player observations (one for each player perspective) and
+combines them into a single complete state dict with correct per-player
+economy/upgrades data alongside global units/buildings data.
 """
 
 from typing import Dict, Set, List, Optional, Any
@@ -34,10 +31,11 @@ class StateExtractor:
     economy, upgrades) and provides a unified interface for extracting complete
     game state at each time step.
 
-    Provides three extraction entry points:
-    - extract_observation(): Full extraction from a single obs (legacy mode)
-    - extract_perspective_dependent(): Economy/upgrades only for one player (two-pass P2 fix)
-    - extract_observation_observer_mode(): Full extraction from two per-player obs (observer mode)
+    The primary extraction entry point is extract_observation_observer_mode(),
+    which takes two per-player observations and combines them into a single
+    complete state dict. extract_observation() remains available for single-obs
+    use cases, and extract_perspective_dependent() extracts economy/upgrades
+    only for a given player perspective.
     """
 
     def __init__(self):
@@ -352,24 +350,6 @@ class StateExtractor:
         self.building_tracker.reset()
 
         logger.info("StateExtractor reset")
-
-    def reset_frame_state(self):
-        """Reset only per-frame state, preserving tag-to-ID mappings and counters.
-
-        Used between two-pass processing so pass 2 reuses the same readable IDs
-        that were assigned during pass 1 (schema scan). This ensures column names
-        in the schema (from pass 1) match exactly with the data (from pass 2).
-        """
-        for extractor in self.unit_extractors.values():
-            extractor.reset_frame_state()
-        for extractor in self.building_extractors.values():
-            extractor.reset_frame_state()
-        # Economy and upgrade extractors are stateless, no frame state to reset
-
-        self.unit_tracker.reset()
-        self.building_tracker.reset()
-
-        logger.info("StateExtractor frame state reset (preserved tag-to-ID mappings)")
 
 
 class UnitTracker:

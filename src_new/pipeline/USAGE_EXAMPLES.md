@@ -67,7 +67,7 @@ config = {
     'show_placeholders': True,
 
     # Processing settings
-    'processing_mode': 'two_pass',  # or 'single_pass'
+    'processing_mode': 'observer',  # Only supported mode
     'step_size': 1,  # Game loops per step
 
     # Output settings
@@ -81,26 +81,12 @@ result = pipeline.process_replay(
 )
 ```
 
-### Two-Pass vs Single-Pass Processing
+### Processing Mode
 
-**Two-Pass Mode (Default - Recommended)**:
-- Pass 1: Scans entire replay to discover all units/buildings
-- Pass 2: Extracts data with consistent schema
-- Pros: Consistent schema across all rows, better for ML
-- Cons: Slower (processes replay twice)
+Observer mode is the only supported processing mode. It uses the SC2 observer API to extract perfect-information game state.
 
 ```python
-config = {'processing_mode': 'two_pass'}
-pipeline = ReplayExtractionPipeline(config)
-```
-
-**Single-Pass Mode**:
-- Extracts data in one pass, building schema dynamically
-- Pros: Faster, more memory-efficient
-- Cons: May have ragged columns (different rows may have different columns)
-
-```python
-config = {'processing_mode': 'single_pass'}
+config = {'processing_mode': 'observer'}
 pipeline = ReplayExtractionPipeline(config)
 ```
 
@@ -114,7 +100,7 @@ from src_new.pipeline.parallel_processor import ParallelReplayProcessor
 
 # Create parallel processor
 processor = ParallelReplayProcessor(
-    config={'processing_mode': 'two_pass'},
+    config={'processing_mode': 'observer'},
     num_workers=4  # Use 4 CPU cores
 )
 
@@ -334,9 +320,9 @@ processor = ParallelReplayProcessor(num_workers=4)
 For large replays or systems with limited memory:
 
 ```python
-# Use single-pass mode to reduce memory usage
+# Increase step_size to sample less frequently and reduce memory usage
 config = {
-    'processing_mode': 'single_pass',
+    'processing_mode': 'observer',
     'step_size': 10,  # Sample every 10 game loops instead of every loop
 }
 
@@ -348,8 +334,7 @@ processor = ParallelReplayProcessor(
 
 ### Processing Time Estimates
 
-- Single replay (two-pass): ~30-60 seconds
-- Single replay (single-pass): ~15-30 seconds
+- Single replay (observer mode): ~30-60 seconds
 - Batch of 100 replays (8 workers): ~10-20 minutes
 
 Times vary based on:

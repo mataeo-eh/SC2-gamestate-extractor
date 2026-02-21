@@ -436,7 +436,7 @@ def process_directory_quick(
             'show_placeholders': True,
 
             # Processing settings
-            'processing_mode': 'two_pass',  # or 'single_pass'
+            'processing_mode': 'observer',
             'step_size': 1,  # Game loops per step
 
             # Output settings

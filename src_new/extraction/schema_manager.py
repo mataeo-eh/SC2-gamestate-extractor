@@ -4,6 +4,13 @@ SchemaManager: Manages wide-table column schema and documentation.
 This component handles schema generation, column ordering, data types,
 and documentation for the wide-format parquet output.
 
+Schema is built in two stages:
+- Static columns (game metadata, economy, upgrades) are created upfront from
+  replay metadata via build_base_schema(), before extraction begins.
+- Entity columns (units and buildings) are added dynamically during the game
+  loop via ensure_unit_columns() and ensure_building_columns(), as each new
+  entity is encountered for the first time.
+
 Key behaviors:
 - Only creates columns for units that actually complete (not cancelled/interrupted)
 - Creates columns for ALL buildings (even cancelled ones, since position is meaningful)
@@ -105,8 +112,10 @@ class SchemaManager:
     """
     Manages wide-table column schema and documentation.
 
-    This class dynamically builds the schema by scanning replays and provides
-    comprehensive documentation for all columns.
+    This class manages the wide-table column schema by building static columns
+    upfront from replay metadata and adding entity-specific columns dynamically
+    during extraction. It provides column ordering, data types, missing value
+    defaults, and documentation for the wide-format parquet output.
 
     Column dtype is 'object' for all unit/building attribute columns because
     they can contain either numeric data (float) or lifecycle state strings
@@ -162,116 +171,103 @@ class SchemaManager:
                     'missing_value': 'N/A' if col_name != 'Messages' else 'NaN',
                 }
 
-    def build_schema_from_replay(
-        self,
-        replay_path: Path,
-        replay_loader: Any,
-        state_extractor: Any
-    ) -> None:
+    def build_base_schema(self, player_names: Dict[int, str]) -> None:
         """
-        Pre-scan replay to determine all columns needed.
+        Build the static portion of the schema using player names from replay metadata.
 
-        This performs a full pass through the replay to discover all unit types,
-        building types, and other dynamic columns that will be needed.
+        This replaces build_schema_from_replay(). Instead of launching a full SC2
+        instance to pre-scan the replay, it builds only the columns whose structure is
+        known before extraction begins: game metadata, economy, and upgrade columns.
+        Unit and building columns are added dynamically during extraction via
+        ensure_unit_columns() and ensure_building_columns().
 
-        After the scan, only units that actually completed (build_progress >= 1.0)
-        will have columns created. Buildings always get columns (even if cancelled).
+        Call this AFTER get_replay_info() has returned player names, and BEFORE
+        creating the WideTableBuilder or starting the game loop.
 
         Args:
-            replay_path: Path to replay file
-            replay_loader: ReplayLoader instance
-            state_extractor: StateExtractor instance
+            player_names: Dict mapping player number to raw player name,
+                          e.g. {1: "Really", 2: "What!"}
+
+        Calls:
+            - self.set_player_names(player_names) — sanitizes and stores names
+            - self._add_economy_columns() — adds p1_minerals, p1_vespene, etc.
+            - self._add_upgrade_columns() — adds p1_upgrade_attack_level, etc.
+
+        Note:
+            _add_base_columns() is already called in __init__() and does not need
+            to be called here. The static base columns (game_loop, timestamp_seconds,
+            Messages) are present from object creation.
         """
-        logger.info(f"Pre-scanning replay to build schema: {replay_path}")
-
-        # Load replay
-        replay_loader.load_replay(replay_path)
-
-        with replay_loader.start_sc2_instance() as controller:
-            metadata = replay_loader.get_replay_info(controller)
-
-            # Extract player names from metadata and set on schema manager
-            player_names = {
-                p['player_id']: p.get('player_name', '')
-                for p in metadata.get('players', [])
-            }
-            self.set_player_names(player_names)
-
-            replay_loader.start_replay(controller, observed_player_id=1, disable_fog=True)
-
-            # Iterate through replay to discover entities
-            game_loop = 0
-            max_loops = metadata['game_duration_loops']
-
-            while game_loop < max_loops:
-                try:
-                    # Step forward
-                    controller.step(1)
-                    obs = controller.observe()
-
-                    # Check if replay has ended
-                    if obs.player_result:
-                        logger.info(f"Schema scan complete - replay ended at loop {game_loop} (expected {max_loops})")
-                        break
-
-                    # Extract state
-                    state = state_extractor.extract_observation(obs, game_loop)
-
-                    # We don't add columns yet - just let the extractors track everything
-                    game_loop = obs.observation.game_loop
-
-                except Exception as e:
-                    logger.warning(f"Error during schema scan at loop {game_loop}: {e}")
-                    break
-
-        # Now build the schema based on what was discovered during the scan
-        self._build_columns_from_extractors(state_extractor)
-
-        logger.info(f"Schema built with {len(self.columns)} columns")
-        logger.info(f"  Units discovered: {len(self._seen_units)}")
-        logger.info(f"  Buildings discovered: {len(self._seen_buildings)}")
-
-    def _build_columns_from_extractors(self, state_extractor: Any) -> None:
-        """
-        Build column schema from extractor state after pass 1 completes.
-
-        Only creates columns for:
-        - Units that actually completed (build_progress reached 1.0)
-        - All buildings (even cancelled ones)
-
-        Conditionally includes shields/energy based on what the extractor observed.
-
-        Args:
-            state_extractor: StateExtractor instance (after pass 1)
-        """
-        for player_num in [1, 2]:
-            player = f'p{player_num}'
-
-            # Get unit extractor for this player
-            unit_extractor = state_extractor.unit_extractors[player_num]
-            completed_ids = unit_extractor.get_completed_readable_ids()
-
-            # Add columns only for completed units
-            for readable_id in sorted(completed_ids):
-                if readable_id not in self._seen_units:
-                    self._seen_units.add(readable_id)
-                    extra_attrs = unit_extractor.get_unit_attributes_for_id(readable_id)
-                    self.add_unit_columns(player, readable_id, extra_attrs)
-
-            # Get building extractor for this player - add ALL buildings
-            building_extractor = state_extractor.building_extractors[player_num]
-            for tag, readable_id in sorted(building_extractor.tag_to_readable_id.items(),
-                                            key=lambda x: x[1]):
-                if readable_id not in self._seen_buildings:
-                    self._seen_buildings.add(readable_id)
-                    extra_attrs = building_extractor.get_building_attributes_for_id(readable_id)
-                    self.add_building_columns(player, readable_id, extra_attrs)
-
-        # Add economy columns (fixed schema)
+        self.set_player_names(player_names)
         self._add_economy_columns()
-
-        # Add upgrade columns (dynamic but can be pre-defined)
         self._add_upgrade_columns()
+        logger.info(
+            f"Base schema built with {len(self.columns)} static columns"
+        )
+
+    def ensure_unit_columns(self, player: str, readable_id: str, extra_attrs: Set[str] = None) -> bool:
+        """
+        Add columns for a unit if they do not already exist in the schema.
+
+        Called inside the game loop, once per unit per frame, BEFORE build_row().
+        Prevents duplicate column creation when the same unit appears across multiple
+        frames. Only call this when the unit's lifecycle == 'completed' (i.e., the
+        unit has fully built). Units still in progress do not get columns yet.
+
+        Args:
+            player: Player prefix, e.g. 'p1' or 'p2'
+            readable_id: Human-readable unit ID, e.g. 'p1_marine_001'
+            extra_attrs: Set of conditional attribute names this unit has
+                         (e.g. {'shields', 'energy'}). Pass None or empty set
+                         if the unit has no conditional attributes.
+
+        Returns:
+            True if new columns were added (first time this unit was seen).
+            False if columns already existed (unit was seen in a prior frame).
+
+        Depends on:
+            - self._seen_units: set of readable_ids already in schema
+            - self.add_unit_columns(): creates the actual column entries
+        """
+        if extra_attrs is None:
+            extra_attrs = set()
+        if readable_id not in self._seen_units:
+            self._seen_units.add(readable_id)
+            self.add_unit_columns(player, readable_id, extra_attrs)
+            return True  # New columns were added
+        return False  # Already existed — no duplicate columns created
+
+    def ensure_building_columns(self, player: str, readable_id: str, extra_attrs: Set[str] = None) -> bool:
+        """
+        Add columns for a building if they do not already exist in the schema.
+
+        Called inside the game loop, once per building per frame, BEFORE build_row().
+        Buildings always get columns on their first appearance — even cancelled ones —
+        because building position data is meaningful regardless of whether construction
+        completed.
+
+        Args:
+            player: Player prefix, e.g. 'p1' or 'p2'
+            readable_id: Human-readable building ID, e.g. 'p1_barracks_001'
+            extra_attrs: Set of conditional attribute names this building has
+                         (e.g. {'shields', 'energy'}). Pass None or empty set
+                         if the building has no conditional attributes.
+
+        Returns:
+            True if new columns were added (first time this building was seen).
+            False if columns already existed (building was seen in a prior frame).
+
+        Depends on:
+            - self._seen_buildings: set of readable_ids already in schema
+            - self.add_building_columns(): creates the actual column entries
+        """
+        if extra_attrs is None:
+            extra_attrs = set()
+        if readable_id not in self._seen_buildings:
+            self._seen_buildings.add(readable_id)
+            self.add_building_columns(player, readable_id, extra_attrs)
+            return True  # New columns were added
+        return False  # Already existed — no duplicate columns created
 
     def add_unit_columns(self, player: str, unit_id: str, extra_attrs: Set[str] = None) -> None:
         """
