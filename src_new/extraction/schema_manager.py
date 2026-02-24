@@ -360,15 +360,26 @@ class SchemaManager:
                 }
 
     def _add_economy_columns(self) -> None:
-        """Add economy columns for both players."""
+        """
+        Add economy columns for both players.
+
+        Only registers columns that are available from s2protocol's
+        SPlayerStatsEvent tracker events. Columns that were previously
+        sourced from the engine's player_common (idle_workers, army_count,
+        food_army, warp_gate_count, larva_count, workers) and score_details
+        (collected_minerals, collected_vespene, spent_minerals, spent_vespene)
+        have been removed because they are always zero in observer mode.
+        """
         for player_num in [1, 2]:
+            # These columns map 1:1 to SPlayerStatsEvent fields parsed by
+            # economy_extractor.load_economy_snapshots().
             economy_columns = [
-                ('minerals', 'int64', 'Current minerals'),
-                ('vespene', 'int64', 'Current vespene gas'),
-                ('supply_used', 'int64', 'Supply used'),
-                ('supply_cap', 'int64', 'Supply capacity'),
-                ('workers', 'int64', 'Total worker count'),
-                ('idle_workers', 'int64', 'Idle worker count'),
+                ('minerals', 'int64', 'Current unspent minerals'),
+                ('vespene', 'int64', 'Current unspent vespene gas'),
+                ('supply_used', 'float64', 'Supply currently used (fixed-point / 4096)'),
+                ('supply_cap', 'float64', 'Supply capacity (fixed-point / 4096)'),
+                ('collection_rate_minerals', 'float64', 'Mineral collection rate per minute'),
+                ('collection_rate_vespene', 'float64', 'Vespene collection rate per minute'),
             ]
 
             for col_suffix, dtype, description in economy_columns:

@@ -2,12 +2,19 @@
 StateExtractor: Extracts all required game state from pysc2 observations.
 
 This component orchestrates the extraction of complete game state including
-units, buildings, economy, upgrades, and messages from SC2 observations.
+units, buildings, upgrades, and messages from SC2 observations.
+
+Economy data is NOT extracted here. In observer mode (the only supported path),
+economy is pre-loaded from the replay file via s2protocol by
+economy_extractor.load_economy_snapshots() and injected into the state dict
+by extraction_pipeline.py. This avoids the observer-mode bug where the engine's
+player_common and score_details are always zero.
 
 The primary extraction entry point is extract_observation_observer_mode(),
 which takes two per-player observations (one for each player perspective) and
-combines them into a single complete state dict with correct per-player
-economy/upgrades data alongside global units/buildings data.
+combines them into a single state dict with per-player upgrades data alongside
+global units/buildings data. Economy keys (p1_economy, p2_economy) are absent
+from the returned dict -- the pipeline adds them afterward.
 """
 
 from typing import Dict, Set, List, Optional, Any
@@ -16,7 +23,6 @@ import logging
 
 from ..extractors.unit_extractor import UnitExtractor
 from ..extractors.building_extractor import BuildingExtractor
-from ..extractors.economy_extractor import EconomyExtractor
 from ..extractors.upgrade_extractor import UpgradeExtractor
 
 
@@ -25,21 +31,28 @@ logger = logging.getLogger(__name__)
 
 class StateExtractor:
     """
-    Extracts complete game state from pysc2 observations.
+    Extracts game state from pysc2 observations (units, buildings, upgrades, messages).
 
-    This class orchestrates all the individual extractors (units, buildings,
-    economy, upgrades) and provides a unified interface for extracting complete
-    game state at each time step.
+    This class orchestrates the individual extractors (units, buildings, upgrades)
+    and provides a unified interface for extracting game state at each time step.
+    Economy data is handled separately by economy_extractor.load_economy_snapshots()
+    and injected by the pipeline, not by this class.
 
     The primary extraction entry point is extract_observation_observer_mode(),
     which takes two per-player observations and combines them into a single
-    complete state dict. extract_observation() remains available for single-obs
-    use cases, and extract_perspective_dependent() extracts economy/upgrades
-    only for a given player perspective.
+    state dict. extract_observation() remains available for single-obs legacy
+    use cases.
     """
 
     def __init__(self):
-        """Initialize the StateExtractor with all component extractors."""
+        """
+        Initialize the StateExtractor with all component extractors.
+
+        Creates unit, building, and upgrade extractors for both players.
+        Economy extractors are NOT created here -- economy is pre-loaded
+        from the replay file by economy_extractor.load_economy_snapshots()
+        and injected by extraction_pipeline.py.
+        """
         # Create extractors for both players
         self.unit_extractors = {
             1: UnitExtractor(player_id=1),
@@ -49,11 +62,6 @@ class StateExtractor:
         self.building_extractors = {
             1: BuildingExtractor(player_id=1),
             2: BuildingExtractor(player_id=2),
-        }
-
-        self.economy_extractors = {
-            1: EconomyExtractor(player_id=1),
-            2: EconomyExtractor(player_id=2),
         }
 
         self.upgrade_extractors = {
@@ -69,7 +77,12 @@ class StateExtractor:
 
     def extract_observation(self, obs, game_loop: int) -> Dict[str, Any]:
         """
-        Extract complete state from single observation.
+        Extract state from a single observation (legacy single-obs path).
+
+        Note: Economy data (p1_economy, p2_economy) is NOT included in the
+        returned dict. Economy is now pre-loaded from the replay file via
+        s2protocol and injected by the pipeline. Callers needing economy data
+        should use economy_extractor.get_economy_at_loop() separately.
 
         Args:
             obs: SC2 observation from controller.observe()
@@ -83,14 +96,10 @@ class StateExtractor:
                 'p2_units': dict,
                 'p1_buildings': dict,
                 'p2_buildings': dict,
-                'p1_economy': dict,
-                'p2_economy': dict,
                 'p1_upgrades': dict,
                 'p2_upgrades': dict,
                 'messages': list,
             }
-
-        # TODO: Test case - Extract complete state from observation
         """
         state = {'game_loop': game_loop}
 
@@ -102,9 +111,8 @@ class StateExtractor:
         state['p1_buildings'] = self.extract_buildings(obs, player_id=1)
         state['p2_buildings'] = self.extract_buildings(obs, player_id=2)
 
-        # Extract economy for both players
-        state['p1_economy'] = self.extract_economy(obs, player_id=1)
-        state['p2_economy'] = self.extract_economy(obs, player_id=2)
+        # Economy is NOT extracted here — it comes from s2protocol via the pipeline.
+        # See economy_extractor.load_economy_snapshots().
 
         # Extract upgrades for both players
         state['p1_upgrades'] = self.extract_upgrades(obs, player_id=1)
@@ -122,34 +130,33 @@ class StateExtractor:
         game_loop: int,
     ) -> Dict[str, Any]:
         """
-        Extract complete state from observer mode observations.
+        Extract state from observer mode observations (units, buildings, upgrades, messages).
 
         In observer mode, the pipeline makes TWO observe() calls per game step:
         one after switching perspective to player 1, and one after switching to
-        player 2.  Both observations share the same raw_data.units (global),
-        but have different player_common and score data (perspective-dependent).
+        player 2. Both observations share the same raw_data.units (global),
+        but have different upgrade data (perspective-dependent).
 
-        This method uses obs_p1 for P1 economy/upgrades and obs_p2 for P2
-        economy/upgrades, while using obs_p1 (arbitrarily) for units/buildings
-        since raw_data.units is identical in both observations.
+        Economy data (p1_economy, p2_economy) is NOT extracted here. In observer
+        mode the engine's player_common and score_details are always zero, so
+        economy is pre-loaded from the replay file via s2protocol and injected
+        into the state dict by extraction_pipeline.py afterward.
 
         Args:
             obs_p1: Observation after switching to player 1 perspective.
-                    Used for units, buildings, P1 economy, P1 upgrades, messages.
+                    Used for units, buildings, P1 upgrades, messages.
             obs_p2: Observation after switching to player 2 perspective.
-                    Used for P2 economy and P2 upgrades.
+                    Used for P2 upgrades.
             game_loop: Current game loop number.
 
         Returns:
-            Complete state dict with all players' data correctly populated:
+            State dict (economy keys absent -- pipeline adds them):
             {
                 'game_loop': int,
                 'p1_units': dict,
                 'p2_units': dict,
                 'p1_buildings': dict,
                 'p2_buildings': dict,
-                'p1_economy': dict,   # from obs_p1 (correct P1 perspective)
-                'p2_economy': dict,   # from obs_p2 (correct P2 perspective)
                 'p1_upgrades': dict,  # from obs_p1 (correct P1 perspective)
                 'p2_upgrades': dict,  # from obs_p2 (correct P2 perspective)
                 'messages': list,
@@ -158,7 +165,6 @@ class StateExtractor:
         Depends on / calls:
             - extract_units() for both players (uses obs_p1)
             - extract_buildings() for both players (uses obs_p1)
-            - extract_economy() with obs_p1 for P1, obs_p2 for P2
             - extract_upgrades() with obs_p1 for P1, obs_p2 for P2
             - extract_messages() (uses obs_p1)
         """
@@ -173,13 +179,12 @@ class StateExtractor:
         state['p1_buildings'] = self.extract_buildings(obs_p1, player_id=1)
         state['p2_buildings'] = self.extract_buildings(obs_p1, player_id=2)
 
-        # Economy is perspective-dependent (player_common / score_details).
-        # P1 economy must come from the P1-perspective observation,
-        # P2 economy must come from the P2-perspective observation.
-        state['p1_economy'] = self.extract_economy(obs_p1, player_id=1)
-        state['p2_economy'] = self.extract_economy(obs_p2, player_id=2)
+        # Economy is NOT extracted from the engine here — player_common and
+        # score_details are always zero in observer mode. Economy is pre-loaded
+        # from the replay file via s2protocol (economy_extractor.load_economy_snapshots)
+        # and injected by extraction_pipeline.py after this method returns.
 
-        # Upgrades are also perspective-dependent (raw_data.player.upgrade_ids
+        # Upgrades are perspective-dependent (raw_data.player.upgrade_ids
         # reflects the observed player).
         state['p1_upgrades'] = self.extract_upgrades(obs_p1, player_id=1)
         state['p2_upgrades'] = self.extract_upgrades(obs_p2, player_id=2)
@@ -222,32 +227,6 @@ class StateExtractor:
         buildings = extractor.extract(obs)
         return buildings
 
-    def extract_economy(self, obs, player_id: int) -> Dict[str, Any]:
-        """
-        Extract economy metrics for a player.
-
-        Args:
-            obs: SC2 observation
-            player_id: Player ID (1 or 2)
-
-        Returns:
-            Dictionary with economy data:
-            {
-                'minerals': int,
-                'vespene': int,
-                'supply_used': int,
-                'supply_cap': int,
-                'workers': int,
-                'idle_workers': int,
-                ...
-            }
-
-        # TODO: Test case - Extract economy metrics
-        """
-        extractor = self.economy_extractors[player_id]
-        economy = extractor.extract(obs)
-        return economy
-
     def extract_upgrades(self, obs, player_id: int) -> Dict[str, Any]:
         """
         Extract completed upgrades for a player.
@@ -268,38 +247,6 @@ class StateExtractor:
         extractor = self.upgrade_extractors[player_id]
         upgrades = extractor.extract(obs)
         return upgrades
-
-    def extract_perspective_dependent(self, obs, game_loop: int, observed_player_id: int) -> Dict[str, Any]:
-        """
-        Extract only perspective-dependent data (economy + upgrades) for the observed player.
-
-        This is used during the P2 economy pass: the replay is replayed from player 2's
-        perspective, and this method extracts economy and upgrades that player_common and
-        raw_data.player.upgrade_ids expose for that perspective.  Units and buildings are
-        NOT re-extracted because they are perspective-independent (use unit.owner).
-
-        Args:
-            obs: SC2 observation from controller.observe()
-            game_loop: Current game loop number
-            observed_player_id: The player whose perspective the replay is running from (1 or 2)
-
-        Returns:
-            Dictionary with perspective-dependent state:
-            {
-                'game_loop': int,
-                'p<N>_economy': dict,
-                'p<N>_upgrades': dict,
-            }
-        """
-        state = {'game_loop': game_loop}
-
-        # Economy and upgrades from player_common / score_details / raw_data.player
-        # reflect the observed_player_id, so we assign them to that player.
-        key_prefix = f'p{observed_player_id}'
-        state[f'{key_prefix}_economy'] = self.extract_economy(obs, player_id=observed_player_id)
-        state[f'{key_prefix}_upgrades'] = self.extract_upgrades(obs, player_id=observed_player_id)
-
-        return state
 
     def extract_messages(self, obs) -> List[Dict[str, Any]]:
         """
@@ -336,12 +283,16 @@ class StateExtractor:
         return messages
 
     def reset(self):
-        """Reset all extractors and trackers."""
+        """
+        Reset all extractors and trackers.
+
+        Resets unit, building, and upgrade extractors plus the unit/building
+        trackers. Economy extractors are not managed here (economy is handled
+        by economy_extractor.load_economy_snapshots() at the pipeline level).
+        """
         for extractor in self.unit_extractors.values():
             extractor.reset()
         for extractor in self.building_extractors.values():
-            extractor.reset()
-        for extractor in self.economy_extractors.values():
             extractor.reset()
         for extractor in self.upgrade_extractors.values():
             extractor.reset()

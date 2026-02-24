@@ -29,13 +29,6 @@ from pysc2.lib import units as pysc2_units
 logger = logging.getLogger(__name__)
 
 
-# Define which alliance values represent different player perspectives
-ALLIANCE_SELF = 1
-ALLIANCE_ALLY = 2
-ALLIANCE_NEUTRAL = 3
-ALLIANCE_ENEMY = 4
-
-
 # Building unit type IDs
 # This is a comprehensive list of all building types in SC2
 BUILDING_TYPES = {
@@ -326,12 +319,16 @@ class BuildingExtractor:
 
         # Process all units, filtering for buildings
         for unit in raw_data.units:
-            # Filter: Skip neutral units (mineral patches, vespene geysers,
-            # destructible rocks, Xel'Naga towers, etc.). These are map
-            # elements, not player-owned game entities, and should not appear
-            # as columns in the output parquet files. Neutral units have
-            # alliance == 3 (ALLIANCE_NEUTRAL) in the SC2 API.
-            if unit.alliance == ALLIANCE_NEUTRAL:
+            # Filter: Skip non-player units (mineral patches, vespene geysers,
+            # destructible rocks, Xel'Naga towers, critters, etc.).
+            # We filter by unit.owner instead of unit.alliance because the
+            # SC2 engine misassigns alliance values in observer mode
+            # (observed_player_id=0): player units get ALLIANCE_NEUTRAL and
+            # neutral map entities get ALLIANCE_SELF. unit.owner is always
+            # correct regardless of perspective mode.
+            # Players are always owner 1 and 2; everything else (owner 16
+            # for neutrals, etc.) is a map entity.
+            if unit.owner not in {1, 2}:
                 continue
 
             # Filter: Only process units owned by this player

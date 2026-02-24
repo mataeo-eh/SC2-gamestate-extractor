@@ -304,10 +304,12 @@ class WideTableBuilder:
             player: Player prefix
             economy_data: Economy data dictionary
         """
+        # Must match the economy columns registered in schema_manager._add_economy_columns()
+        # and the keys returned by economy_extractor.get_economy_at_loop().
         economy_columns = [
             'minerals', 'vespene',
             'supply_used', 'supply_cap',
-            'workers', 'idle_workers',
+            'collection_rate_minerals', 'collection_rate_vespene',
         ]
 
         for attr in economy_columns:

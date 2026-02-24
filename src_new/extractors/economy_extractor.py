@@ -1,262 +1,236 @@
 """
-EconomyExtractor: Extracts economy data from SC2 observations.
+EconomyExtractor: Extracts economy data from SC2 replay files using s2protocol.
 
-This component handles:
-- Extracting economy metrics from player_common (resources, supply, workers)
-- Extracting collection statistics from score details
-- Extracting spending totals from score details (spent_minerals, spent_vespene)
-- Extracting race-specific counts (warp_gate_count, larva_count) from player_common
-- Simple field extraction with no state tracking needed
+This module replaces the previous engine-based EconomyExtractor class. In observer
+mode (observed_player_id=0), the SC2 engine's player_common and score_details are
+always empty (all zeros). Instead, this module parses the replay file directly using
+s2protocol to extract SPlayerStatsEvent tracker events, which contain per-player
+economy snapshots at ~160 game-loop intervals regardless of observation mode.
 
-Compatible with both replay extraction modes:
-- Legacy two-pass mode: the replay is started with observed_player_id=N, so
-  player_common and score_details are already scoped to that player.
-- Observer mode (single-pass): the pipeline starts the replay without
-  observed_player_id, steps forward once, then switches perspective to each
-  player via ActionObserverPlayerPerspective before calling observe(). The
-  resulting observation's player_common and score_details are scoped to the
-  player whose perspective was activated. This extractor is called once per
-  player per game-loop step, and does NOT perform any perspective switching
-  itself — that is the pipeline's responsibility.
+Provides two public functions:
+  - load_economy_snapshots(replay_path) -> dict
+      Parses the replay file once and returns all economy snapshots grouped by player.
+  - get_economy_at_loop(snapshots, player_id, game_loop) -> dict
+      Returns the most recent economy snapshot for a player at or before a given game loop.
+      Uses binary search for efficient lookup across potentially thousands of snapshots.
+
+The pipeline (extraction_pipeline.py) calls load_economy_snapshots() once before the
+game loop begins, then calls get_economy_at_loop() each frame to forward-fill economy
+values between the ~160-loop update intervals.
+
+Dependencies:
+  - mpyq: reads the MPQ archive format of SC2 replay files
+  - s2protocol: Blizzard's official SC2 replay protocol decoder
 """
 
-from typing import Dict
+from typing import Dict, List
+from bisect import bisect_right
 import logging
+
+import mpyq
+from s2protocol import versions
 
 
 logger = logging.getLogger(__name__)
 
 
-class EconomyExtractor:
+# The set of fields we extract from each SPlayerStatsEvent, mapped to their
+# output key names and any transformation needed. SPlayerStatsEvent stores
+# supply values as fixed-point integers (multiply by 4096), so we divide
+# those back to get the real float value.
+#
+# Source field name -> (output key, divisor)
+# A divisor of 1 means "use raw integer value as-is".
+# A divisor of 4096 means "fixed-point conversion: value / 4096".
+_FIELD_MAP = {
+    'm_scoreValueMineralsCurrent':        ('minerals',                   1),
+    'm_scoreValueVespeneCurrent':         ('vespene',                    1),
+    'm_scoreValueFoodUsed':               ('supply_used',             4096),
+    'm_scoreValueFoodMade':               ('supply_cap',              4096),
+    'm_scoreValueMineralsCollectionRate': ('collection_rate_minerals',   1),
+    'm_scoreValueVespeneCollectionRate':  ('collection_rate_vespene',    1),
+}
+
+# Keys used in the output dicts, in a canonical order. Used by
+# _make_zeroed_snapshot() to build a zero-valued default dict.
+_ECONOMY_KEYS = [entry[0] for entry in _FIELD_MAP.values()]
+
+
+def _make_zeroed_snapshot() -> Dict[str, float]:
     """
-    Extracts economy data from SC2 observations.
+    Build a snapshot dict with all economy keys set to zero.
 
-    This class extracts resource counts, supply information, worker counts,
-    collection rates, spending totals, and race-specific counts from the
-    observation data. Unlike unit/building extractors, this does not require
-    state tracking across frames.
+    Used as the default return value when no SPlayerStatsEvent has been
+    emitted yet for a player at or before the requested game loop.
 
-    Works identically in both legacy two-pass mode (observed_player_id set at
-    replay start) and observer mode (pipeline switches perspective before each
-    observe() call). The extractor simply reads whatever player_common and
-    score_details the observation already contains — it is agnostic to how that
-    perspective was established.
+    Returns:
+        Dict with keys matching the economy schema, all values 0.
 
-    Example usage:
-        extractor = EconomyExtractor(player_id=1)
-
-        for obs in game_loop_iterator:
-            economy_data = extractor.extract(obs)
-
-            # Print economy state
-            print(f"Resources: {economy_data['minerals']}m, {economy_data['vespene']}g")
-            print(f"Supply: {economy_data['supply_used']}/{economy_data['supply_cap']}")
-            print(f"Workers: {economy_data['workers']}, Idle: {economy_data['idle_workers']}")
+    Called by:
+        get_economy_at_loop() -- when no snapshot exists yet for a player.
     """
+    return {key: 0 for key in _ECONOMY_KEYS}
 
-    def __init__(self, player_id: int):
-        """
-        Initialize the EconomyExtractor.
 
-        Args:
-            player_id: Player ID this extractor is tracking (1 or 2)
-        """
-        self.player_id = player_id
+def load_economy_snapshots(replay_path: str) -> Dict[int, List[Dict[str, float]]]:
+    """
+    Parse a replay file and extract all SPlayerStatsEvent economy snapshots.
 
-    def extract(self, obs) -> Dict[str, float]:
-        """
-        Extract all economy data from observation.
+    Opens the replay as an MPQ archive, decodes the tracker events using the
+    protocol version embedded in the replay header, and collects economy fields
+    from every SPlayerStatsEvent. Returns snapshots grouped by player_id (1-indexed)
+    and sorted by game_loop ascending within each player.
 
-        The observation's player_common and score_details are already scoped to
-        the correct player by the time this method is called. In legacy two-pass
-        mode this is because the replay was started with observed_player_id=N.
-        In observer mode this is because the pipeline switched perspective via
-        ActionObserverPlayerPerspective(player_id=N) and then called observe()
-        before invoking this method. Either way, the extractor simply reads
-        the fields — no perspective logic is needed here.
+    Args:
+        replay_path: Absolute or relative path to the .SC2Replay file.
 
-        Args:
-            obs: SC2 observation from controller.observe()
-
-        Returns:
-            Dictionary containing economy metrics:
+    Returns:
+        Dict mapping player_id (int, 1-indexed) to a list of snapshot dicts,
+        each containing:
             {
-                # Current resources
-                'minerals': 450,
-                'vespene': 200,
-
-                # Supply
-                'supply_used': 45,
-                'supply_cap': 60,
-                'food_army': 30,
-                'workers': 15,
-
-                # Worker and army counts
-                'idle_workers': 2,
-                'army_count': 30,
-
-                # Race-specific counts
-                'warp_gate_count': 0,   # Protoss only, 0 for other races
-                'larva_count': 0,       # Zerg only, 0 for other races
-
-                # Collection totals
-                'collected_minerals': 15000,
-                'collected_vespene': 8000,
-
-                # Spending totals
-                'spent_minerals': 12000,
-                'spent_vespene': 6000,
-
-                # Collection rates (per minute)
-                'collection_rate_minerals': 1200.0,
-                'collection_rate_vespene': 600.0,
+                'game_loop': int,
+                'minerals': int,
+                'vespene': int,
+                'supply_used': float,
+                'supply_cap': float,
+                'collection_rate_minerals': float,
+                'collection_rate_vespene': float,
             }
+        Lists are sorted by game_loop ascending. Players with no events get
+        an empty list.
 
-        Depends on / calls:
-            _get_default_economy_data() — used as fallback on extraction errors
-        """
-        try:
-            # --- player_common fields ---
-            # player_common is perspective-dependent: it reflects whichever
-            # player the observation is scoped to (set by the pipeline).
-            player_common = obs.observation.player_common
+    Raises:
+        FileNotFoundError: If replay_path does not exist.
+        KeyError: If the replay header is missing expected version fields.
 
-            # Current resources
-            minerals = player_common.minerals
-            vespene = player_common.vespene
+    Depends on / calls:
+        - mpyq.MPQArchive: opens the replay MPQ container
+        - s2protocol.versions.latest().decode_replay_header(): reads version info
+        - s2protocol.versions.build(base_build).decode_replay_tracker_events():
+          iterates tracker events looking for SPlayerStatsEvent
+    """
+    logger.info(f"Loading economy snapshots from: {replay_path}")
 
-            # Supply information
-            food_used = player_common.food_used
-            food_cap = player_common.food_cap
-            food_army = player_common.food_army
-            food_workers = player_common.food_workers
+    # Open the replay file as an MPQ archive
+    archive = mpyq.MPQArchive(replay_path)
 
-            # Worker and army counts
-            idle_worker_count = player_common.idle_worker_count
-            army_count = player_common.army_count
+    # Decode the replay header to determine the protocol version.
+    # The header is stored in the MPQ's user_data_header and contains the
+    # SC2 build number needed to select the correct protocol decoder.
+    header_content = archive.header['user_data_header']['content']
+    header = versions.latest().decode_replay_header(header_content)
+    base_build = header['m_version']['m_baseBuild']
 
-            # Race-specific counts from player_common.
-            # warp_gate_count is only non-zero for Protoss players;
-            # larva_count is only non-zero for Zerg players.
-            # Both default to 0 for races that don't use them.
-            warp_gate_count = player_common.warp_gate_count
-            larva_count = player_common.larva_count
+    logger.debug(f"Replay base build: {base_build}")
 
-            # --- score_details fields ---
-            # score_details is also perspective-dependent, same scoping as
-            # player_common above.
-            score_details = obs.observation.score.score_details
+    # Load the protocol matching this replay's build version
+    protocol = versions.build(base_build)
 
-            # Total resources collected over the course of the game
-            collected_minerals = score_details.collected_minerals
-            collected_vespene = score_details.collected_vespene
+    # Read and decode tracker events from the replay archive.
+    # Tracker events include unit births/deaths, upgrades, and player stats.
+    tracker_raw = archive.read_file('replay.tracker.events')
 
-            # Total resources spent over the course of the game
-            spent_minerals = score_details.spent_minerals
-            spent_vespene = score_details.spent_vespene
+    # Accumulate snapshots per player.
+    # Keys are player_id (1-indexed int), values are lists of snapshot dicts.
+    snapshots: Dict[int, List[Dict[str, float]]] = {}
 
-            # Collection rates (resources per minute)
-            collection_rate_minerals = score_details.collection_rate_minerals
-            collection_rate_vespene = score_details.collection_rate_vespene
+    event_count = 0
+    for event in protocol.decode_replay_tracker_events(tracker_raw):
+        if event['_event'] != 'NNet.Replay.Tracker.SPlayerStatsEvent':
+            continue
 
-            # Build result dictionary
-            # Keys match the names expected by wide_table_builder and schema_manager.
-            # New fields (spent_minerals, spent_vespene, warp_gate_count,
-            # larva_count) are additive — no existing keys are removed.
-            economy_data = {
-                # Current resources
-                'minerals': minerals,
-                'vespene': vespene,
+        event_count += 1
 
-                # Supply (named to match schema: supply_used, supply_cap)
-                'supply_used': food_used,
-                'supply_cap': food_cap,
-                'food_army': food_army,
-                'workers': food_workers,
+        # SPlayerStatsEvent uses 1-indexed m_playerId.
+        # m_playerId=1 is player 1, m_playerId=2 is player 2.
+        player_id = event['m_playerId']
+        game_loop = event['_gameloop']
 
-                # Worker and army counts
-                'idle_workers': idle_worker_count,
-                'army_count': army_count,
+        # Extract the stats sub-object that holds the score values.
+        # All m_scoreValue* fields live inside event['m_stats'].
+        stats = event['m_stats']
 
-                # Race-specific counts
-                'warp_gate_count': warp_gate_count,
-                'larva_count': larva_count,
+        # Build the snapshot dict by extracting each mapped field.
+        # Apply the divisor for fixed-point fields (supply_used, supply_cap).
+        snapshot = {'game_loop': game_loop}
+        for src_field, (out_key, divisor) in _FIELD_MAP.items():
+            raw_value = stats.get(src_field, 0)
+            snapshot[out_key] = raw_value / divisor if divisor != 1 else raw_value
 
-                # Collection totals
-                'collected_minerals': collected_minerals,
-                'collected_vespene': collected_vespene,
+        # Append to this player's snapshot list
+        if player_id not in snapshots:
+            snapshots[player_id] = []
+        snapshots[player_id].append(snapshot)
 
-                # Spending totals
-                'spent_minerals': spent_minerals,
-                'spent_vespene': spent_vespene,
+    # Sort each player's snapshots by game_loop (should already be in order,
+    # but sort defensively in case the tracker events are not strictly ordered).
+    for pid in snapshots:
+        snapshots[pid].sort(key=lambda s: s['game_loop'])
 
-                # Collection rates (per minute)
-                'collection_rate_minerals': collection_rate_minerals,
-                'collection_rate_vespene': collection_rate_vespene,
+    logger.info(
+        f"Loaded {event_count} SPlayerStatsEvent(s) for "
+        f"{len(snapshots)} player(s) from replay"
+    )
+
+    return snapshots
+
+
+def get_economy_at_loop(
+    snapshots: Dict[int, List[Dict[str, float]]],
+    player_id: int,
+    game_loop: int,
+) -> Dict[str, float]:
+    """
+    Return the most recent economy snapshot for a player at or before a given game loop.
+
+    Uses binary search (bisect_right) on the pre-sorted snapshot list to find
+    the latest snapshot whose game_loop <= the requested game_loop. This gives
+    O(log n) lookup per call, which is efficient even for long replays with
+    thousands of snapshots.
+
+    If the player has no snapshots at all, or the earliest snapshot is after
+    the requested game_loop, returns a zeroed dict (all economy values = 0).
+
+    Args:
+        snapshots: The dict returned by load_economy_snapshots().
+                   Maps player_id -> sorted list of snapshot dicts.
+        player_id: Which player to look up (1-indexed, typically 1 or 2).
+        game_loop: The game loop to query. Returns the most recent snapshot
+                   at or before this loop.
+
+    Returns:
+        Dict with the same keys as a snapshot from load_economy_snapshots():
+            {
+                'game_loop': int,       # (absent if returning zeroed default)
+                'minerals': int,
+                'vespene': int,
+                'supply_used': float,
+                'supply_cap': float,
+                'collection_rate_minerals': float,
+                'collection_rate_vespene': float,
             }
+        If no snapshot exists yet, returns a zeroed dict (no 'game_loop' key).
 
-            return economy_data
+    Depends on / calls:
+        _make_zeroed_snapshot() -- for the fallback when no data is available.
+        bisect_right (from bisect module) -- for binary search on sorted list.
+    """
+    player_snaps = snapshots.get(player_id, [])
 
-        except Exception as e:
-            logger.error(f"Error extracting economy data: {e}")
-            # Return default values on error
-            return self._get_default_economy_data()
+    if not player_snaps:
+        # No snapshots at all for this player — return zeros
+        return _make_zeroed_snapshot()
 
-    def _get_default_economy_data(self) -> Dict[str, float]:
-        """
-        Get default economy data (all zeros) for error cases.
+    # Binary search: find the rightmost snapshot with game_loop <= requested game_loop.
+    # We build a list of game_loops for bisect_right. bisect_right returns the
+    # insertion point AFTER any existing entries equal to game_loop, so index - 1
+    # gives us the last snapshot at or before the target.
+    game_loops = [s['game_loop'] for s in player_snaps]
+    idx = bisect_right(game_loops, game_loop)
 
-        Must stay in sync with the keys returned by extract(). Any field
-        added to extract()'s output dictionary must also be added here.
+    if idx == 0:
+        # All snapshots are after the requested game_loop — return zeros
+        return _make_zeroed_snapshot()
 
-        Returns:
-            Dictionary with all economy fields set to 0
-
-        Called by:
-            extract() — when an exception occurs during field extraction
-        """
-        return {
-            'minerals': 0,
-            'vespene': 0,
-            'supply_used': 0,
-            'supply_cap': 0,
-            'food_army': 0,
-            'workers': 0,
-            'idle_workers': 0,
-            'army_count': 0,
-            'warp_gate_count': 0,
-            'larva_count': 0,
-            'collected_minerals': 0,
-            'collected_vespene': 0,
-            'spent_minerals': 0,
-            'spent_vespene': 0,
-            'collection_rate_minerals': 0.0,
-            'collection_rate_vespene': 0.0,
-        }
-
-    def get_summary(self, economy_data: Dict[str, float]) -> str:
-        """
-        Get a human-readable summary of economy data.
-
-        Args:
-            economy_data: Output from extract()
-
-        Returns:
-            Formatted string summary
-        """
-        summary = f"Resources: {economy_data['minerals']}m, {economy_data['vespene']}g | "
-        summary += f"Supply: {economy_data['supply_used']}/{economy_data['supply_cap']} "
-        summary += f"(Army: {economy_data['food_army']}, Workers: {economy_data['workers']}) | "
-        summary += f"Idle Workers: {economy_data['idle_workers']} | "
-        summary += f"Collection: {economy_data['collection_rate_minerals']:.0f}m/min, "
-        summary += f"{economy_data['collection_rate_vespene']:.0f}g/min"
-        return summary
-
-    def reset(self):
-        """
-        Reset extractor state.
-
-        Note: This extractor has no state to reset, but this method
-        is provided for consistency with other extractors.
-        """
-        pass
+    # Return a copy to prevent callers from mutating the cached snapshot
+    return dict(player_snaps[idx - 1])

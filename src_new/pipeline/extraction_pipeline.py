@@ -18,6 +18,7 @@ from ..extraction.state_extractor import StateExtractor
 from ..extraction.schema_manager import SchemaManager
 from ..extraction.wide_table_builder import WideTableBuilder
 from ..extraction.parquet_writer import ParquetWriter
+from ..extractors.economy_extractor import load_economy_snapshots, get_economy_at_loop
 
 
 logger = logging.getLogger(__name__)
@@ -197,6 +198,8 @@ class ReplayExtractionPipeline:
             Dict with keys: output_files, metadata, stats
 
         Depends on / calls:
+            - load_economy_snapshots() -- pre-parses s2protocol tracker events
+            - get_economy_at_loop() -- forward-fills economy into each row
             - replay_loader.load_replay()
             - replay_loader.start_sc2_instance()
             - replay_loader.get_replay_info()
@@ -218,6 +221,22 @@ class ReplayExtractionPipeline:
         # Load replay before opening SC2 instance — this is the ONLY load,
         # no pre-scan pass is needed.
         self.replay_loader.load_replay(replay_path)
+
+        # Parse economy snapshots from the replay file via s2protocol BEFORE
+        # launching the SC2 engine. This avoids the observer-mode bug where
+        # the engine returns all-zero economy data (player_common/score_details
+        # are empty when observed_player_id=0). The snapshots are emitted by
+        # the replay tracker at ~160 game-loop intervals; we forward-fill them
+        # into each row inside the game loop below.
+        economy_snapshots = load_economy_snapshots(str(replay_path))
+
+        # Log how many snapshots were loaded per player so operators can
+        # verify that the replay contains economy data before the loop starts.
+        for pid in sorted(economy_snapshots.keys()):
+            snap_count = len(economy_snapshots[pid])
+            logger.info(
+                f"Economy snapshots loaded: player {pid} has {snap_count} snapshot(s)"
+            )
 
         rows = []
         all_messages = []
@@ -280,6 +299,16 @@ class ReplayExtractionPipeline:
                     state = self.state_extractor.extract_observation_observer_mode(
                         obs_p1, obs_p2, game_loop
                     )
+
+                    # Inject economy data from s2protocol snapshots.
+                    # state_extractor no longer populates p1_economy / p2_economy
+                    # because the SC2 engine returns zeroed economy in observer mode.
+                    # Instead we forward-fill from the pre-parsed tracker snapshots:
+                    # get_economy_at_loop() returns the most recent snapshot at or
+                    # before this game_loop via O(log n) binary search, giving each
+                    # row accurate economy values without needing per-player engine obs.
+                    state['p1_economy'] = get_economy_at_loop(economy_snapshots, 1, game_loop)
+                    state['p2_economy'] = get_economy_at_loop(economy_snapshots, 2, game_loop)
 
                     # --- Dynamic column creation ---
                     # Add unit columns the first time each completed unit is seen.
