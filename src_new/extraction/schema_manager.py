@@ -5,11 +5,13 @@ This component handles schema generation, column ordering, data types,
 and documentation for the wide-format parquet output.
 
 Schema is built in two stages:
-- Static columns (game metadata, economy, upgrades) are created upfront from
-  replay metadata via build_base_schema(), before extraction begins.
+- Static columns (game metadata, economy) are created upfront from replay
+  metadata via build_base_schema(), before extraction begins.
 - Entity columns (units and buildings) are added dynamically during the game
   loop via ensure_unit_columns() and ensure_building_columns(), as each new
   entity is encountered for the first time.
+- Upgrade columns are registered dynamically via add_upgrade_column() as each
+  new upgrade is discovered during extraction.
 
 Key behaviors:
 - Only creates columns for units that actually complete (not cancelled/interrupted)
@@ -17,6 +19,8 @@ Key behaviors:
 - Conditionally includes shields (Protoss only) and energy (casters only) per entity
 - No separate lifecycle columns (status, progress, started_loop, completed_loop,
   destroyed_loop) - lifecycle state is embedded in attribute columns
+- Upgrade columns use dtype 'object' to hold numeric values (0, 1) and lifecycle
+  strings ('started', 'cancelled')
 """
 
 from typing import List, Dict, Any, Set, Optional
@@ -26,6 +30,15 @@ import logging
 import re
 
 import numpy as np
+
+# ---------------------------------------------------------------------------
+# Auto-derive attribute lists from the canonical FIELD_CONFIG definitions in
+# the extractor modules. This eliminates hardcoded duplication: if a field is
+# added/removed/reordered in UNIT_FIELD_CONFIG or BUILDING_FIELD_CONFIG, the
+# schema attribute lists update automatically.
+# ---------------------------------------------------------------------------
+from src_new.extractors.unit_extractor import UNIT_FIELD_CONFIG
+from src_new.extractors.building_extractor import BUILDING_FIELD_CONFIG
 
 
 logger = logging.getLogger(__name__)
@@ -49,63 +62,93 @@ def sanitize_name(name: str) -> str:
     return sanitized or 'unknown'
 
 
-# Base attribute columns for units (always present).
-# Suffixes must match the column_suffix values in UNIT_FIELD_CONFIG
-# (src_new/extractors/unit_extractor.py).
-UNIT_BASE_ATTRIBUTES = [
-    ('pos_(X,Y,Z)', 'object', 'Position as (X, Y, Z) coordinate tuple'),
-    ('health', 'object', 'Health as current/max fraction string'),
-    ('facing', 'object', 'Facing direction'),
-    ('radius', 'object', 'Unit radius'),
-    ('build_progress', 'object', 'Build progress (0.0 to 1.0)'),
-    ('is_flying', 'object', 'Whether unit is flying'),
-    ('is_burrowed', 'object', 'Whether unit is burrowed'),
-    ('is_hallucination', 'object', 'Whether unit is a hallucination'),
-    ('weapon_cooldown', 'object', 'Weapon cooldown'),
-    ('attack_upgrade_level', 'object', 'Attack upgrade level'),
-    ('armor_upgrade_level', 'object', 'Armor upgrade level'),
-    ('cargo_space_taken', 'object', 'Cargo space taken'),
-    ('cargo_space_max', 'object', 'Maximum cargo space'),
-    ('order_count', 'object', 'Number of queued orders'),
-]
+def _derive_base_attributes(field_config: List[Dict[str, Any]]) -> List[tuple]:
+    """
+    Derive the "always present" attribute tuples from a FIELD_CONFIG list.
 
-# Conditional attribute columns for units (added only when applicable).
-# Suffixes must match the conditional column_suffix values in UNIT_FIELD_CONFIG.
-UNIT_SHIELD_ATTRIBUTES = [
-    ('shields', 'object', 'Shields as current/max fraction string (Protoss only)'),
-    ('shield_upgrade_level', 'object', 'Shield upgrade level (Protoss only)'),
-]
+    Filters the config to entries where always=True and produces
+    (column_suffix, 'object', description) tuples used by SchemaManager
+    when creating entity columns.
 
-UNIT_ENERGY_ATTRIBUTES = [
-    ('energy', 'object', 'Energy as current/max fraction string (casters only)'),
-]
+    Args:
+        field_config: A FIELD_CONFIG list (e.g. UNIT_FIELD_CONFIG or
+                      BUILDING_FIELD_CONFIG) -- list of dicts with keys
+                      'column_suffix', 'always', 'description', etc.
 
-# Base attribute columns for buildings (always present).
-# Suffixes must match the column_suffix values in BUILDING_FIELD_CONFIG
-# (src_new/extractors/building_extractor.py).
-BUILDING_BASE_ATTRIBUTES = [
-    ('pos_(X,Y,Z)', 'object', 'Position as (X, Y, Z) coordinate tuple'),
-    ('health', 'object', 'Health as current/max fraction string'),
-    ('facing', 'object', 'Facing direction'),
-    ('build_progress', 'object', 'Build progress (0.0 to 1.0)'),
-    ('is_flying', 'object', 'Whether building is flying (lifted Terran)'),
-    ('is_burrowed', 'object', 'Whether building is burrowed'),
-    ('attack_upgrade_level', 'object', 'Attack upgrade level'),
-    ('armor_upgrade_level', 'object', 'Armor upgrade level'),
-    ('radius', 'object', 'Building radius'),
-    ('order_count', 'object', 'Number of queued orders'),
-]
+    Returns:
+        List of (column_suffix, dtype_str, description) tuples for always-on fields.
+    """
+    return [
+        (entry['column_suffix'], 'object', entry.get('description', entry['column_suffix']))
+        for entry in field_config
+        if entry.get('always', False)
+    ]
 
-# Conditional attribute columns for buildings.
-# Suffixes must match the conditional column_suffix values in BUILDING_FIELD_CONFIG.
-BUILDING_SHIELD_ATTRIBUTES = [
-    ('shields', 'object', 'Shields as current/max fraction string (Protoss only)'),
-    ('shield_upgrade_level', 'object', 'Shield upgrade level (Protoss only)'),
-]
 
-BUILDING_ENERGY_ATTRIBUTES = [
-    ('energy', 'object', 'Energy as current/max fraction string (casters only)'),
-]
+def _derive_conditional_attributes(
+    field_config: List[Dict[str, Any]],
+    suffixes: Set[str],
+) -> List[tuple]:
+    """
+    Derive conditional attribute tuples from a FIELD_CONFIG list.
+
+    Filters the config to entries where always=False AND column_suffix is in
+    the given set of suffixes, producing (column_suffix, 'object', description)
+    tuples.
+
+    Args:
+        field_config: A FIELD_CONFIG list (e.g. UNIT_FIELD_CONFIG).
+        suffixes: Set of column_suffix strings to include (e.g. {'shields',
+                  'shield_upgrade_level'}).
+
+    Returns:
+        List of (column_suffix, dtype_str, description) tuples for matching
+        conditional fields.
+    """
+    return [
+        (entry['column_suffix'], 'object', entry.get('description', entry['column_suffix']))
+        for entry in field_config
+        if not entry.get('always', False) and entry['column_suffix'] in suffixes
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Unit attribute lists -- auto-derived from UNIT_FIELD_CONFIG
+# ---------------------------------------------------------------------------
+
+# Base attributes: always=True entries from UNIT_FIELD_CONFIG
+# (e.g. pos_(X,Y,Z), health, facing, radius, build_progress, ...)
+UNIT_BASE_ATTRIBUTES = _derive_base_attributes(UNIT_FIELD_CONFIG)
+
+# Shield attributes: conditional entries with suffix 'shields' or 'shield_upgrade_level'
+# These are added only for Protoss units that have shield_max > 0.
+UNIT_SHIELD_ATTRIBUTES = _derive_conditional_attributes(
+    UNIT_FIELD_CONFIG, {'shields', 'shield_upgrade_level'}
+)
+
+# Energy attributes: conditional entry with suffix 'energy'
+# Added only for caster units that have energy_max > 0.
+UNIT_ENERGY_ATTRIBUTES = _derive_conditional_attributes(
+    UNIT_FIELD_CONFIG, {'energy'}
+)
+
+# ---------------------------------------------------------------------------
+# Building attribute lists -- auto-derived from BUILDING_FIELD_CONFIG
+# ---------------------------------------------------------------------------
+
+# Base attributes: always=True entries from BUILDING_FIELD_CONFIG
+# (e.g. pos_(X,Y,Z), health, facing, build_progress, ...)
+BUILDING_BASE_ATTRIBUTES = _derive_base_attributes(BUILDING_FIELD_CONFIG)
+
+# Shield attributes: conditional entries with suffix 'shields' or 'shield_upgrade_level'
+BUILDING_SHIELD_ATTRIBUTES = _derive_conditional_attributes(
+    BUILDING_FIELD_CONFIG, {'shields', 'shield_upgrade_level'}
+)
+
+# Energy attributes: conditional entry with suffix 'energy'
+BUILDING_ENERGY_ATTRIBUTES = _derive_conditional_attributes(
+    BUILDING_FIELD_CONFIG, {'energy'}
+)
 
 
 class SchemaManager:
@@ -177,9 +220,11 @@ class SchemaManager:
 
         This replaces build_schema_from_replay(). Instead of launching a full SC2
         instance to pre-scan the replay, it builds only the columns whose structure is
-        known before extraction begins: game metadata, economy, and upgrade columns.
+        known before extraction begins: game metadata and economy columns.
         Unit and building columns are added dynamically during extraction via
         ensure_unit_columns() and ensure_building_columns().
+        Upgrade columns are registered dynamically via add_upgrade_column() as each
+        new upgrade is discovered during extraction.
 
         Call this AFTER get_replay_info() has returned player names, and BEFORE
         creating the WideTableBuilder or starting the game loop.
@@ -189,18 +234,20 @@ class SchemaManager:
                           e.g. {1: "Really", 2: "What!"}
 
         Calls:
-            - self.set_player_names(player_names) — sanitizes and stores names
-            - self._add_economy_columns() — adds p1_minerals, p1_vespene, etc.
-            - self._add_upgrade_columns() — adds p1_upgrade_attack_level, etc.
+            - self.set_player_names(player_names) -- sanitizes and stores names
+            - self._add_economy_columns() -- adds p1_minerals, p1_vespene, etc.
 
         Note:
             _add_base_columns() is already called in __init__() and does not need
             to be called here. The static base columns (game_loop, timestamp_seconds,
             Messages) are present from object creation.
+
+            Upgrade columns are no longer pre-registered here. They are added
+            dynamically via add_upgrade_column() when each upgrade is first
+            encountered during extraction.
         """
         self.set_player_names(player_names)
         self._add_economy_columns()
-        self._add_upgrade_columns()
         logger.info(
             f"Base schema built with {len(self.columns)} static columns"
         )
@@ -394,27 +441,56 @@ class SchemaManager:
                         'missing_value': 'NaN',
                     }
 
-    def _add_upgrade_columns(self) -> None:
-        """Add upgrade columns for both players."""
-        # Common upgrades across all races
-        common_upgrades = [
-            'attack_level',
-            'armor_level',
-            'shield_level',
-        ]
+    def add_upgrade_column(self, player: str, upgrade_name: str) -> None:
+        """
+        Dynamically register a single upgrade column for a player.
 
-        for player_num in [1, 2]:
-            for upgrade in common_upgrades:
-                col_name = f'p{player_num}_upgrade_{upgrade}'
+        Called during extraction whenever a new upgrade is first encountered.
+        This replaces the old _add_upgrade_columns() which hardcoded three
+        upgrade names. Upgrades are now discovered at runtime, so any upgrade
+        in the game (race-specific or otherwise) gets a column automatically.
 
-                if col_name not in self.columns:
-                    self.columns.append(col_name)
-                    self.dtypes[col_name] = 'int64'
-                    self.column_docs[col_name] = {
-                        'description': f'{upgrade.replace("_", " ").title()} for player {player_num}',
-                        'type': 'int64',
-                        'missing_value': '0',
-                    }
+        The column dtype is 'object' because upgrade values can be:
+        - 0           : upgrade not started
+        - 1           : upgrade completed
+        - 'started'   : upgrade research in progress
+        - 'cancelled' : upgrade research was cancelled
+
+        This method is idempotent -- calling it multiple times with the same
+        player + upgrade_name is safe and will not create duplicate columns.
+
+        Args:
+            player: Player prefix string, e.g. 'p1' or 'p2'.
+                    The player number is extracted from this string.
+            upgrade_name: Human-readable upgrade name, e.g. 'TerranInfantryWeaponsLevel1'.
+                          Will be lowercased for the column name.
+
+        Depends on:
+            - self.columns: master column list
+            - self.dtypes: column dtype registry
+            - self.column_docs: column documentation registry
+        """
+        # Extract player number from prefix (e.g. "p1" -> 1)
+        player_num = int(player[1:])
+
+        col_name = f'p{player_num}_upgrade_{upgrade_name.lower()}'
+
+        # Idempotent: only add if not already registered
+        if col_name not in self.columns:
+            self.columns.append(col_name)
+            self.dtypes[col_name] = 'object'
+            self.column_docs[col_name] = {
+                'description': (
+                    f'Upgrade status for {upgrade_name}: '
+                    f'0=not started, 1=completed, '
+                    f"'started'=in progress, 'cancelled'=cancelled"
+                ),
+                'type': 'object',
+                'missing_value': '0',
+            }
+            logger.debug(
+                f"Registered upgrade column: {col_name} for player {player_num}"
+            )
 
     def get_column_list(self) -> List[str]:
         """
@@ -504,25 +580,6 @@ class SchemaManager:
             return np.nan
         else:
             return np.nan  # Use NaN for object columns too (Parquet compatible)
-
-    def add_unit_count_columns(self, unit_type: str) -> None:
-        """
-        Add unit count columns for a specific unit type.
-
-        Args:
-            unit_type: Unit type name (e.g., 'Marine')
-        """
-        for player_num in [1, 2]:
-            col_name = f'p{player_num}_{unit_type.lower()}_count'
-
-            if col_name not in self.columns:
-                self.columns.append(col_name)
-                self.dtypes[col_name] = 'int64'
-                self.column_docs[col_name] = {
-                    'description': f'Count of {unit_type} units for player {player_num}',
-                    'type': 'int64',
-                    'missing_value': '0',
-                }
 
     def reset(self):
         """Reset the schema manager."""

@@ -13,6 +13,8 @@ from datetime import datetime
 import pandas as pd
 import pyarrow.parquet as pq
 
+from src_new.shared_constants import ECONOMY_COLUMN_SUFFIXES, ENTITY_COL_RE
+
 # Use TYPE_CHECKING to avoid circular imports
 if TYPE_CHECKING:
     from src_new.extraction.schema_manager import SchemaManager
@@ -93,7 +95,7 @@ def generate_data_dictionary(schema: Any, output_path: Path) -> None:
             base_cols.append(col)
         elif '_count' in col and not any(x in col for x in ['_x', '_y', '_z']):
             count_cols.append(col)
-        elif any(x in col for x in ['minerals', 'vespene', 'supply_', 'workers', 'idle_workers']):
+        elif any(col.endswith(f'_{s}') or col.endswith(s) for s in ECONOMY_COLUMN_SUFFIXES):
             economy_cols.append(col)
         elif 'upgrade' in col:
             upgrade_cols.append(col)
@@ -184,10 +186,13 @@ def generate_data_dictionary(schema: Any, output_path: Path) -> None:
         # Show examples from first few units
         sample_units = set()
         for col in unit_cols:
-            # Extract unit identifier (e.g., "p1_marine_001" from "p1_marine_001_x")
-            parts = col.split('_')
-            if len(parts) >= 4:
-                unit_id = '_'.join(parts[:3])  # p1_marine_001
+            # Use ENTITY_COL_RE to correctly parse unit identifiers, handling
+            # bot_name segments in the middle portion (e.g., "p1_really_marine_003_x"
+            # produces unit_id "p1_really_marine_003" instead of the incorrect
+            # "p1_really_marine" that naive split('_')[:3] would produce).
+            m = ENTITY_COL_RE.match(col)
+            if m:
+                unit_id = f"{m.group(1)}_{m.group(2)}_{m.group(3)}"  # e.g., "p1_really_marine_003"
                 sample_units.add(unit_id)
 
             if len(sample_units) >= 10:  # Show first 10 units as examples
@@ -235,11 +240,12 @@ def generate_data_dictionary(schema: Any, output_path: Path) -> None:
         lines.append("Lifecycle strings (building_started, completed, destroyed, cancelled) appear in ALL columns on transition frames.\n")
 
         # Show examples from first few buildings
+        # Use ENTITY_COL_RE for correct parsing, same rationale as unit ID parsing above
         sample_buildings = set()
         for col in building_cols:
-            parts = col.split('_')
-            if len(parts) >= 4:
-                building_id = '_'.join(parts[:3])
+            m = ENTITY_COL_RE.match(col)
+            if m:
+                building_id = f"{m.group(1)}_{m.group(2)}_{m.group(3)}"  # e.g., "p1_bot_commandcenter_001"
                 sample_buildings.add(building_id)
 
             if len(sample_buildings) >= 5:  # Show first 5 buildings as examples

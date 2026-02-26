@@ -25,94 +25,32 @@ import logging
 
 from pysc2.lib import units as pysc2_units
 
+from src_new.shared_constants import BUILDING_TYPES
+
 
 logger = logging.getLogger(__name__)
-
-
-# Building unit type IDs
-# This is a comprehensive list of all building types in SC2
-BUILDING_TYPES = {
-    # Terran buildings
-    18,   # CommandCenter
-    19,   # SupplyDepot
-    20,   # Refinery
-    21,   # Barracks
-    22,   # OrbitalCommand
-    27,   # EngineeringBay
-    28,   # MissileTurret
-    29,   # Bunker
-    36,   # SupplyDepotLowered
-    41,   # SensorTower
-    43,   # GhostAcademy
-    45,   # Factory
-    46,   # Starport
-    47,   # Armory
-    48,   # FusionCore
-    130,  # PlanetaryFortress
-    132,  # Reactor
-    133,  # TechLab
-    134,  # BarracksReactor
-    135,  # BarracksTechLab
-    138,  # FactoryReactor
-    139,  # FactoryTechLab
-    142,  # StarportReactor
-    143,  # StarportTechLab
-
-    # Protoss buildings
-    59,   # Nexus
-    60,   # Pylon
-    61,   # Assimilator
-    62,   # Gateway
-    63,   # Forge
-    64,   # FleetBeacon
-    66,   # PhotonCannon
-    67,   # CyberneticsCore
-    68,   # ShieldBattery
-    69,   # RoboticsFacility
-    70,   # Stargate
-    71,   # TwilightCouncil
-    72,   # RoboticsBay
-    74,   # TemplarArchive
-    75,   # DarkShrine
-    133,  # WarpGate
-
-    # Zerg buildings
-    86,   # Hatchery
-    88,   # Lair
-    89,   # Hive
-    90,   # SpawningPool
-    91,   # EvolutionChamber
-    92,   # HydraliskDen
-    93,   # Spire
-    94,   # UltraliskCavern
-    95,   # InfestationPit
-    96,   # NydusNetwork
-    97,   # BanelingNest
-    98,   # RoachWarren
-    99,   # SpineCrawler
-    100,  # SporeCrawler
-    101,  # GreaterSpire
-    104,  # Extractor
-    142,  # LurkerDenMP
-
-    # Creep tumors
-    87,   # CreepTumor
-    137,  # CreepTumorBurrowed
-    138,  # CreepTumorQueen
-}
 
 
 def is_building(unit_type_id: int) -> bool:
     """
     Check if a unit type ID represents a building.
 
+    Converts the integer unit type ID to a lowercase string name via pysc2
+    and checks membership in the shared BUILDING_TYPES frozenset (which
+    stores lowercase string names, not integer IDs).
+
     Args:
-        unit_type_id: SC2 unit type ID
+        unit_type_id: SC2 unit type ID (integer from the protobuf)
 
     Returns:
         True if the unit type is a building, False otherwise
+
+    Depends on / calls:
+        - get_building_type_name() to resolve the integer ID to a string name
+        - BUILDING_TYPES from shared_constants (frozenset of lowercase strings)
     """
-    return unit_type_id in BUILDING_TYPES
+    name = get_building_type_name(unit_type_id).lower()
+    return name in BUILDING_TYPES
 
 
 def get_building_type_name(unit_type_id: int) -> str:

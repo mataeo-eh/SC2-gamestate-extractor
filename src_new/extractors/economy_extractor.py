@@ -34,6 +34,10 @@ from s2protocol import versions
 logger = logging.getLogger(__name__)
 
 
+# s2protocol tracker event type for player economy stats
+_PLAYER_STATS_EVENT = 'NNet.Replay.Tracker.SPlayerStatsEvent'
+
+
 # The set of fields we extract from each SPlayerStatsEvent, mapped to their
 # output key names and any transformation needed. SPlayerStatsEvent stores
 # supply values as fixed-point integers (multiply by 4096), so we divide
@@ -42,6 +46,13 @@ logger = logging.getLogger(__name__)
 # Source field name -> (output key, divisor)
 # A divisor of 1 means "use raw integer value as-is".
 # A divisor of 4096 means "fixed-point conversion: value / 4096".
+#
+# Intentional curated subset of SPlayerStatsEvent fields.
+# These 6 fields are the core economy metrics for ground truth data.
+# Must be kept in sync with schema_manager._add_economy_columns()
+# and shared_constants.ECONOMY_COLUMN_SUFFIXES.
+# Additional SPlayerStatsEvent fields (army value, tech value,
+# structures value, etc.) are intentionally excluded.
 _FIELD_MAP = {
     'm_scoreValueMineralsCurrent':        ('minerals',                   1),
     'm_scoreValueVespeneCurrent':         ('vespene',                    1),
@@ -136,7 +147,7 @@ def load_economy_snapshots(replay_path: str) -> Dict[int, List[Dict[str, float]]
 
     event_count = 0
     for event in protocol.decode_replay_tracker_events(tracker_raw):
-        if event['_event'] != 'NNet.Replay.Tracker.SPlayerStatsEvent':
+        if event['_event'] != _PLAYER_STATS_EVENT:
             continue
 
         event_count += 1

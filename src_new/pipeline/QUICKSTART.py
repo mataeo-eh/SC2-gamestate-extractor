@@ -212,6 +212,8 @@ def example_5_read_output():
         print(f"Game State DataFrame:")
         print(f"  Rows: {len(df)}")
         print(f"  Columns: {len(df.columns)}")
+        # Column names below must match schema_manager output format
+        # (see src_new/extraction/schema_manager.py for current schema)
         print(f"  Duration: {df['timestamp_seconds'].max():.1f}s")
         print(f"  P1 final minerals: {df.iloc[-1]['p1_minerals']}")
         print(f"  P2 final minerals: {df.iloc[-1]['p2_minerals']}")
@@ -227,6 +229,7 @@ def example_5_read_output():
         print(f"  Total messages: {len(messages_df)}")
         if len(messages_df) > 0:
             print("\n  First few messages:")
+            # Message dict keys (game_loop, player_id, message) match pipeline output format
             for _, msg in messages_df.head(3).iterrows():
                 print(f"    [{msg['game_loop']}] P{msg['player_id']}: {msg['message']}")
     else:
@@ -235,6 +238,8 @@ def example_5_read_output():
     print()
 
     # Read schema
+    # Schema JSON structure: {'columns': [...], 'documentation': {col: {'description': ...}}}
+    # These keys match SchemaManager.get_schema_documentation() output
     if schema_path.exists():
         with open(schema_path, 'r') as f:
             schema = json.load(f)

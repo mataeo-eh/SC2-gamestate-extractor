@@ -6,17 +6,26 @@ Reads raw game state parquet files and produces new parquet files with
 unit count, building count, and derived army composition columns added.
 
 Each input parquet file has per-entity columns following the pattern:
-    p{n}_p{n}_{entity_type}_{id}_{attribute}
+    {player}_{botname}_{entitytype}_{sequence_id}_{attribute}
+    e.g., "p1_really_marine_003_health"
+
+The regex ENTITY_COL_RE (imported from shared_constants) captures:
+    Group 1: player  (e.g., "p1")
+    Group 2: middle  (combined botname + entity_type, e.g., "really_marine")
+    Group 3: entity_id (e.g., "003")
+    Group 4: attribute (e.g., "health")
+
+Entity type is extracted from middle via: middle.rsplit('_', 1)[-1]
+Column prefixes are reconstructed as: f"{player}_{middle}_{entity_id}"
 
 This script:
-1. Parses all entity columns to discover (player, entity_type, entity_id) tuples
+1. Parses all entity columns to discover (player, entity_type, entity_id, middle) tuples
 2. For each (player, entity_type), counts alive instances per row
 3. Computes derived features: total_unit_types, production_building_count, has_air_units
 4. Writes the augmented dataframe to the output directory
 """
 
 import logging
-import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -31,63 +40,18 @@ import pandas as pd
 from tqdm import tqdm
 
 from src_new.pipeline.logging_config import setup_logging
+from src_new.shared_constants import (
+    ENTITY_COL_RE,
+    BUILDING_TYPES,
+    AIR_UNIT_TYPES,
+    PRODUCTION_BUILDING_TYPES,
+    ALIVE_STATES,
+)
 
 # ---------------------------------------------------------------------------
 # Module-level logger
 # ---------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-# Entity column pattern: p{player}_p{player}_{type}_{id}_{attribute}
-ENTITY_COL_RE = re.compile(r"^(p[12])_p[12]_(.+?)_(\d+)_(.+)$")
-
-# Known building types (structures) - reused from raw_data_summary.py
-BUILDING_TYPES = {
-    # Terran
-    "commandcenter", "commandcenterflying", "orbitalcommand", "planetaryfortress",
-    "supplydepot", "supplydepotlowered", "barracks", "barrackstechlab",
-    "barracksreactor", "factory", "factorytechlab", "factoryreactor",
-    "starport", "starporttechlab", "starportreactor", "engineeringbay",
-    "armory", "ghostacademy", "fusioncore", "bunker", "missileturret",
-    "sensortower", "refinery",
-    # Protoss
-    "nexus", "pylon", "gateway", "forge", "cyberneticscore",
-    "assimilator", "twilightcouncil", "templararchive", "darkshrine",
-    "roboticsfacility", "roboticsbay", "stargate", "fleetbeacon",
-    "photoncannon", "shieldbattery",
-    # Zerg
-    "hatchery", "lair", "hive", "spawningpool", "evolutionchamber",
-    "extractor", "roachwarren", "banelingnest", "hydraliskden",
-    "lurkerden", "infestationpit", "spire", "greaterspire",
-    "ultraliskcavern", "nydusnetwork", "nyduscanal",
-    "spinecrawler", "sporecrawler",
-}
-
-# Known air unit types (SC2 domain knowledge)
-AIR_UNIT_TYPES = {
-    # Terran
-    "banshee", "battlecruiser", "liberator", "medivac", "raven", "viking", "vikingfighter",
-    # Protoss
-    "carrier", "oracle", "phoenix", "tempest", "voidray", "warpprism", "mothership",
-    # Zerg
-    "broodlord", "corruptor", "mutalisk", "overlord", "overseer", "viper",
-}
-
-# Known production buildings (buildings that produce units)
-PRODUCTION_BUILDING_TYPES = {
-    # Terran
-    "barracks", "factory", "starport", "commandcenter", "orbitalcommand", "planetaryfortress",
-    # Protoss
-    "gateway", "roboticsfacility", "stargate", "nexus",
-    # Zerg
-    "hatchery", "lair", "hive",
-}
-
-# Alive states for units with a _state column
-ALIVE_STATES = {"built", "existing"}
 
 
 # ---------------------------------------------------------------------------
@@ -97,15 +61,35 @@ ALIVE_STATES = {"built", "existing"}
 def parse_entity_columns(columns):
     """Parse all entity columns and group by (player, entity_type, entity_id).
 
+    Uses ENTITY_COL_RE from shared_constants which captures:
+        Group 1: player   (e.g., "p1")
+        Group 2: middle   (combined botname + entity_type, e.g., "really_marine")
+        Group 3: entity_id (e.g., "003")
+        Group 4: attribute (e.g., "health")
+
+    The entity_type is extracted from middle via: middle.rsplit('_', 1)[-1]
+    The full middle string is stored so downstream code can reconstruct
+    column prefixes as f"{player}_{middle}_{entity_id}".
+
+    Args:
+        columns: Iterable of column name strings from the dataframe.
+
     Returns:
-        dict: {(player, entity_type, entity_id): set of attribute names}
+        dict: {(player, entity_type, entity_id): {"attrs": set, "middle": str}}
+              where "attrs" is the set of attribute names for that entity instance
+              and "middle" is the combined botname+entity_type prefix portion.
     """
-    entities = defaultdict(set)
+    entities = defaultdict(lambda: {"attrs": set(), "middle": None})
     for col in columns:
         m = ENTITY_COL_RE.match(col)
         if m:
-            player, entity_type, entity_id, attribute = m.groups()
-            entities[(player, entity_type, entity_id)].add(attribute)
+            player, middle, entity_id, attribute = m.groups()
+            # Extract the entity type from the last underscore-delimited segment
+            # of middle (SC2 type names never contain underscores after sanitization)
+            entity_type = middle.rsplit("_", 1)[-1]
+            key = (player, entity_type, entity_id)
+            entities[key]["attrs"].add(attribute)
+            entities[key]["middle"] = middle
     return dict(entities)
 
 
@@ -113,14 +97,19 @@ def group_entities_by_player_type(entities):
     """Group entity instances by (player, entity_type).
 
     Args:
-        entities: dict from parse_entity_columns
+        entities: dict from parse_entity_columns, where each value is
+                  {"attrs": set, "middle": str}.
 
     Returns:
-        dict: {(player, entity_type): list of (entity_id, set of attributes)}
+        dict: {(player, entity_type): list of (entity_id, set of attributes, middle)}
+              The middle string is included so downstream code can reconstruct
+              column prefixes as f"{player}_{middle}_{entity_id}".
     """
     groups = defaultdict(list)
-    for (player, entity_type, entity_id), attrs in entities.items():
-        groups[(player, entity_type)].append((entity_id, attrs))
+    for (player, entity_type, entity_id), entity_data in entities.items():
+        groups[(player, entity_type)].append(
+            (entity_id, entity_data["attrs"], entity_data["middle"])
+        )
     return dict(groups)
 
 
@@ -131,19 +120,23 @@ def compute_alive_count_for_group(df, player, entity_type, instances):
     Falls back to _completed_loop/_destroyed_loop lifecycle columns.
 
     Args:
-        df: The full dataframe
-        player: 'p1' or 'p2'
-        entity_type: e.g. 'marine', 'barracks'
-        instances: list of (entity_id, set of attributes)
+        df: The full dataframe.
+        player: 'p1' or 'p2'.
+        entity_type: e.g. 'marine', 'barracks' (extracted from middle).
+        instances: list of (entity_id, set of attributes, middle) tuples.
+                   middle is the combined botname+entity_type portion of the column
+                   name, used to reconstruct column prefixes.
 
     Returns:
-        pd.Series: Integer series with alive count per row
+        pd.Series: Integer series with alive count per row.
     """
     n_rows = len(df)
     total_alive = np.zeros(n_rows, dtype=np.int64)
 
-    for entity_id, attrs in instances:
-        col_prefix = f"{player}_{player}_{entity_type}_{entity_id}"
+    for entity_id, attrs, middle in instances:
+        # Reconstruct column prefix: {player}_{middle}_{entity_id}
+        # e.g., "p1_really_marine_003"
+        col_prefix = f"{player}_{middle}_{entity_id}"
 
         if "state" in attrs:
             # Use state column: alive = state in ('built', 'existing')

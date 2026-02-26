@@ -15,7 +15,6 @@ for intermediate rows.
 """
 
 import logging
-import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -32,56 +31,16 @@ from tqdm import tqdm
 from sklearn.cluster import DBSCAN
 
 from src_new.pipeline.logging_config import setup_logging
+from src_new.shared_constants import (
+    ENTITY_COL_RE, BUILDING_TYPES, WORKER_TYPES,
+    BASE_TYPES, NON_ARMY_TYPES, ALIVE_STATES,
+)
 from src_new.utils.needs_processing import needs_processing
 
 # ---------------------------------------------------------------------------
 # Module-level logger
 # ---------------------------------------------------------------------------
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-# Entity column pattern: p{player}_p{player}_{type}_{id}_{attribute}
-ENTITY_COL_RE = re.compile(r"^(p[12])_p[12]_(.+?)_(\d+)_(.+)$")
-
-# Known building types (structures that don't move) - matches create_unit_counts.py
-BUILDING_TYPES = {
-    # Terran
-    "commandcenter", "commandcenterflying", "orbitalcommand", "planetaryfortress",
-    "supplydepot", "supplydepotlowered", "barracks", "barrackstechlab",
-    "barracksreactor", "factory", "factorytechlab", "factoryreactor",
-    "starport", "starporttechlab", "starportreactor", "engineeringbay",
-    "armory", "ghostacademy", "fusioncore", "bunker", "missileturret",
-    "sensortower", "refinery",
-    # Protoss
-    "nexus", "pylon", "gateway", "forge", "cyberneticscore",
-    "assimilator", "twilightcouncil", "templararchive", "darkshrine",
-    "roboticsfacility", "roboticsbay", "stargate", "fleetbeacon",
-    "photoncannon", "shieldbattery",
-    # Zerg
-    "hatchery", "lair", "hive", "spawningpool", "evolutionchamber",
-    "extractor", "roachwarren", "banelingnest", "hydraliskden",
-    "lurkerden", "infestationpit", "spire", "greaterspire",
-    "ultraliskcavern", "nydusnetwork", "nyduscanal",
-    "spinecrawler", "sporecrawler",
-}
-
-# Worker types (economic units, excluded from army clustering)
-WORKER_TYPES = {"scv", "probe", "drone", "mule"}
-
-# Base structure types (used to find starting positions)
-BASE_TYPES = {
-    "commandcenter", "nexus", "hatchery", "lair", "hive",
-    "commandcenterflying", "orbitalcommand", "planetaryfortress",
-}
-
-# Non-army types = buildings + workers (excluded from army clustering)
-NON_ARMY_TYPES = BUILDING_TYPES | WORKER_TYPES
-
-# Alive states for units with a _state column
-ALIVE_STATES = {"built", "existing"}
 
 # DBSCAN parameters for army clustering
 DBSCAN_EPS = 10.0          # Base spatial eps in map units
@@ -96,15 +55,34 @@ MERGE_DISTANCE_FACTOR = 1.5  # Merge clusters whose centroids are within this * 
 def parse_entity_columns(columns):
     """Parse all entity columns and group by (player, entity_type, entity_id).
 
+    Uses the shared ENTITY_COL_RE which captures:
+        Group 1 -- player prefix  : "p1" or "p2"
+        Group 2 -- middle portion : combined {botname}_{entitytype}
+        Group 3 -- zero-padded sequence id (e.g. "003")
+        Group 4 -- attribute name
+
+    The entity_type is extracted as the last underscore-delimited segment
+    of `middle` (SC2 type names never contain underscores after sanitisation).
+
+    The `middle` field is stored so downstream functions can reconstruct
+    column prefixes as ``f"{player}_{middle}_{entity_id}"``.
+
+    Args:
+        columns: iterable of column name strings from the dataframe
+
     Returns:
-        dict: {(player, entity_type, entity_id): set of attribute names}
+        dict: {(player, entity_type, entity_id): {"attrs": set, "middle": str}}
     """
-    entities = defaultdict(set)
+    entities = defaultdict(lambda: {"attrs": set(), "middle": ""})
     for col in columns:
         m = ENTITY_COL_RE.match(col)
         if m:
-            player, entity_type, entity_id, attribute = m.groups()
-            entities[(player, entity_type, entity_id)].add(attribute)
+            player, middle, entity_id, attribute = m.groups()
+            # Entity type is the last segment of the middle portion
+            entity_type = middle.rsplit("_", 1)[-1]
+            key = (player, entity_type, entity_id)
+            entities[key]["attrs"].add(attribute)
+            entities[key]["middle"] = middle
     return dict(entities)
 
 
@@ -112,14 +90,17 @@ def group_entities_by_player_type(entities):
     """Group entity instances by (player, entity_type).
 
     Args:
-        entities: dict from parse_entity_columns
+        entities: dict from parse_entity_columns, where values are
+                  dicts with keys 'attrs' (set) and 'middle' (str)
 
     Returns:
-        dict: {(player, entity_type): list of (entity_id, set of attributes)}
+        dict: {(player, entity_type): list of (entity_id, attrs_set, middle_str)}
     """
     groups = defaultdict(list)
-    for (player, entity_type, entity_id), attrs in entities.items():
-        groups[(player, entity_type)].append((entity_id, attrs))
+    for (player, entity_type, entity_id), data in entities.items():
+        groups[(player, entity_type)].append(
+            (entity_id, data["attrs"], data["middle"])
+        )
     return dict(groups)
 
 
@@ -132,7 +113,8 @@ def find_base_positions(df, entities):
 
     Args:
         df: The full dataframe
-        entities: dict from parse_entity_columns
+        entities: dict from parse_entity_columns, values are dicts
+                  with 'attrs' (set) and 'middle' (str) keys
 
     Returns:
         dict: {player: {"x": float, "y": float}} for each player found
@@ -140,10 +122,13 @@ def find_base_positions(df, entities):
     bases = {}
 
     # Pass 1: base buildings with id=001
-    for (player, etype, eid), attrs in entities.items():
+    for (player, etype, eid), data in entities.items():
+        attrs = data["attrs"]
+        middle = data["middle"]
+        # Assumes first base always has ID "001" (consistent with schema_manager's zero-padded counter)
         if etype in BASE_TYPES and eid == "001" and "x" in attrs and "y" in attrs:
-            x_col = f"{player}_{player}_{etype}_{eid}_x"
-            y_col = f"{player}_{player}_{etype}_{eid}_y"
+            x_col = f"{player}_{middle}_{eid}_x"
+            y_col = f"{player}_{middle}_{eid}_y"
             if x_col in df.columns and y_col in df.columns:
                 x_vals = df[x_col].dropna()
                 y_vals = df[y_col].dropna()
@@ -157,11 +142,13 @@ def find_base_positions(df, entities):
     for player in ["p1", "p2"]:
         if player in bases:
             continue
-        for (p, etype, eid), attrs in entities.items():
+        for (p, etype, eid), data in entities.items():
+            attrs = data["attrs"]
+            middle = data["middle"]
             if (p == player and etype in WORKER_TYPES and eid == "001"
                     and "x" in attrs and "y" in attrs):
-                x_col = f"{player}_{player}_{etype}_{eid}_x"
-                y_col = f"{player}_{player}_{etype}_{eid}_y"
+                x_col = f"{player}_{middle}_{eid}_x"
+                y_col = f"{player}_{middle}_{eid}_y"
                 if x_col in df.columns and y_col in df.columns:
                     x_vals = df[x_col].dropna()
                     y_vals = df[y_col].dropna()
@@ -175,7 +162,7 @@ def find_base_positions(df, entities):
     return bases
 
 
-def is_entity_alive(df, row_idx, player, entity_type, entity_id, attrs):
+def is_entity_alive(df, row_idx, player, entity_type, entity_id, attrs, middle):
     """Check if a specific entity is alive at a given row index.
 
     Uses _state column if available (alive = 'built' or 'existing').
@@ -185,14 +172,16 @@ def is_entity_alive(df, row_idx, player, entity_type, entity_id, attrs):
         df: The full dataframe
         row_idx: Integer index into the dataframe
         player: 'p1' or 'p2'
-        entity_type: e.g. 'marine'
+        entity_type: e.g. 'marine' (used only for type-level logic)
         entity_id: e.g. '001'
         attrs: set of attribute names for this entity
+        middle: the combined bot_name + entity_type string from regex group 2,
+                used to construct column prefixes as f"{player}_{middle}_{entity_id}"
 
     Returns:
         bool: True if the entity is alive at this row
     """
-    col_prefix = f"{player}_{player}_{entity_type}_{entity_id}"
+    col_prefix = f"{player}_{middle}_{entity_id}"
 
     if "state" in attrs:
         state_col = f"{col_prefix}_state"
@@ -217,16 +206,18 @@ def is_entity_alive(df, row_idx, player, entity_type, entity_id, attrs):
     return False
 
 
-def get_entity_position(df, row_idx, player, entity_type, entity_id, attrs):
+def get_entity_position(df, row_idx, player, entity_type, entity_id, attrs, middle):
     """Get the (x, y) position of an entity at a given row index.
 
     Args:
         df: The full dataframe
         row_idx: Integer index into the dataframe
         player: 'p1' or 'p2'
-        entity_type: e.g. 'marine'
+        entity_type: e.g. 'marine' (used only for type-level logic)
         entity_id: e.g. '001'
         attrs: set of attribute names for this entity
+        middle: the combined bot_name + entity_type string from regex group 2,
+                used to construct column prefixes as f"{player}_{middle}_{entity_id}"
 
     Returns:
         tuple (x, y) or None if position is not available
@@ -234,7 +225,7 @@ def get_entity_position(df, row_idx, player, entity_type, entity_id, attrs):
     if "x" not in attrs or "y" not in attrs:
         return None
 
-    col_prefix = f"{player}_{player}_{entity_type}_{entity_id}"
+    col_prefix = f"{player}_{middle}_{entity_id}"
     x_col = f"{col_prefix}_x"
     y_col = f"{col_prefix}_y"
 
@@ -259,7 +250,8 @@ def collect_army_positions(df, row_idx, player, entities):
         df: The full dataframe
         row_idx: Integer index into the dataframe
         player: 'p1' or 'p2'
-        entities: dict from parse_entity_columns
+        entities: dict from parse_entity_columns, values are dicts
+                  with 'attrs' (set) and 'middle' (str) keys
 
     Returns:
         positions: np.ndarray of shape (N, 2) with x, y coordinates
@@ -268,16 +260,19 @@ def collect_army_positions(df, row_idx, player, entities):
     positions = []
     types = []
 
-    for (p, etype, eid), attrs in entities.items():
+    for (p, etype, eid), data in entities.items():
         if p != player:
             continue
         if etype in NON_ARMY_TYPES:
             continue
 
-        if not is_entity_alive(df, row_idx, player, etype, eid, attrs):
+        attrs = data["attrs"]
+        middle = data["middle"]
+
+        if not is_entity_alive(df, row_idx, player, etype, eid, attrs, middle):
             continue
 
-        pos = get_entity_position(df, row_idx, player, etype, eid, attrs)
+        pos = get_entity_position(df, row_idx, player, etype, eid, attrs, middle)
         if pos is not None:
             positions.append(pos)
             types.append(etype)
@@ -497,14 +492,15 @@ def count_alive_army_types(df, row_idx, player, entities):
         df: The full dataframe
         row_idx: Integer index
         player: 'p1' or 'p2'
-        entities: dict from parse_entity_columns
+        entities: dict from parse_entity_columns, values are dicts
+                  with 'attrs' (set) and 'middle' (str) keys
 
     Returns:
         int: number of distinct army unit types with at least one alive instance
     """
     alive_types = set()
 
-    for (p, etype, eid), attrs in entities.items():
+    for (p, etype, eid), data in entities.items():
         if p != player:
             continue
         if etype in NON_ARMY_TYPES:
@@ -512,7 +508,10 @@ def count_alive_army_types(df, row_idx, player, entities):
         if etype in alive_types:
             continue  # Already found this type alive, skip further checks
 
-        if is_entity_alive(df, row_idx, player, etype, eid, attrs):
+        attrs = data["attrs"]
+        middle = data["middle"]
+
+        if is_entity_alive(df, row_idx, player, etype, eid, attrs, middle):
             alive_types.add(etype)
 
     return len(alive_types)
@@ -525,7 +524,8 @@ def precompute_alive_masks(df, entities):
 
     Args:
         df: The full dataframe
-        entities: dict from parse_entity_columns
+        entities: dict from parse_entity_columns, values are dicts
+                  with 'attrs' (set) and 'middle' (str) keys
 
     Returns:
         dict: {(player, entity_type, entity_id): np.ndarray of bool}
@@ -533,8 +533,10 @@ def precompute_alive_masks(df, entities):
     n_rows = len(df)
     alive_masks = {}
 
-    for (player, etype, eid), attrs in entities.items():
-        col_prefix = f"{player}_{player}_{etype}_{eid}"
+    for (player, etype, eid), data in entities.items():
+        attrs = data["attrs"]
+        middle = data["middle"]
+        col_prefix = f"{player}_{middle}_{eid}"
         mask = np.zeros(n_rows, dtype=np.bool_)
 
         if "state" in attrs:
@@ -571,7 +573,8 @@ def precompute_position_arrays(df, entities):
 
     Args:
         df: The full dataframe
-        entities: dict from parse_entity_columns
+        entities: dict from parse_entity_columns, values are dicts
+                  with 'attrs' (set) and 'middle' (str) keys
 
     Returns:
         dict: {(player, entity_type, entity_id): {"x": np.ndarray, "y": np.ndarray}}
@@ -579,11 +582,13 @@ def precompute_position_arrays(df, entities):
     """
     pos_arrays = {}
 
-    for (player, etype, eid), attrs in entities.items():
+    for (player, etype, eid), data in entities.items():
+        attrs = data["attrs"]
+        middle = data["middle"]
         if "x" not in attrs or "y" not in attrs:
             continue
 
-        col_prefix = f"{player}_{player}_{etype}_{eid}"
+        col_prefix = f"{player}_{middle}_{eid}"
         x_col = f"{col_prefix}_x"
         y_col = f"{col_prefix}_y"
 

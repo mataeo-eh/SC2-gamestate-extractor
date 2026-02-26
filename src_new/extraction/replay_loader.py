@@ -86,7 +86,7 @@ class ReplayLoader:
             logger.error(f"Replay file not found: {replay_path}")
             raise FileNotFoundError(f"Replay file not found: {replay_path}")
 
-        if not replay_path.suffix == '.SC2Replay':
+        if not replay_path.suffix.lower() == '.sc2replay':
             logger.error(f"Invalid replay file extension: {replay_path}")
             raise ValueError(f"Invalid replay file extension. Expected .SC2Replay, got {replay_path.suffix}")
 

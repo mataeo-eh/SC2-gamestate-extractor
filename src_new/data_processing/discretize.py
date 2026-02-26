@@ -10,9 +10,7 @@ This is intended for training simpler models for a proof of concept of strategy 
 
 
 import logging
-import re
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 # Ensure the project root is on sys.path so src_new can be imported
@@ -20,7 +18,6 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
@@ -45,23 +42,26 @@ def drop_columns(input_dir, output_dir):
             continue
 
         df = pd.read_parquet(file)
-        
-        # Define the columns to keep (the engineered features added in engineer_army_features.py)
+
+        # Programmatically discover feature columns by known suffixes.
+        # Army features come from engineer_army_features.py, economy from schema_manager.
+        # This avoids hardcoding player-prefixed column names, so the list stays
+        # correct even if upstream feature names change or new players are added.
+        army_suffixes = (
+            "_main_army_direction",
+            "_army_complexity_ratio",
+            "_main_army_size",
+            "_army_count",
+        )
+        economy_suffixes = (
+            "_supply_cap",
+            "_supply_used",
+        )
         columns_to_keep = [
-            "p1_main_army_direction",
-            "p1_army_complexity_ratio",
-            "p1_main_army_size",
-            "p1_army_count",
-            "p1_supply_cap",
-            "p1_supply_used",
-            "p2_main_army_direction",
-            "p2_main_army_size",
-            "p2_army_count",
-            "p2_army_complexity_ratio",
-            "p2_supply_cap",
-            "p2_supply_used",
+            col for col in df.columns
+            if any(col.endswith(s) for s in army_suffixes + economy_suffixes)
         ]
-        
+
         try:
             # Drop all other columns
             df_discretized = df[columns_to_keep]

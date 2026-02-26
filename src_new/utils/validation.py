@@ -13,6 +13,8 @@ import pandas as pd
 import numpy as np
 import pyarrow.parquet as pq
 
+from src_new.shared_constants import ECONOMY_COLUMN_SUFFIXES, ENTITY_COL_RE
+
 
 logger = logging.getLogger(__name__)
 
@@ -428,8 +430,10 @@ class OutputValidator:
                 type_issues.append("timestamp_seconds should be float64")
 
         # Check economy columns (should be int64 or Int64)
+        # Use suffix-based detection from shared_constants to avoid false positives
+        # from substring matching (e.g., a unit named "minerals_marine" would incorrectly match)
         economy_cols = [col for col in df.columns if any(
-            x in col for x in ['minerals', 'vespene', 'supply_', 'workers', 'idle_workers']
+            col.endswith(f'_{s}') or col.endswith(s) for s in ECONOMY_COLUMN_SUFFIXES
         )]
 
         for col in economy_cols:
@@ -463,10 +467,13 @@ class OutputValidator:
         issues = []
 
         for player in [1, 2]:
-            minerals_col = f'p{player}_minerals'
-            vespene_col = f'p{player}_vespene'
-            supply_used_col = f'p{player}_supply_used'
-            supply_cap_col = f'p{player}_supply_cap'
+            # Construct economy column names for this player from shared_constants
+            # so names stay in sync with schema_manager output format
+            eco_cols = {suffix: f'p{player}_{suffix}' for suffix in ECONOMY_COLUMN_SUFFIXES}
+            minerals_col = eco_cols['minerals']
+            vespene_col = eco_cols['vespene']
+            supply_used_col = eco_cols['supply_used']
+            supply_cap_col = eco_cols['supply_cap']
 
             # Check minerals
             if minerals_col in df.columns:
@@ -551,10 +558,20 @@ class OutputValidator:
                 if count_col not in df.columns:
                     continue
 
-                # Find all individual unit columns for this type
-                unit_cols = [col for col in df.columns
-                            if col.startswith(f'p{player}_{unit_type}_')
-                            and col.endswith('_x')]  # Use _x as proxy for unit existence
+                # Find all individual unit columns for this type using ENTITY_COL_RE.
+                # This correctly handles bot_name prefixes in column names
+                # (e.g., "p1_really_marine_003_x" where "really" is the bot_name).
+                # We extract entity_type from the middle group by taking the last
+                # underscore-delimited segment, since SC2 type names never contain
+                # underscores after sanitization.
+                unit_cols = []
+                for col in df.columns:
+                    m = ENTITY_COL_RE.match(col)
+                    if m and m.group(1) == f'p{player}':
+                        # Extract entity type from middle group (bot_name + entity_type)
+                        entity_type = m.group(2).rsplit('_', 1)[-1]
+                        if entity_type == unit_type and m.group(4) == 'x':
+                            unit_cols.append(col)
 
                 if unit_cols:
                     # Count non-NaN values in unit columns
@@ -588,6 +605,7 @@ class OutputValidator:
         issues = []
 
         # Find all state columns
+        # Suffix-based state detection is a reasonable heuristic for validation
         state_cols = [col for col in df.columns if col.endswith('_state') or col.endswith('_status')]
 
         valid_unit_states = {'created', 'alive', 'cancelled', 'dead', 'built', 'existing', 'killed'}
@@ -652,8 +670,12 @@ class OutputValidator:
             stats['game_duration_seconds'] = float(df['timestamp_seconds'].max() if 'timestamp_seconds' in df.columns else 0)
 
         # Column categories
+        # Unit column suffix matching is a reasonable heuristic for display-only stats
         unit_cols = [col for col in df.columns if any(x in col for x in ['_x', '_y', '_health', '_state'])]
-        economy_cols = [col for col in df.columns if any(x in col for x in ['minerals', 'vespene', 'supply'])]
+        # Use ECONOMY_COLUMN_SUFFIXES for economy detection to stay in sync with schema
+        economy_cols = [col for col in df.columns if any(
+            col.endswith(f'_{s}') or col.endswith(s) for s in ECONOMY_COLUMN_SUFFIXES
+        )]
         building_cols = [col for col in df.columns if any(x in col for x in ['_status', '_progress'])]
 
         stats['unit_columns'] = len(unit_cols)

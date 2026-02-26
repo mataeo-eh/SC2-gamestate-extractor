@@ -19,6 +19,10 @@ from .schema_manager import SchemaManager
 
 logger = logging.getLogger(__name__)
 
+# Column name for chat messages (stable base column).
+# Extracted as a module-level constant so all references stay in sync.
+MESSAGES_COLUMN = 'Messages'
+
 
 class ParquetWriter:
     """
@@ -241,7 +245,7 @@ class ParquetWriter:
                     # Special handling for object columns that may contain lists
                     # (like Messages column which can be NaN, string, or list of strings)
                     # Convert lists to JSON strings for parquet compatibility
-                    if col == 'Messages':
+                    if col == MESSAGES_COLUMN:
                         df[col] = df[col].apply(self._serialize_messages_for_parquet)
                     else:
                         # Unit/building attribute columns contain mixed types:
@@ -338,8 +342,8 @@ class ParquetWriter:
         logger.info(f"  Loaded {len(df)} rows, {len(df.columns)} columns")
 
         # Deserialize Messages column if present
-        if 'Messages' in df.columns:
-            df['Messages'] = df['Messages'].apply(self._deserialize_messages_from_parquet)
+        if MESSAGES_COLUMN in df.columns:
+            df[MESSAGES_COLUMN] = df[MESSAGES_COLUMN].apply(self._deserialize_messages_from_parquet)
             logger.info("  Deserialized Messages column from parquet")
 
         return df

@@ -21,17 +21,14 @@ import numpy as np
 from .schema_manager import SchemaManager, UNIT_BASE_ATTRIBUTES, UNIT_SHIELD_ATTRIBUTES, \
     UNIT_ENERGY_ATTRIBUTES, BUILDING_BASE_ATTRIBUTES, BUILDING_SHIELD_ATTRIBUTES, \
     BUILDING_ENERGY_ATTRIBUTES
+from src_new.shared_constants import (
+    UNIT_LIFECYCLE_OVERRIDE_STATES,
+    BUILDING_LIFECYCLE_OVERRIDE_STATES,
+    ECONOMY_COLUMN_SUFFIXES,
+)
 
 
 logger = logging.getLogger(__name__)
-
-
-# Lifecycle states where ALL unit attribute columns should be filled with the state string
-UNIT_LIFECYCLE_OVERRIDE_STATES = {'unit_started', 'building', 'completed', 'destroyed'}
-
-# Lifecycle states where ALL building attribute columns should be filled with the state string
-# (not 'under_construction' - buildings get real data during construction)
-BUILDING_LIFECYCLE_OVERRIDE_STATES = {'building_started', 'completed', 'destroyed', 'cancelled'}
 
 
 class WideTableBuilder:
@@ -304,13 +301,9 @@ class WideTableBuilder:
             player: Player prefix
             economy_data: Economy data dictionary
         """
-        # Must match the economy columns registered in schema_manager._add_economy_columns()
-        # and the keys returned by economy_extractor.get_economy_at_loop().
-        economy_columns = [
-            'minerals', 'vespene',
-            'supply_used', 'supply_cap',
-            'collection_rate_minerals', 'collection_rate_vespene',
-        ]
+        # Economy column suffixes are sourced from shared_constants to stay in sync
+        # with schema_manager._add_economy_columns() and economy_extractor output.
+        economy_columns = list(ECONOMY_COLUMN_SUFFIXES)
 
         for attr in economy_columns:
             col_name = f'{player}_{attr}'
@@ -324,23 +317,46 @@ class WideTableBuilder:
         upgrades_data: Dict[str, Any]
     ) -> None:
         """
-        Add upgrades data to row.
+        Add individual upgrade columns to row based on UpgradeExtractor output.
+
+        Each upgrade gets its own column: p{n}_upgrade_{name}.
+        Columns are registered dynamically on the schema (SchemaManager) when
+        first encountered via schema.add_upgrade_column().
+
+        Values:
+            0           -- upgrade not started or not completed at this gameloop
+            1           -- upgrade completed
+            'started'   -- upgrade research in progress (lifecycle tracking)
+            'cancelled' -- upgrade research was cancelled (lifecycle tracking)
+
+        Called by: build_row() for each player's upgrades_data dict.
+        Depends on: self.schema.add_upgrade_column() for dynamic column registration.
 
         Args:
             row: Row dictionary to modify
-            player: Player prefix
-            upgrades_data: Upgrades data dictionary
+            player: Player prefix string (e.g., "p1")
+            upgrades_data: Dict from UpgradeExtractor.extract() keyed by upgrade
+                           name, where each value is a dict with at least a
+                           'status' key (e.g., {'status': 'completed'})
         """
-        # Map upgrade names to column names
-        upgrade_mapping = {
-            'attack_level': f'{player}_upgrade_attack_level',
-            'armor_level': f'{player}_upgrade_armor_level',
-            'shield_level': f'{player}_upgrade_shield_level',
-        }
+        for upgrade_name, upgrade_info in upgrades_data.items():
+            col_name = f'{player}_upgrade_{upgrade_name.lower()}'
 
-        for upgrade_name, col_name in upgrade_mapping.items():
-            if col_name in row:
-                row[col_name] = upgrades_data.get(upgrade_name, 0)
+            # Register the column with the schema if this is the first time
+            # we've seen this upgrade. This ensures the column appears in the
+            # parquet output even if it wasn't pre-registered at init time.
+            if col_name not in row:
+                self.schema.add_upgrade_column(player, upgrade_name)
+                row[col_name] = 0
+
+            # Determine column value from upgrade status
+            status = upgrade_info.get('status', 'completed')
+            if status == 'completed':
+                row[col_name] = 1
+            elif status == 'started':
+                row[col_name] = 'started'
+            elif status == 'cancelled':
+                row[col_name] = 'cancelled'
 
     def add_unit_counts_to_row(
         self,
@@ -461,21 +477,35 @@ class WideTableBuilder:
         """
         Get summary statistics for a row.
 
+        Builds economy entries dynamically from ECONOMY_COLUMN_SUFFIXES so
+        that new economy metrics added to shared_constants are automatically
+        reflected here without hardcoding column names.
+
+        Called by: external callers for debugging / logging row snapshots.
+        Depends on: ECONOMY_COLUMN_SUFFIXES from shared_constants.
+
         Args:
             row: Row dictionary
 
         Returns:
-            Summary dictionary with statistics
+            Summary dictionary with base stats and all economy columns for
+            both players.
         """
         summary = {
             'game_loop': row.get('game_loop'),
             'timestamp_seconds': row.get('timestamp_seconds'),
             'total_columns': len(row),
-            'missing_values': sum(1 for v in row.values() if v is None or (isinstance(v, float) and np.isnan(v))),
-            'p1_minerals': row.get('p1_minerals'),
-            'p2_minerals': row.get('p2_minerals'),
-            'p1_supply_used': row.get('p1_supply_used'),
-            'p2_supply_used': row.get('p2_supply_used'),
+            'missing_values': sum(
+                1 for v in row.values()
+                if v is None or (isinstance(v, float) and np.isnan(v))
+            ),
         }
+
+        # Add all economy columns for both players, constructed from the
+        # shared constant so the summary stays in sync automatically.
+        for suffix in ECONOMY_COLUMN_SUFFIXES:
+            for p in ['p1', 'p2']:
+                col = f'{p}_{suffix}'
+                summary[col] = row.get(col)
 
         return summary
