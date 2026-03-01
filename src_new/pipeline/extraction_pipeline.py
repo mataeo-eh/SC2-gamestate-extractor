@@ -19,6 +19,7 @@ from ..extraction.schema_manager import SchemaManager
 from ..extraction.wide_table_builder import WideTableBuilder
 from ..extraction.parquet_writer import ParquetWriter
 from ..extractors.economy_extractor import load_economy_snapshots, get_economy_at_loop
+from ..extraction.metadata_writer import build_metadata, save_metadata
 
 
 logger = logging.getLogger(__name__)
@@ -95,7 +96,7 @@ class ReplayExtractionPipeline:
                 'output_files': {
                     'game_state': Path,
                     'messages': Path,
-                    'schema': Path,
+                    'metadata': Path,
                 },
                 'metadata': dict,
                 'stats': {
@@ -214,7 +215,7 @@ class ReplayExtractionPipeline:
             - wide_table_builder.build_row()
             - parquet_writer.write_game_state()
             - parquet_writer.write_messages()
-            - schema_manager.save_schema()
+            - build_metadata() + save_metadata() from metadata_writer
         """
         logger.info("Starting observer mode processing")
 
@@ -379,7 +380,7 @@ class ReplayExtractionPipeline:
         output_files = {
             'game_state': parquet_dir / f"{replay_name}_game_state.parquet",
             'messages': parquet_dir / f"{replay_name}_messages.parquet",
-            'schema': json_dir / f"{replay_name}_schema.json",
+            'metadata': json_dir / f"{replay_name}_metadata.json",
         }
 
         logger.info(f"Writing game state to {output_files['game_state']}")
@@ -393,8 +394,18 @@ class ReplayExtractionPipeline:
         else:
             logger.info("No messages to write")
 
-        logger.info(f"Writing schema to {output_files['schema']}")
-        self.schema_manager.save_schema(output_files['schema'])
+        # Build and write comprehensive metadata JSON that makes the
+        # parquet file self-documenting for dataset consumers.
+        parquet_filename = f"{replay_name}_game_state.parquet"
+        metadata_dict = build_metadata(
+            metadata=metadata,
+            columns=self.schema_manager.columns,
+            total_rows=len(rows),
+            parquet_filename=parquet_filename,
+            all_messages=all_messages,
+        )
+        logger.info(f"Writing metadata to {output_files['metadata']}")
+        save_metadata(metadata_dict, output_files['metadata'])
 
         return {
             'output_files': output_files,

@@ -384,7 +384,7 @@ def generate_replay_report(
 
     game_state_path = replay_dir / f"{replay_stem}_game_state.parquet"
     messages_path = replay_dir / f"{replay_stem}_messages.parquet"
-    schema_path = replay_dir / f"{replay_stem}_schema.json"
+    metadata_json_path = replay_dir / f"{replay_stem}_metadata.json"
 
     # Output files
     lines.append("## Output Files\n")
@@ -420,10 +420,10 @@ def generate_replay_report(
     else:
         lines.append(f"- ⚠️ **Messages**: Not found (may be no messages)")
 
-    if schema_path.exists():
-        lines.append(f"- ✅ **Schema**: `{schema_path.name}`")
+    if metadata_json_path.exists():
+        lines.append(f"- ✅ **Metadata**: `{metadata_json_path.name}`")
     else:
-        lines.append(f"- ❌ **Schema**: Not found")
+        lines.append(f"- ❌ **Metadata**: Not found")
 
     lines.append("")
 

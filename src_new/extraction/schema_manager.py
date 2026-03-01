@@ -510,27 +510,6 @@ class SchemaManager:
         """
         return self.column_docs.copy()
 
-    def save_schema(self, output_path: Path) -> None:
-        """
-        Save schema to JSON file.
-
-        Args:
-            output_path: Path to save schema JSON
-        """
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        schema_data = {
-            'columns': self.columns,
-            'dtypes': self.dtypes,
-            'documentation': self.column_docs,
-        }
-
-        with open(output_path, 'w') as f:
-            json.dump(schema_data, f, indent=2)
-
-        logger.info(f"Schema saved to {output_path}")
-
     def load_schema(self, schema_path: Path) -> None:
         """
         Load schema from JSON file.
