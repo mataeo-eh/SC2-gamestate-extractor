@@ -186,6 +186,8 @@ def process_single_file(filepath):
 
     # Track which entity types exist per player for derived features
     entity_type_count_cols = {}  # (player, entity_type) -> column_name
+    # Track all column names created by this function (for safe int-casting later)
+    created_cols = []
 
     # Step 1: Compute per-entity-type count columns
     for (player, entity_type), instances in groups.items():
@@ -193,6 +195,7 @@ def process_single_file(filepath):
         count_series = compute_alive_count_for_group(df, player, entity_type, instances)
         df[col_name] = count_series
         entity_type_count_cols[(player, entity_type)] = col_name
+        created_cols.append(col_name)
 
     # Step 2: Compute derived features for each player
     for player in ["p1", "p2"]:
@@ -207,6 +210,7 @@ def process_single_file(filepath):
             df[f"{player}_total_unit_types"] = (unit_counts_matrix > 0).sum(axis=1).astype(np.int64)
         else:
             df[f"{player}_total_unit_types"] = 0
+        created_cols.append(f"{player}_total_unit_types")
 
         # --- production_building_count: sum of alive production buildings ---
         prod_count_cols = [
@@ -219,6 +223,7 @@ def process_single_file(filepath):
             )
         else:
             df[f"{player}_production_building_count"] = 0
+        created_cols.append(f"{player}_production_building_count")
 
         # --- has_air_units: 1 if any air unit type has count > 0 ---
         air_count_cols = [
@@ -230,11 +235,13 @@ def process_single_file(filepath):
             df[f"{player}_has_air_units"] = (air_matrix.sum(axis=1) > 0).astype(np.int64)
         else:
             df[f"{player}_has_air_units"] = 0
+        created_cols.append(f"{player}_has_air_units")
 
     # Step 3: Ensure all new columns are integer with no NaN
-    new_cols = [c for c in df.columns if c.endswith("_count") or c.endswith("_total_unit_types")
-                or c.endswith("_production_building_count") or c.endswith("_has_air_units")]
-    for col in new_cols:
+    # Use the explicit list of columns we created, NOT a suffix filter.
+    # A suffix filter like endswith("_count") would also match original entity
+    # columns (e.g., *_order_count) which contain lifecycle strings.
+    for col in created_cols:
         df[col] = df[col].fillna(0).astype(np.int64)
 
     return df
