@@ -36,8 +36,7 @@ class ReplayExtractionPipeline:
     4. Extract state at each loop using per-player perspective switching
     5. Add entity columns (units, buildings) on-demand as they are first seen
     6. Build wide-format rows
-    7. Collect messages
-    8. Write parquet files
+    7. Write parquet and metadata files
 
     Observer mode is the only supported processing path. It uses a single
     replay pass with per-player perspective switching to get correct
@@ -95,14 +94,12 @@ class ReplayExtractionPipeline:
                 'replay_path': Path,
                 'output_files': {
                     'game_state': Path,
-                    'messages': Path,
                     'metadata': Path,
                 },
                 'metadata': dict,
                 'stats': {
                     'total_loops': int,
                     'rows_written': int,
-                    'messages_written': int,
                     'processing_time_seconds': float,
                 },
                 'error': str or None,
@@ -158,7 +155,6 @@ class ReplayExtractionPipeline:
             logger.info(f"Successfully processed replay in {processing_time:.2f}s")
             logger.info(f"  Total loops: {result['stats']['total_loops']}")
             logger.info(f"  Rows written: {result['stats']['rows_written']}")
-            logger.info(f"  Messages: {result['stats']['messages_written']}")
 
         except Exception as e:
             processing_time = time.time() - start_time
@@ -214,7 +210,6 @@ class ReplayExtractionPipeline:
             - schema_manager.ensure_building_columns()
             - wide_table_builder.build_row()
             - parquet_writer.write_game_state()
-            - parquet_writer.write_messages()
             - build_metadata() + save_metadata() from metadata_writer
         """
         logger.info("Starting observer mode processing")
@@ -379,7 +374,6 @@ class ReplayExtractionPipeline:
 
         output_files = {
             'game_state': parquet_dir / f"{replay_name}_game_state.parquet",
-            'messages': parquet_dir / f"{replay_name}_messages.parquet",
             'metadata': json_dir / f"{replay_name}_metadata.json",
         }
 
@@ -387,12 +381,6 @@ class ReplayExtractionPipeline:
         self.parquet_writer.write_game_state(
             rows, output_files['game_state'], self.schema_manager
         )
-
-        if all_messages:
-            logger.info(f"Writing messages to {output_files['messages']}")
-            self.parquet_writer.write_messages(all_messages, output_files['messages'])
-        else:
-            logger.info("No messages to write")
 
         # Build and write comprehensive metadata JSON that makes the
         # parquet file self-documenting for dataset consumers.
@@ -413,7 +401,6 @@ class ReplayExtractionPipeline:
             'stats': {
                 'total_loops': max_loops,
                 'rows_written': len(rows),
-                'messages_written': len(all_messages),
             },
         }
 

@@ -104,57 +104,6 @@ class ParquetWriter:
             logger.error(f"Failed to write parquet: {e}")
             raise IOError(f"Failed to write parquet: {e}")
 
-    def write_messages(
-        self,
-        messages: List[Dict[str, Any]],
-        output_path: Path
-    ) -> None:
-        """
-        Write messages to separate parquet.
-
-        Schema: game_loop, player_id, message
-
-        Args:
-            messages: List of message dictionaries with keys:
-                - game_loop: int
-                - player_id: int
-                - message: str
-            output_path: Path to output parquet file
-
-        # TODO: Test case - Write and read back messages
-        """
-        if not messages:
-            logger.info("No messages to write")
-            return
-
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
-        logger.info(f"Writing {len(messages)} messages to {output_path}")
-
-        # Convert to DataFrame
-        df = pd.DataFrame(messages)
-
-        # Ensure correct schema
-        df = df[['game_loop', 'player_id', 'message']]
-        df['game_loop'] = df['game_loop'].astype('int64')
-        df['player_id'] = df['player_id'].astype('int64')
-        df['message'] = df['message'].astype('string')
-
-        # Write to parquet
-        try:
-            df.to_parquet(
-                output_path,
-                engine='pyarrow',
-                compression=self.compression,
-                index=False,
-            )
-            logger.info(f"Successfully wrote {len(messages)} messages to {output_path}")
-
-        except Exception as e:
-            logger.error(f"Failed to write messages parquet: {e}")
-            raise IOError(f"Failed to write messages parquet: {e}")
-
     def append_rows(
         self,
         rows: List[Dict[str, Any]],
