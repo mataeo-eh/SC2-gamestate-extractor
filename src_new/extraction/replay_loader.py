@@ -13,6 +13,9 @@ from pysc2 import run_configs
 from pysc2.lib import replay
 from s2clientprotocol import sc2api_pb2 as sc_pb
 from s2clientprotocol import common_pb2
+import sc2reader
+import mpyq
+from s2protocol import versions as s2versions
 
 from ..pipeline.replay_loader import ReplayLoader as PipelineReplayLoader
 
@@ -56,6 +59,7 @@ class ReplayLoader:
         self.replay_version = None
         self.replay_info = None
         self.controller = None
+        self.replay_path = None
 
         logger.info("ReplayLoader initialized with perfect information settings")
 
@@ -91,6 +95,10 @@ class ReplayLoader:
             raise ValueError(f"Invalid replay file extension. Expected .SC2Replay, got {replay_path.suffix}")
 
         try:
+            # Store the replay path for later use by get_replay_info() when
+            # extracting map dimensions via sc2reader/s2protocol.
+            self.replay_path = replay_path
+
             # Load replay data and version
             self.replay_data, self.replay_version = self._pipeline_loader.load_replay(str(replay_path))
             logger.info(f"Successfully loaded replay: {replay_path.name}")
@@ -141,6 +149,8 @@ class ReplayLoader:
                 'game_duration_loops': int,
                 'game_duration_seconds': float,
                 'num_players': int,
+                'map_width': int or absent,   # pixels, set by _extract_map_dimensions()
+                'map_height': int or absent,  # pixels, set by _extract_map_dimensions()
                 'players': [
                     {
                         'player_id': int,
@@ -191,7 +201,104 @@ class ReplayLoader:
         logger.info(f"  Duration: {metadata['game_duration_seconds']:.1f} seconds")
         logger.info(f"  Players: {metadata['num_players']}")
 
+        # --- Map dimension extraction ---
+        # The SC2 engine (pysc2) does not expose map pixel dimensions in its
+        # replay info protobuf.  We extract them from the replay file itself
+        # using sc2reader or, as a fallback, s2protocol + mpyq.
+        #
+        # Strategy:
+        #   1. Try sc2reader.load_replay(path, load_map=True) which parses the
+        #      embedded map archive and exposes width/height via map.map_info.
+        #   2. If sc2reader fails (e.g. bot replays with missing cache_handles),
+        #      fall back to s2protocol's decode_replay_initdata which stores
+        #      m_mapSizeX / m_mapSizeY in the lobby state.
+        #
+        # Both approaches read the .SC2Replay file directly — no SC2 game
+        # engine required.
+        self._extract_map_dimensions(metadata)
+
         return metadata
+
+    def _extract_map_dimensions(self, metadata: Dict[str, Any]) -> None:
+        """
+        Populate map_width and map_height in the metadata dict.
+
+        Attempts two strategies in order:
+
+        1. **sc2reader** -- ``sc2reader.load_replay(path, load_map=True)``
+           parses the embedded .s2ma map archive and provides pixel dimensions
+           via ``replay.map.map_info.width / .height``.
+        2. **s2protocol fallback** -- if sc2reader fails (common with
+           bot-generated replays whose ``replay.details`` lacks cache_handles),
+           we open the MPQ archive with *mpyq*, decode ``replay.initData``
+           with *s2protocol*, and read ``m_mapSizeX`` / ``m_mapSizeY`` from
+           the game description.
+
+        Both strategies are file-only (no SC2 engine needed) and wrapped in
+        try/except so a failure here never crashes the pipeline.
+
+        Args:
+            metadata: The metadata dict built by get_replay_info().  Modified
+                      in-place to add ``map_width`` and ``map_height`` keys
+                      if extraction succeeds.
+
+        Returns:
+            None -- mutates *metadata* in-place.
+
+        Depends on / calls:
+            - sc2reader.load_replay (strategy 1)
+            - mpyq.MPQArchive, s2protocol.versions (strategy 2)
+            - Called by get_replay_info()
+        """
+        replay_path_str = str(self.replay_path)
+
+        # ----- Strategy 1: sc2reader -----
+        try:
+            sc2_replay = sc2reader.load_replay(replay_path_str, load_map=True)
+            # sc2reader stores map pixel dimensions inside the MapInfo object
+            # accessible at replay.map.map_info after load_map=True.
+            map_info = sc2_replay.map.map_info
+            metadata['map_width'] = map_info.width
+            metadata['map_height'] = map_info.height
+            logger.info(
+                f"  Map dimensions (sc2reader): "
+                f"{metadata['map_width']}x{metadata['map_height']}"
+            )
+            return  # success — no need for fallback
+        except Exception as e:
+            logger.debug(
+                f"sc2reader could not extract map dimensions: {e}. "
+                f"Falling back to s2protocol."
+            )
+
+        # ----- Strategy 2: s2protocol + mpyq fallback -----
+        # Bot-generated replays often lack the cache_handles that sc2reader
+        # requires in replay.details.  s2protocol can still decode the
+        # replay.initData section, which contains m_mapSizeX / m_mapSizeY
+        # in the lobby game description.
+        try:
+            archive = mpyq.MPQArchive(replay_path_str)
+
+            # Decode the replay header to get the protocol build number.
+            header_content = archive.header['user_data_header']['content']
+            header = s2versions.latest().decode_replay_header(header_content)
+            base_build = header['m_version']['m_baseBuild']
+
+            protocol = s2versions.build(base_build)
+
+            # Decode initData, which holds the lobby state including map size.
+            init_data_raw = archive.read_file('replay.initData')
+            init_data = protocol.decode_replay_initdata(init_data_raw)
+
+            game_desc = init_data['m_syncLobbyState']['m_gameDescription']
+            metadata['map_width'] = game_desc['m_mapSizeX']
+            metadata['map_height'] = game_desc['m_mapSizeY']
+            logger.info(
+                f"  Map dimensions (s2protocol): "
+                f"{metadata['map_width']}x{metadata['map_height']}"
+            )
+        except Exception as e:
+            logger.warning(f"Could not extract map dimensions via sc2reader or s2protocol: {e}")
 
     def start_replay(
         self,
