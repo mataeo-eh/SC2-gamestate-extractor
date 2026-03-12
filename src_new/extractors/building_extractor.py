@@ -339,7 +339,14 @@ class BuildingExtractor:
 
             buildings_data[readable_id] = building_data
 
-        # Detect destroyed/cancelled buildings (in previous frame but not current)
+        # Detect destroyed/cancelled buildings (in previous frame but not current).
+        # After recording the destroyed/cancelled event, clean up tag mappings
+        # so that if the SC2 engine recycles this tag for a new building later,
+        # the extractor treats it as a brand-new building and assigns a fresh
+        # readable_id. Without this cleanup, recycled tags would silently
+        # merge multiple physical buildings into one entity's columns,
+        # corrupting per-entity time series data.
+        # (See diagnostics/023-lifecycle-timeline-rca.md)
         disappeared_tags = self.previous_tags - current_tags
         for disappeared_tag in disappeared_tags:
             if disappeared_tag in self.tag_to_readable_id:
@@ -362,6 +369,11 @@ class BuildingExtractor:
                     'tag': disappeared_tag,
                     '_lifecycle': lifecycle,
                 }
+                # Clean up dead tag mappings so recycled tags get fresh IDs
+                del self.tag_to_readable_id[disappeared_tag]
+                self.completed_tags.discard(disappeared_tag)
+                self.previous_build_progress.pop(disappeared_tag, None)
+                self.was_under_construction.pop(disappeared_tag, None)
 
         # Also check explicit dead units from event for buildings we track
         for dead_tag in dead_unit_tags:
@@ -373,6 +385,11 @@ class BuildingExtractor:
                         'tag': dead_tag,
                         '_lifecycle': 'destroyed',
                     }
+                # Clean up dead tag mappings so recycled tags get fresh IDs
+                del self.tag_to_readable_id[dead_tag]
+                self.completed_tags.discard(dead_tag)
+                self.previous_build_progress.pop(dead_tag, None)
+                self.was_under_construction.pop(dead_tag, None)
 
         # Update previous tags for next iteration
         self.previous_tags = current_tags

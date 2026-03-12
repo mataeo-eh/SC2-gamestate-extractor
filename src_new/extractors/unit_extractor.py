@@ -379,7 +379,13 @@ class UnitExtractor:
 
             units_data[readable_id] = unit_data
 
-        # Detect dead units (in previous frame but not current)
+        # Detect dead units (in previous frame but not current).
+        # After recording the destroyed event, clean up tag mappings so that
+        # if the SC2 engine recycles this tag for a new unit later, the
+        # extractor treats it as a brand-new unit and assigns a fresh
+        # readable_id. Without this cleanup, recycled tags would silently
+        # merge multiple physical units into one entity's columns, corrupting
+        # per-entity time series data. (See diagnostics/023-lifecycle-timeline-rca.md)
         disappeared_tags = self.previous_tags - current_tags
         for dead_tag in disappeared_tags:
             if dead_tag in self.tag_to_readable_id:
@@ -389,6 +395,10 @@ class UnitExtractor:
                     'tag': dead_tag,
                     '_lifecycle': 'destroyed',
                 }
+                # Clean up dead tag mappings so recycled tags get fresh IDs
+                del self.tag_to_readable_id[dead_tag]
+                self.completed_tags.discard(dead_tag)
+                self.previous_build_progress.pop(dead_tag, None)
 
         # Also check explicit dead units from event
         for dead_tag in raw_data.event.dead_units:
@@ -400,6 +410,10 @@ class UnitExtractor:
                         'tag': dead_tag,
                         '_lifecycle': 'destroyed',
                     }
+                # Clean up dead tag mappings so recycled tags get fresh IDs
+                del self.tag_to_readable_id[dead_tag]
+                self.completed_tags.discard(dead_tag)
+                self.previous_build_progress.pop(dead_tag, None)
 
         # Update previous tags for next iteration
         self.previous_tags = current_tags
