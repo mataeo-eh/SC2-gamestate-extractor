@@ -56,7 +56,7 @@ Usage:
     python quickstart.py --output data/quickstart --engineer-features --discretize -dataset
 
     # Testing
-    python quickstart.py --process-replay-directory replays --output data/quickstart --workers 1 -dataset --num-replays 1 -e -d
+    python quickstart.py --process-replay-directory replays --output data/quickstart --workers 2 -dataset --num-replays 5 -e -d
 """
 from absl import flags
 import sys
@@ -66,6 +66,9 @@ from pathlib import Path
 import argparse
 import multiprocessing
 
+import papermill as pm
+from papermill.exceptions import PapermillExecutionError
+
 from src_new.pipeline.logging_config import setup_logging
 
 from dotenv import load_dotenv
@@ -74,10 +77,71 @@ import os
 # Load variables from .env file
 load_dotenv()
 
+# Resolve paths relative to this script's location (robust to different cwd).
+# SCRIPT_DIR always points to the directory containing quickstart.py regardless
+# of where the user invokes the script from.
+SCRIPT_DIR = Path(__file__).resolve().parent
+EDA_NOTEBOOKS = [
+    SCRIPT_DIR / "EDA" / "raw_data_summary.ipynb",
+    SCRIPT_DIR / "EDA" / "data_verification.ipynb",
+]
+
 # Fix Unicode encoding for Windows console
 if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
+
+def run_eda_notebooks(output_dir: Path):
+    """Execute EDA notebooks via papermill with the resolved parquet directory path.
+
+    Each notebook has a papermill ``parameters`` cell that declares a
+    ``parquet_dir`` string variable.  This function resolves the parquet
+    directory to an absolute path (so notebooks work regardless of cwd) and
+    injects it into every notebook listed in ``EDA_NOTEBOOKS``.
+
+    Notebooks are executed **in-place** -- the executed output overwrites the
+    original ``.ipynb`` file.  On failure the partially-executed notebook is
+    still written (with error markers), so the user can inspect what went wrong.
+
+    Parameters:
+        output_dir (Path): The ``--output`` argument from argparse
+                           (e.g. ``Path('data/quickstart')``).  The parquet
+                           sub-directory is appended automatically.
+
+    Returns:
+        None
+
+    Depends on / calls:
+        - ``papermill.execute_notebook()``
+        - ``EDA_NOTEBOOKS`` (module-level list of notebook paths)
+        - ``PapermillExecutionError`` for cell-level failures
+    """
+    # Resolve to an absolute path so notebooks work regardless of the
+    # working directory papermill happens to use.
+    parquet_dir_abs = str((output_dir / "parquet").resolve())
+
+    for nb_path in EDA_NOTEBOOKS:
+        nb_path_str = str(nb_path)
+        print(f"  Running EDA notebook: {nb_path.name} ...")
+        try:
+            pm.execute_notebook(
+                input_path=nb_path_str,
+                output_path=nb_path_str,       # in-place execution
+                parameters={"parquet_dir": parquet_dir_abs},
+                cwd=str(nb_path.parent),        # match Jupyter's default cwd
+                kernel_name="python3",
+            )
+            print(f"  OK: {nb_path.name}")
+        except PapermillExecutionError as exc:
+            # Cell-level error -- notebook is already saved with error markers.
+            print(f"  FAILED: {nb_path.name}")
+            print(f"    Error in cell [{exc.exec_count}]: {exc.ename}: {exc.evalue}")
+            print("    The notebook has been saved with error details.")
+        except Exception as exc:
+            # Kernel death, missing dependencies, or other unexpected error.
+            print(f"  FAILED: {nb_path.name}")
+            print(f"    Unexpected error: {exc}")
 
 
 def check_prerequisites():
@@ -357,6 +421,11 @@ def main():
         action="store_true",
         help="Whether to create a simplified dataset with only the engineered features for quick baseline model training."
     )
+    parser.add_argument(
+        "-EDA", "--EDA-notebook",
+        action="store_true",
+        help="Run EDA notebooks (raw_data_summary, data_verification) on the output data via papermill."
+    )
 
     args = parser.parse_args()
 
@@ -462,6 +531,13 @@ def main():
         discretize_main(Path(os.getenv("DISCRETIZE_INPUT_DIR")), Path(os.getenv("DISCRETIZE_OUTPUT_DIR")))
         print(f"✓ Discretized dataset created at {os.getenv('DISCRETIZE_OUTPUT_DIR')}")
 
+    # Run EDA notebooks if passed
+    if args.EDA_notebook:
+        print("Running EDA notebooks...")
+        run_eda_notebooks(args.output)
+        print("EDA notebooks complete.")
+
+    if args.discretize:
         # After discretization is done, update the kaggle dataset if passed
         # Note: The discretized data is a separate dataset from the raw information and engineered features dataset 
         if args.update_kaggle_dataset:
