@@ -27,6 +27,24 @@ from src_new.shared_constants import BUILDING_TYPES
 logger = logging.getLogger(__name__)
 
 
+def _parse_position(pos_string: str) -> tuple:
+    """
+    Parse a formatted position string back to a numeric tuple.
+
+    Args:
+        pos_string: Position string in the format '(x, y, z)' as produced by
+                    the UNIT_FIELD_CONFIG / BUILDING_FIELD_CONFIG extract lambdas.
+
+    Returns:
+        Tuple of (x, y, z) as floats, e.g. (42.5, 63.0, 11.98).
+
+    Raises:
+        ValueError: If the string cannot be parsed as three float values.
+    """
+    parts = pos_string.strip('()').split(',')
+    return tuple(float(p.strip()) for p in parts)
+
+
 def is_building(unit_type_id: int) -> bool:
     """
     Check if a unit type ID represents a building.
@@ -231,6 +249,8 @@ class UnitExtractor:
     - "building": While the unit is being produced, ALL attribute columns
     - "completed": On the gameloop where the unit completes, ALL attribute columns
     - Real data: After completion, columns capture real data (pos, health, etc.)
+    - "inside <building_type>": Unit is inside a building (gas, bunker, CC);
+      position column gets the building's coordinates, other columns get the string
     - "destroyed": On the gameloop where the unit is destroyed, ALL attribute columns
     - NaN: Before the unit exists and after it is destroyed
 
@@ -274,6 +294,19 @@ class UnitExtractor:
         # The schema_manager uses these sets to decide which extra columns to create.
         self.unit_attributes: Dict[str, Set[str]] = {}
 
+        # Track last known position per tag for hidden-unit resolution.
+        # Stored as raw (x, y, z) float tuples from the protobuf, NOT as
+        # formatted strings, so resolve_hidden_units() can compute distances.
+        self.last_known_positions: Dict[int, tuple] = {}
+
+        # Track unit type name (lowercase) per tag for building-compatibility
+        # matching in resolve_hidden_units().
+        self.last_known_unit_type: Dict[int, str] = {}
+
+        # Tags visible in the most recent extract() call. Used by
+        # resolve_hidden_units() to identify which tracked units are hidden.
+        self._current_tags: Set[int] = set()
+
     def extract(self, obs) -> Dict[str, Dict]:
         """
         Extract all unit data from observation.
@@ -288,7 +321,12 @@ class UnitExtractor:
         - 'building': Unit is being produced (0.0 < build_progress < 1.0)
         - 'completed': The frame where build_progress transitions to >= 1.0
         - 'existing': Unit exists and is complete (normal data)
-        - 'destroyed': Unit just died this frame
+        - 'destroyed': Unit confirmed dead via raw_data.event.dead_units
+
+        Units temporarily absent from raw_data.units (e.g., workers inside gas
+        buildings, units in transports) are NOT marked destroyed — their tag
+        mapping is preserved so they resume their existing entity ID when they
+        reappear. Their columns simply contain NaN for the frames they are hidden.
 
         Units that never complete will still appear in extract() output (needed
         for pass 1 tracking), but schema_manager will filter them out when
@@ -359,6 +397,12 @@ class UnitExtractor:
             # Update previous build progress
             self.previous_build_progress[tag] = unit.build_progress
 
+            # Track position and unit type for hidden-unit resolution.
+            # These are used by resolve_hidden_units() to match disappeared
+            # units to nearby buildings (gas mining, bunker loading, etc.).
+            self.last_known_positions[tag] = (unit.pos.x, unit.pos.y, unit.pos.z)
+            self.last_known_unit_type[tag] = get_unit_type_name(unit.unit_type).lower()
+
             # Build the unit data dict from the configurable field definitions
             unit_data = {
                 'tag': tag,
@@ -379,16 +423,34 @@ class UnitExtractor:
 
             units_data[readable_id] = unit_data
 
-        # Detect dead units (in previous frame but not current).
-        # After recording the destroyed event, clean up tag mappings so that
-        # if the SC2 engine recycles this tag for a new unit later, the
-        # extractor treats it as a brand-new unit and assigns a fresh
-        # readable_id. Without this cleanup, recycled tags would silently
-        # merge multiple physical units into one entity's columns, corrupting
-        # per-entity time series data. (See diagnostics/023-lifecycle-timeline-rca.md)
-        disappeared_tags = self.previous_tags - current_tags
-        for dead_tag in disappeared_tags:
-            if dead_tag in self.tag_to_readable_id:
+        # Detect dead units using the authoritative dead_units event list.
+        #
+        # IMPORTANT: We intentionally do NOT treat "disappeared from observation"
+        # as death. Units can temporarily leave raw_data.units without dying:
+        # - Workers enter gas buildings (Refinery/Assimilator/Extractor) to mine
+        #   and are removed from the unit list for ~65 game loops per cycle
+        # - Units loaded into transports (Medivac, Overlord) or bunkers
+        #
+        # Previously, any tag absent from current_tags but present in
+        # previous_tags was marked "destroyed" and its tag mapping was deleted.
+        # This caused gas-mining workers to get new entity IDs every time they
+        # exited a refinery, inflating entity counts by 5-10x (e.g., 490 SCVs
+        # instead of ~27). See diagnostics/023-lifecycle-timeline-rca.md.
+        #
+        # The raw_data.event.dead_units list is the engine's authoritative
+        # death signal — it fires only for actual unit deaths (combat, spells,
+        # timed life expiry), never for units entering buildings or transports.
+        # By relying solely on dead_units, temporarily hidden units keep their
+        # tag mapping intact and resume their existing entity ID when they
+        # reappear. _determine_lifecycle() handles reappearance correctly
+        # because it checks completed_tags before is_new.
+        #
+        # Tag cleanup after confirmed death ensures that if the SC2 engine
+        # recycles this tag for a genuinely new unit later, the extractor
+        # assigns a fresh readable_id instead of merging two physical units
+        # into one entity's columns.
+        for dead_tag in raw_data.event.dead_units:
+            if dead_tag in self.tag_to_readable_id and dead_tag in self.all_seen_tags:
                 readable_id = self.tag_to_readable_id[dead_tag]
                 self.dead_tags.add(dead_tag)
                 units_data[readable_id] = {
@@ -399,26 +461,143 @@ class UnitExtractor:
                 del self.tag_to_readable_id[dead_tag]
                 self.completed_tags.discard(dead_tag)
                 self.previous_build_progress.pop(dead_tag, None)
+                self.last_known_positions.pop(dead_tag, None)
+                self.last_known_unit_type.pop(dead_tag, None)
 
-        # Also check explicit dead units from event
-        for dead_tag in raw_data.event.dead_units:
-            if dead_tag in self.tag_to_readable_id and dead_tag in self.all_seen_tags:
-                readable_id = self.tag_to_readable_id[dead_tag]
-                self.dead_tags.add(dead_tag)
-                if readable_id not in units_data:
-                    units_data[readable_id] = {
-                        'tag': dead_tag,
-                        '_lifecycle': 'destroyed',
-                    }
-                # Clean up dead tag mappings so recycled tags get fresh IDs
-                del self.tag_to_readable_id[dead_tag]
-                self.completed_tags.discard(dead_tag)
-                self.previous_build_progress.pop(dead_tag, None)
+        # Store current_tags for resolve_hidden_units() to identify which
+        # tracked units are no longer visible in the observation this frame.
+        self._current_tags = current_tags
 
         # Update previous tags for next iteration
         self.previous_tags = current_tags
 
         return units_data
+
+    def resolve_hidden_units(self, buildings_data: Dict[str, Dict]) -> Dict[str, Dict]:
+        """
+        Match hidden units to nearby compatible buildings and return data entries.
+
+        After extract() runs, some units may be tracked (in tag_to_readable_id)
+        but not visible in the current observation (not in _current_tags). These
+        are units that temporarily entered a building — gas miners inside
+        refineries, marines inside bunkers, SCVs loaded into command centers, etc.
+
+        This method cross-references each hidden unit's last known position with
+        the current frame's building positions to find the containing building.
+        If a compatible building is found within INSIDE_BUILDING_DISTANCE_THRESHOLD,
+        the unit is reported as "inside <building_type>" with the building's
+        coordinates in the position column.
+
+        Call this AFTER extract() and AFTER extracting buildings for the same
+        player and frame. The returned dict should be merged into the units_data
+        via dict.update().
+
+        Args:
+            buildings_data: Building data dict from BuildingExtractor.extract()
+                            for the same player and frame. Keys are readable IDs
+                            (e.g., 'p1_refinery_001'), values are data dicts with
+                            '_lifecycle', 'pos_(X,Y,Z)', 'unit_type_name', etc.
+
+        Returns:
+            Dict mapping readable_id to data dict for each hidden unit matched
+            to a building. Example entry:
+                'p1_scv_005': {
+                    'tag': 12345,
+                    '_lifecycle': 'inside refinery',
+                    'pos_(X,Y,Z)': '(42.5, 63.0, 11.98)',
+                }
+            Units not matched to any building are omitted (their columns stay NaN).
+
+        Depends on / calls:
+            - self._current_tags (set by extract())
+            - self.tag_to_readable_id, last_known_positions, last_known_unit_type
+            - UNIT_CONTAINING_BUILDINGS, INSIDE_BUILDING_DISTANCE_THRESHOLD
+              from shared_constants
+            - _parse_position() module-level helper
+        """
+        from src_new.shared_constants import (
+            UNIT_CONTAINING_BUILDINGS,
+            INSIDE_BUILDING_DISTANCE_THRESHOLD,
+        )
+
+        resolved: Dict[str, Dict] = {}
+
+        # Identify hidden tags: tracked (have readable IDs) but not currently
+        # visible in the observation. After dead_units cleanup in extract(),
+        # only genuinely hidden (inside-building) units remain in this set.
+        hidden_tags = set(self.tag_to_readable_id.keys()) - self._current_tags
+
+        if not hidden_tags:
+            return resolved
+
+        # Build a list of candidate buildings that can contain units.
+        # Skip destroyed/cancelled buildings (can't contain units) and
+        # buildings still under construction (can't be entered yet).
+        candidate_buildings: List[Dict] = []
+        for building_id, building_data in buildings_data.items():
+            lifecycle = building_data.get('_lifecycle', '')
+            if lifecycle not in ('existing', 'completed'):
+                continue
+
+            pos_str = building_data.get('pos_(X,Y,Z)')
+            building_type = building_data.get('unit_type_name', '').lower()
+            if not pos_str or not building_type:
+                continue
+
+            # Only consider buildings that are known to contain units
+            if building_type not in UNIT_CONTAINING_BUILDINGS:
+                continue
+
+            try:
+                pos = _parse_position(pos_str)
+            except (ValueError, IndexError):
+                continue
+
+            candidate_buildings.append({
+                'building_type': building_type,
+                'position': pos,
+                'pos_string': pos_str,
+                'compatible_units': UNIT_CONTAINING_BUILDINGS[building_type],
+            })
+
+        if not candidate_buildings:
+            return resolved
+
+        # For each hidden unit, find the nearest compatible building
+        for tag in hidden_tags:
+            readable_id = self.tag_to_readable_id[tag]
+            last_pos = self.last_known_positions.get(tag)
+            unit_type = self.last_known_unit_type.get(tag)
+
+            if last_pos is None or unit_type is None:
+                continue
+
+            best_building = None
+            best_distance = INSIDE_BUILDING_DISTANCE_THRESHOLD
+
+            for building in candidate_buildings:
+                # Check unit-type compatibility (None = any unit accepted)
+                compatible = building['compatible_units']
+                if compatible is not None and unit_type not in compatible:
+                    continue
+
+                # 2D distance (x, y); z is elevation and irrelevant for proximity
+                dx = last_pos[0] - building['position'][0]
+                dy = last_pos[1] - building['position'][1]
+                dist = (dx * dx + dy * dy) ** 0.5
+
+                if dist < best_distance:
+                    best_distance = dist
+                    best_building = building
+
+            if best_building is not None:
+                resolved[readable_id] = {
+                    'tag': tag,
+                    '_lifecycle': f"inside {best_building['building_type']}",
+                    'pos_(X,Y,Z)': best_building['pos_string'],
+                }
+
+        return resolved
 
     @staticmethod
     def _extract_fields(unit) -> Dict[str, Any]:
@@ -630,4 +809,7 @@ class UnitExtractor:
         self.previous_build_progress.clear()
         self.dead_tags.clear()
         self.unit_attributes.clear()
+        self.last_known_positions.clear()
+        self.last_known_unit_type.clear()
+        self._current_tags.clear()
 
