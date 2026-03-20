@@ -161,6 +161,8 @@ class WideTableBuilder:
         - 'building': ALL attribute columns filled with "building"
         - 'completed': ALL attribute columns filled with "completed"
         - 'existing': Real data values written to attribute columns
+        - 'inside <building>': Position column gets building coordinates,
+          all other attribute columns filled with "inside <building_type>"
         - 'destroyed': ALL attribute columns filled with "destroyed"
         - (no lifecycle / unit not in schema): columns remain NaN
 
@@ -186,6 +188,17 @@ class WideTableBuilder:
                 col_name = f'{prefix}_{suffix}'
                 if col_name in row:
                     row[col_name] = lifecycle
+        elif lifecycle.startswith('inside '):
+            # Unit is inside a building (gas mining, bunker, command center).
+            # Position column gets the building's coordinates (real data),
+            # all other attribute columns get the lifecycle string.
+            for suffix in attr_suffixes:
+                col_name = f'{prefix}_{suffix}'
+                if col_name in row:
+                    if suffix == 'pos_(X,Y,Z)' and 'pos_(X,Y,Z)' in unit_data:
+                        row[col_name] = unit_data['pos_(X,Y,Z)']
+                    else:
+                        row[col_name] = lifecycle
         else:
             # 'existing' - write real data
             for suffix in attr_suffixes:

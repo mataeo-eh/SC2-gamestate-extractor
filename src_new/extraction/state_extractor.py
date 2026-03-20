@@ -174,6 +174,18 @@ class StateExtractor:
         state['p1_buildings'] = self.extract_buildings(obs_p1, player_id=1)
         state['p2_buildings'] = self.extract_buildings(obs_p1, player_id=2)
 
+        # Resolve hidden units: match disappeared-but-not-dead units to nearby
+        # buildings. Workers mining gas enter refineries and leave raw_data.units
+        # temporarily; marines can load into bunkers; SCVs into command centers.
+        # resolve_hidden_units() cross-references each hidden unit's last known
+        # position with the current frame's building positions and returns
+        # "inside <building_type>" entries with the building's coordinates.
+        for player_num in [1, 2]:
+            hidden = self.unit_extractors[player_num].resolve_hidden_units(
+                state[f'p{player_num}_buildings']
+            )
+            state[f'p{player_num}_units'].update(hidden)
+
         # Economy is NOT extracted from the engine here — player_common and
         # score_details are always zero in observer mode. Economy is pre-loaded
         # from the replay file via s2protocol (economy_extractor.load_economy_snapshots)
