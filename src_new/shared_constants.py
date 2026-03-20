@@ -435,3 +435,50 @@ ECONOMY_COLUMN_SUFFIXES: tuple = (
 #       entity_type = middle.rsplit('_', 1)[-1]
 
 ENTITY_COL_RE = re.compile(r"^(p[12])_(.+)_(\d{3})_(.+)$")
+
+
+# ---------------------------------------------------------------------------
+# UNIT_CONTAINING_BUILDINGS
+# ---------------------------------------------------------------------------
+# Maps building type names (lowercase, matching pysc2 enum names) to the
+# frozenset of unit type names that can enter that building. Used by
+# UnitExtractor.resolve_hidden_units() to match disappeared units to
+# nearby buildings.
+#
+# A value of None means ANY ground unit can enter (e.g., Nydus).
+#
+# When a unit disappears from raw_data.units but is NOT in dead_units, the
+# pipeline checks if it is within INSIDE_BUILDING_DISTANCE_THRESHOLD of a
+# compatible building. If so, the unit's attribute columns are filled with
+# "inside <building_type>" and its position column gets the building's coords.
+
+UNIT_CONTAINING_BUILDINGS: dict = {
+
+    # --- Gas buildings: race-specific workers ---
+    "refinery": frozenset({"scv"}),
+    "refineryrich": frozenset({"scv"}),
+    "assimilator": frozenset({"probe"}),
+    "assimilatorrich": frozenset({"probe"}),
+    "extractor": frozenset({"drone"}),
+    "extractorrich": frozenset({"drone"}),
+
+    # --- Terran town halls: SCVs can be loaded via Load command ---
+    "commandcenter": frozenset({"scv"}),
+    "orbitalcommand": frozenset({"scv"}),
+    "planetaryfortress": frozenset({"scv"}),
+
+    # --- Bunker: Terran infantry ---
+    "bunker": frozenset({"marine", "marauder", "ghost", "reaper"}),
+
+    # --- Nydus: any Zerg ground unit ---
+    "nydusnetwork": None,
+    "nyduscanal": None,
+}
+
+
+# Maximum 2D distance (game units) between a hidden unit's last known
+# position and a building's center to consider the unit "inside" that
+# building. Buildings have radii of ~1–2.5 game units and units must be
+# touching the building to enter, so 5.0 provides a comfortable buffer
+# while avoiding false positives from nearby-but-unrelated buildings.
+INSIDE_BUILDING_DISTANCE_THRESHOLD: float = 5.0
