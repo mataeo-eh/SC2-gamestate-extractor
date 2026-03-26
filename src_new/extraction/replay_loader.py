@@ -340,7 +340,9 @@ class ReplayLoader:
 
             # data_build: use s2protocol value only if sc2reader didn't
             # already provide it (setdefault avoids overwriting).
-            metadata.setdefault('data_build', header['m_version']['m_dataBuild'])
+            # Note: data build lives at the header top-level as 'm_dataBuildNum',
+            # NOT inside m_version (which has 'm_build' and 'm_baseBuild').
+            metadata.setdefault('data_build', header['m_dataBuildNum'])
 
             protocol = s2versions.build(base_build)
 
