@@ -21,7 +21,7 @@ import logging
 
 from pysc2.lib import units as pysc2_units
 
-from src_new.shared_constants import BUILDING_TYPES
+from src_new.shared_constants import BUILDING_TYPES, UNTRACKED_ENTITY_TYPES
 
 
 logger = logging.getLogger(__name__)
@@ -373,6 +373,13 @@ class UnitExtractor:
 
             # Filter: Skip buildings (handled by BuildingExtractor)
             if is_building(unit.unit_type):
+                continue
+
+            # Filter: Skip untracked entity types (projectiles, temporary
+            # effects, etc.) that the engine tracks as units but add noise
+            # to the dataset. Configurable via UNTRACKED_ENTITY_TYPES in
+            # shared_constants.py.
+            if get_unit_type_name(unit.unit_type).lower() in UNTRACKED_ENTITY_TYPES:
                 continue
 
             # Track this tag

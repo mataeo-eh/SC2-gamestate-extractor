@@ -382,6 +382,24 @@ NON_ARMY_TYPES: frozenset = BUILDING_TYPES | WORKER_TYPES
 
 
 # ---------------------------------------------------------------------------
+# UNTRACKED_ENTITY_TYPES
+# ---------------------------------------------------------------------------
+# Entity types that the SC2 engine tracks as units but that we do NOT want
+# to write to parquet output. These are typically projectiles, temporary
+# effects, or other pseudo-units that clutter the dataset without providing
+# meaningful game-state information.
+#
+# Names are lowercase pysc2.lib.units enum member names, matching the
+# convention used throughout the pipeline.
+#
+# To suppress additional entity types, simply add them to this set.
+
+UNTRACKED_ENTITY_TYPES: frozenset = frozenset({
+    "kd8charge",  # Terran Reaper grenade projectile
+})
+
+
+# ---------------------------------------------------------------------------
 # ECONOMY_COLUMN_SUFFIXES
 # ---------------------------------------------------------------------------
 # Ordered tuple of the economy metric column suffixes appended after the
