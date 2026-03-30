@@ -20,7 +20,8 @@ in unit_extractor.py. Each field specifies a column suffix, extraction lambda, a
 whether it is always present or conditional (e.g., shields only for Protoss buildings).
 """
 
-from typing import Dict, Set, Optional
+from typing import Dict, Set, Optional, FrozenSet
+import json
 import logging
 
 from pysc2.lib import units as pysc2_units
@@ -30,14 +31,22 @@ from src_new.shared_constants import BUILDING_TYPES
 
 logger = logging.getLogger(__name__)
 
+# Module-level API-derived building type ID set. When populated by
+# set_building_type_ids_global(), is_building() uses O(1) integer lookup
+# instead of string name conversion + frozenset membership test.
+# None means the fallback string-based path is used.
+_BUILDING_TYPE_IDS: Optional[FrozenSet[int]] = None
+
 
 def is_building(unit_type_id: int) -> bool:
     """
     Check if a unit type ID represents a building.
 
-    Converts the integer unit type ID to a lowercase string name via pysc2
-    and checks membership in the shared BUILDING_TYPES frozenset (which
-    stores lowercase string names, not integer IDs).
+    Uses a two-tier strategy:
+    1. If the API-derived _BUILDING_TYPE_IDS set has been populated (via
+       BuildingExtractor.set_building_type_ids()), performs O(1) integer
+       lookup against the set built from data_raw() Attribute.Structure.
+    2. Falls back to string name conversion + BUILDING_TYPES membership.
 
     Args:
         unit_type_id: SC2 unit type ID (integer from the protobuf)
@@ -46,9 +55,14 @@ def is_building(unit_type_id: int) -> bool:
         True if the unit type is a building, False otherwise
 
     Depends on / calls:
-        - get_building_type_name() to resolve the integer ID to a string name
-        - BUILDING_TYPES from shared_constants (frozenset of lowercase strings)
+        - _BUILDING_TYPE_IDS (module-level, set by set_building_type_ids())
+        - get_building_type_name() (fallback path only)
+        - BUILDING_TYPES from shared_constants (fallback path only)
     """
+    if _BUILDING_TYPE_IDS is not None:
+        return unit_type_id in _BUILDING_TYPE_IDS
+
+    # Fallback: string-based lookup (pre-031 behavior)
     name = get_building_type_name(unit_type_id).lower()
     return name in BUILDING_TYPES
 
@@ -166,6 +180,106 @@ BUILDING_FIELD_CONFIG = [
         'always': True,
         'description': 'Number of queued orders',
     },
+    # -- Enhancement fields (031) ------------------------------------------
+    # These fields were confirmed populated in observer mode by research
+    # script 030-verify-data-raw.py. See research/030-api-type-classification.md
+    # Section 5 for empirical verification details.
+    {
+        'column_suffix': 'buff_ids',
+        'extract': lambda unit: json.dumps(list(unit.buff_ids)) if unit.buff_ids else "[]",
+        'always': True,
+        'description': 'Active buff IDs as JSON array string (e.g., "[271, 5]")',
+    },
+    {
+        'column_suffix': 'buff_duration_remain',
+        'extract': lambda unit: unit.buff_duration_remain,
+        'always': True,
+        'description': 'Remaining buff duration (game loops)',
+    },
+    {
+        'column_suffix': 'buff_duration_max',
+        'extract': lambda unit: unit.buff_duration_max,
+        'always': True,
+        'description': 'Maximum buff duration (game loops)',
+    },
+    {
+        'column_suffix': 'rally_x',
+        'extract': lambda unit: unit.rally_targets[0].point.x if unit.rally_targets else 0.0,
+        'always': True,
+        'description': 'X coordinate of first rally point (0.0 if no rally set)',
+    },
+    {
+        'column_suffix': 'rally_y',
+        'extract': lambda unit: unit.rally_targets[0].point.y if unit.rally_targets else 0.0,
+        'always': True,
+        'description': 'Y coordinate of first rally point (0.0 if no rally set)',
+    },
+    {
+        'column_suffix': 'rally_tag',
+        'extract': lambda unit: unit.rally_targets[0].tag if unit.rally_targets else 0,
+        'always': True,
+        'description': 'Tag of rally target unit (0 if rally is a point or no rally set)',
+    },
+    {
+        'column_suffix': 'assigned_harvesters',
+        'extract': lambda unit: unit.assigned_harvesters,
+        'always': True,
+        'description': 'Number of workers currently assigned to this building (town halls, gas)',
+    },
+    {
+        'column_suffix': 'ideal_harvesters',
+        'extract': lambda unit: unit.ideal_harvesters,
+        'always': True,
+        'description': 'Ideal number of harvesters for this building (town halls, gas)',
+    },
+    {
+        'column_suffix': 'engaged_target_tag',
+        'extract': lambda unit: unit.engaged_target_tag,
+        'always': True,
+        'description': 'Tag of unit currently being attacked (0 when not engaged)',
+    },
+    {
+        'column_suffix': 'detect_range',
+        'extract': lambda unit: unit.detect_range,
+        'always': True,
+        'description': 'Detection range (0.0 for non-detector buildings)',
+    },
+    {
+        'column_suffix': 'radar_range',
+        'extract': lambda unit: unit.radar_range,
+        'always': True,
+        'description': 'Radar range (0.0 unless SensorTower)',
+    },
+    {
+        'column_suffix': 'is_powered',
+        'extract': lambda unit: unit.is_powered,
+        'always': True,
+        'description': 'Whether the building is powered (Protoss buildings near Pylon; always False for non-Protoss)',
+    },
+    {
+        'column_suffix': 'is_active',
+        'extract': lambda unit: unit.is_active,
+        'always': True,
+        'description': 'Whether the building is actively performing an action',
+    },
+    {
+        'column_suffix': 'cloak',
+        'extract': lambda unit: unit.cloak,
+        'always': True,
+        'description': 'CloakState enum: 0=Unknown, 1=Cloaked, 2=CloakedDetected, 3=NotCloaked, 4=CloakedAllied',
+    },
+    {
+        'column_suffix': 'add_on_tag',
+        'extract': lambda unit: unit.add_on_tag,
+        'always': True,
+        'description': 'Tag of attached add-on building (Terran TechLab/Reactor, 0 when none)',
+    },
+    {
+        'column_suffix': 'display_type',
+        'extract': lambda unit: unit.display_type,
+        'always': True,
+        'description': 'DisplayType enum: 1=Visible, 2=Snapshot, 3=Hidden, 4=Placeholder',
+    },
 ]
 
 
@@ -225,6 +339,24 @@ class BuildingExtractor:
 
         # Track which readable_ids have shields and/or energy (discovered during pass 1)
         self.building_attributes: Dict[str, Set[str]] = {}
+
+    def set_building_type_ids(self, building_type_ids: FrozenSet[int]) -> None:
+        """
+        Set the API-derived building type ID set for is_building() lookups.
+
+        Updates the module-level _BUILDING_TYPE_IDS so that is_building() uses
+        O(1) integer lookup instead of string name conversion. Called by
+        StateExtractor.set_api_type_data() after data_raw() is available.
+
+        Args:
+            building_type_ids: frozenset of integer unit type IDs that have
+                Attribute.Structure in data_raw()
+
+        Depends on / calls:
+            - Modifies module-level _BUILDING_TYPE_IDS
+        """
+        global _BUILDING_TYPE_IDS
+        _BUILDING_TYPE_IDS = building_type_ids
 
     def extract(self, obs) -> Dict[str, Dict]:
         """

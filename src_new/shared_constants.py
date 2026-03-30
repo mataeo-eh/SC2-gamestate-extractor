@@ -165,6 +165,9 @@ BUILDING_TYPES: frozenset = frozenset({
 # ---------------------------------------------------------------------------
 # WORKER_TYPES
 # ---------------------------------------------------------------------------
+# Complete set of worker unit types: {scv, probe, drone, mule}.
+# Verified against pysc2.lib.units enums — no other worker-class units exist.
+# MULE is intentionally included as a resource-gathering economic unit.
 
 WORKER_TYPES: frozenset = frozenset({
     "scv",    # Terran worker
@@ -184,6 +187,10 @@ WORKER_TYPES: frozenset = frozenset({
 # calculation (e.g., "which direction is the army moving relative to base?").
 # Includes all morphed variants so the base remains detectable through the
 # morph chain.
+#
+# Verified complete (9 entries) in research/030-api-type-classification.md:
+# covers all CC/OC/PF variants (including flying), Nexus, and Hatch/Lair/Hive.
+# PlanetaryFortressFlying does not exist in SC2 (PF cannot lift off).
 
 BASE_TYPES: frozenset = frozenset({
     # Terran
@@ -204,8 +211,18 @@ BASE_TYPES: frozenset = frozenset({
 
 
 # ---------------------------------------------------------------------------
-# AIR_UNIT_TYPES
+# AIR_UNIT_TYPES  [DEPRECATED]
 # ---------------------------------------------------------------------------
+# DEPRECATED: Prefer using the per-frame `is_flying` proto field (already
+# extracted in UNIT_FIELD_CONFIG and BUILDING_FIELD_CONFIG) for runtime
+# air/ground classification. The `is_flying` field is authoritative, handles
+# temporary flight states (e.g., lifted Terran buildings, morphing units),
+# and requires no hardcoded maintenance.
+#
+# This frozenset is retained ONLY as a legacy reference for post-extraction
+# analysis tools (e.g., create_unit_counts.py `has_air_units` column) that
+# operate on entity type names rather than per-frame proto fields.
+#
 # Units that are inherently airborne (cannot land or be grounded).
 # Does NOT include ground units with temporary air modes (e.g., WarpPrism
 # can switch to Phasing mode but is still fundamentally an air unit so it
@@ -259,6 +276,7 @@ AIR_UNIT_TYPES: frozenset = frozenset({
 PRODUCTION_BUILDING_TYPES: frozenset = frozenset({
 
     # --- Terran production ---
+    "commandcenter",      # trains SCVs (missing pre-031; confirmed producer)
     "barracks",           # trains Infantry
     "factory",            # trains Mechanical ground
     "starport",           # trains air units
@@ -273,6 +291,7 @@ PRODUCTION_BUILDING_TYPES: frozenset = frozenset({
     # but it uses energy-based abilities on a production-tier building)
     "orbitalcommand",
     "orbitalcommandflying",
+    "planetaryfortress",  # trains SCVs (missing pre-031; confirmed producer)
 
     # --- Terran research buildings ---
     "engineeringbay",     # upgrades Infantry armor/weapons
@@ -281,6 +300,7 @@ PRODUCTION_BUILDING_TYPES: frozenset = frozenset({
     "fusioncore",         # enables Battlecruiser research
 
     # --- Protoss production ---
+    "nexus",              # trains Probes + Chrono Boost (missing pre-031)
     "gateway",            # trains ground units
     "warpgate",           # morphed Gateway; warps in units instantly at pylon range
     "roboticsfacility",   # trains Robotic units
@@ -311,6 +331,7 @@ PRODUCTION_BUILDING_TYPES: frozenset = frozenset({
     "banelingnest",       # enables Baneling speed
     "roachwarren",        # enables Roach upgrades
     "lurkerden",          # enables Lurker + upgrades
+    "nydusnetwork",       # produces NydusCanal worms (missing pre-031)
 
 })
 
@@ -469,6 +490,15 @@ ENTITY_COL_RE = re.compile(r"^(p[12])_(.+)_(\d{3})_(.+)$")
 # pipeline checks if it is within INSIDE_BUILDING_DISTANCE_THRESHOLD of a
 # compatible building. If so, the unit's attribute columns are filled with
 # "inside <building_type>" and its position column gets the building's coords.
+#
+# FN-3 NOTE (031): The SC2 protobuf `passengers` field on Unit is NOT
+# populated in observer mode (observed_player_id=0). It is only filled
+# when observing from a specific player's perspective. Replacing this
+# heuristic with passengers would require per-player perspective switching
+# for raw_data.units, adding complexity and two extra observe() calls per
+# step. The current proximity-based approach works well enough for
+# inside-building detection. See research/030-api-type-classification.md
+# Section 2 for empirical verification.
 
 UNIT_CONTAINING_BUILDINGS: dict = {
 

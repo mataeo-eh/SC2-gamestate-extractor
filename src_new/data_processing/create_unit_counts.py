@@ -226,6 +226,11 @@ def process_single_file(filepath):
         created_cols.append(f"{player}_production_building_count")
 
         # --- has_air_units: 1 if any air unit type has count > 0 ---
+        # NOTE: AIR_UNIT_TYPES is deprecated for runtime extraction (prefer
+        # per-frame `is_flying` proto field). It is still used here because
+        # this post-extraction tool operates on entity type names from column
+        # headers, not per-frame proto fields. A future enhancement could
+        # check per-row is_flying columns instead.
         air_count_cols = [
             col_name for (p, etype), col_name in entity_type_count_cols.items()
             if p == player and etype in AIR_UNIT_TYPES

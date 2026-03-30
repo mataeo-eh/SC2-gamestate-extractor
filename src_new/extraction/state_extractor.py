@@ -17,7 +17,7 @@ global units/buildings data. Economy keys (p1_economy, p2_economy) are absent
 from the returned dict -- the pipeline adds them afterward.
 """
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import logging
 
 from ..extractors.unit_extractor import UnitExtractor
@@ -69,6 +69,35 @@ class StateExtractor:
         }
 
         logger.info("StateExtractor initialized")
+
+    def set_api_type_data(self, api_type_data: Dict[str, Any]) -> None:
+        """
+        Pass API-derived type classification data to unit and building extractors.
+
+        Called by extraction_pipeline after data_raw() is available (post
+        start_replay). Forwards the building_type_ids frozenset so that
+        is_building() can use integer ID set lookup instead of string name
+        matching against the hardcoded BUILDING_TYPES frozenset.
+
+        Args:
+            api_type_data: Dict with keys:
+                - 'building_type_ids': frozenset[int] or None (fallback)
+
+        Depends on / calls:
+            - UnitExtractor.set_building_type_ids()
+            - BuildingExtractor.set_building_type_ids()
+        """
+        building_type_ids = api_type_data.get('building_type_ids')
+        if building_type_ids is not None:
+            for extractor in self.unit_extractors.values():
+                extractor.set_building_type_ids(building_type_ids)
+            for extractor in self.building_extractors.values():
+                extractor.set_building_type_ids(building_type_ids)
+            logger.info(
+                f"API type data applied: {len(building_type_ids)} building type IDs"
+            )
+        else:
+            logger.info("API type data not available; using string-based fallback")
 
     def extract_observation(self, obs, game_loop: int) -> Dict[str, Any]:
         """

@@ -261,6 +261,23 @@ class ReplayExtractionPipeline:
             # Start replay in observer mode — no fixed player perspective.
             self.replay_loader.start_replay(controller, observer_mode=True)
 
+            # --- FN-1: Build API-derived building type ID set from data_raw() ---
+            # After start_replay(), call controller.data_raw() to get all
+            # UnitTypeData entries. Build a frozenset of integer unit_type_ids
+            # where Attribute.Structure (value 8) is present. This replaces the
+            # hardcoded string-based BUILDING_TYPES lookup for runtime
+            # is_building() checks, using the SC2 engine's own type metadata
+            # instead of manually curated name sets.
+            #
+            # The string-based BUILDING_TYPES in shared_constants.py is retained
+            # as a legacy fallback for post-extraction tools (metadata_writer,
+            # create_unit_counts, etc.) that operate on entity type name strings.
+            api_type_data = self._build_api_type_data(controller)
+
+            # Pass API-derived type data to state_extractor so it can forward
+            # the building type ID set to unit and building extractors.
+            self.state_extractor.set_api_type_data(api_type_data)
+
             game_loop = 0
             max_loops = metadata['game_duration_loops']
             # Report progress approximately every 5%
@@ -403,6 +420,59 @@ class ReplayExtractionPipeline:
                 'rows_written': len(rows),
             },
         }
+
+    def _build_api_type_data(self, controller) -> Dict[str, Any]:
+        """
+        Call controller.data_raw() and build API-derived type classification sets.
+
+        Queries the SC2 engine's UnitTypeData to build a frozenset of integer
+        unit_type_ids that have Attribute.Structure (value 8). This set is used
+        by unit_extractor and building_extractor for runtime is_building()
+        classification, replacing the hardcoded string-based BUILDING_TYPES
+        lookup with an authoritative, engine-derived alternative.
+
+        The Attribute.Structure flag marks ALL structures including neutral map
+        objects (bridges, destructible rocks, mineral fields). The pipeline's
+        existing owner filter (unit.owner in {1, 2}) already excludes these
+        neutrals, so no additional filtering is needed here.
+
+        Args:
+            controller: SC2 controller instance (after start_replay())
+
+        Returns:
+            Dict with API-derived type data:
+            {
+                'building_type_ids': frozenset[int] -- unit type IDs with
+                    Attribute.Structure from data_raw()
+            }
+
+        Depends on / calls:
+            - controller.data_raw() from the SC2 API
+        """
+        # Attribute.Structure has enum value 8 in s2clientprotocol.data_pb2
+        ATTRIBUTE_STRUCTURE = 8
+
+        try:
+            data_raw = controller.data_raw()
+            building_ids = set()
+
+            for unit_type_data in data_raw.units:
+                if ATTRIBUTE_STRUCTURE in unit_type_data.attributes:
+                    building_ids.add(unit_type_data.unit_id)
+
+            building_type_ids = frozenset(building_ids)
+            logger.info(
+                f"API type data: {len(building_type_ids)} building type IDs "
+                f"from data_raw() (Attribute.Structure)"
+            )
+            return {'building_type_ids': building_type_ids}
+
+        except Exception as e:
+            logger.warning(
+                f"Failed to build API type data from data_raw(): {e}. "
+                f"Falling back to string-based BUILDING_TYPES."
+            )
+            return {'building_type_ids': None}
 
     def get_config(self) -> Dict[str, Any]:
         """
