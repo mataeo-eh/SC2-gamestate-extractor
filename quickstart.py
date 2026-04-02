@@ -548,6 +548,15 @@ def main():
     if args.update_kaggle_dataset:
         from src_new.pipeline.dataset_pipeline import main as upload_to_kaggle
         upload_to_kaggle(dataset_name = "mataeoanderson/sc2-replay-data", download_path = Path("data/quickstart"))
+
+        # Push the Kaggle EDA notebook alongside the dataset update
+        from src_new.pipeline.dataset_pipeline import push_kaggle_notebook
+        print("Pushing EDA notebook to Kaggle...")
+        nb_success, nb_message = push_kaggle_notebook()
+        if nb_success:
+            print("✓ EDA notebook pushed to Kaggle successfully.")
+        else:
+            print(f"✗ Failed to push EDA notebook: {nb_message}")
     
 
 
