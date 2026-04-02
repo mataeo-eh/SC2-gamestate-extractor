@@ -1,9 +1,16 @@
 import os
-from kaggle.api.kaggle_api_extended import KaggleApi 
+import shutil
+import tempfile
+from kaggle.api.kaggle_api_extended import KaggleApi
 from pathlib import Path
 import json
 
 ROOT = Path(__file__).resolve().parents[2]
+
+# Path to kernel-metadata.json and the Kaggle notebook in the EDA directory
+EDA_DIR = ROOT / "EDA"
+KERNEL_METADATA_PATH = EDA_DIR / "kernel-metadata.json"
+KAGGLE_NOTEBOOK_NAME = "data_verification_kaggle.ipynb"
 
 def upload_to_kaggle(dataset_name, download_path):
     """
@@ -56,6 +63,57 @@ def main(dataset_name, download_path, Title = "StarCraft II Bot Replay Features"
         print("Dataset uploaded successfully!")
     else:
         print(f"Failed to upload dataset: {message}")
+
+def push_kaggle_notebook():
+    """
+    Push the Kaggle EDA notebook to Kaggle using `kaggle kernels push`.
+
+    Copies the Kaggle notebook and kernel-metadata.json into a temporary
+    directory, pushes via the Kaggle API, then cleans up the temp directory.
+
+    First push creates the kernel on Kaggle; subsequent pushes create new
+    versions. The kernel-metadata.json in EDA/ controls the kernel slug,
+    title, visibility, and attached dataset sources.
+
+    Depends on / calls:
+        - KERNEL_METADATA_PATH (module-level constant)
+        - KAGGLE_NOTEBOOK_NAME (module-level constant)
+        - EDA_DIR (module-level constant)
+        - KaggleApi.kernels_push() for the actual upload
+
+    Returns:
+        success (bool): Whether the push was successful.
+        message (str): Status or error message.
+    """
+    if not KERNEL_METADATA_PATH.exists():
+        msg = f"kernel-metadata.json not found at {KERNEL_METADATA_PATH}"
+        print(f"Error: {msg}")
+        return False, msg
+
+    notebook_path = EDA_DIR / KAGGLE_NOTEBOOK_NAME
+    if not notebook_path.exists():
+        msg = f"Kaggle notebook not found at {notebook_path}"
+        print(f"Error: {msg}")
+        return False, msg
+
+    try:
+        # Create a temp directory with the notebook and metadata for kaggle push
+        tmp_dir = tempfile.mkdtemp(prefix="kaggle_notebook_push_")
+        shutil.copy2(KERNEL_METADATA_PATH, Path(tmp_dir) / "kernel-metadata.json")
+        shutil.copy2(notebook_path, Path(tmp_dir) / KAGGLE_NOTEBOOK_NAME)
+
+        api = KaggleApi()
+        api.authenticate()
+        api.kernels_push(tmp_dir)
+    except Exception as e:
+        print(f"Error pushing notebook to Kaggle: {e}")
+        return False, str(e)
+    finally:
+        # Clean up temp directory regardless of success or failure
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    return True, "Success"
+
 
 if __name__ == "__main__":
     main(dataset_name = "mataeoanderson/sc2-replay-data", download_path = ROOT / "data" / "quickstart")
