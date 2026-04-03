@@ -482,23 +482,29 @@ ENTITY_COL_RE = re.compile(r"^(p[12])_(.+)_(\d{3})_(.+)$")
 # Maps building type names (lowercase, matching pysc2 enum names) to the
 # frozenset of unit type names that can enter that building. Used by
 # UnitExtractor.resolve_hidden_units() to match disappeared units to
-# nearby buildings.
+# nearby buildings via the distance heuristic.
 #
 # A value of None means ANY ground unit can enter (e.g., Nydus).
 #
-# When a unit disappears from raw_data.units but is NOT in dead_units, the
-# pipeline checks if it is within INSIDE_BUILDING_DISTANCE_THRESHOLD of a
-# compatible building. If so, the unit's attribute columns are filled with
-# "inside <building_type>" and its position column gets the building's coords.
+# ROLE IN THE 4-TIER STATUS RESOLUTION SYSTEM (prompt 033):
 #
-# FN-3 NOTE (031): The SC2 protobuf `passengers` field on Unit is NOT
-# populated in observer mode (observed_player_id=0). It is only filled
-# when observing from a specific player's perspective. Replacing this
-# heuristic with passengers would require per-player perspective switching
-# for raw_data.units, adding complexity and two extra observe() calls per
-# step. The current proximity-based approach works well enough for
-# inside-building detection. See research/030-api-type-classification.md
-# Section 2 for empirical verification.
+#   Tier 1 (passengers field): For non-gas containers with cargo_space_max > 0
+#     (Bunkers, Command Centers, Medivacs, etc.), the `passengers` repeated
+#     field from the raw observation is the primary detection method. This
+#     dict is NOT consulted for Tier 1.
+#
+#   Tier 2 (gas mining -- PRIMARY use of this dict): Gas refineries have
+#     cargo_space_max=0 and never populate the passengers field. Workers
+#     literally despawn during gas harvesting. The distance heuristic using
+#     this dict's gas building entries (refinery, assimilator, extractor and
+#     their rich variants) is the primary method for gas mining detection.
+#
+#   Tier 4 (fallback): For any remaining unresolved disappearances after
+#     Tier 1 and Tier 2, the distance heuristic checks non-gas entries in
+#     this dict (Bunkers, Command Centers, Nydus) as a fallback. This catches
+#     edge cases where passengers was empty for loaded transports.
+#
+# See research/032-passenger-dead-units-findings.md for the full analysis.
 
 UNIT_CONTAINING_BUILDINGS: dict = {
 
@@ -526,7 +532,11 @@ UNIT_CONTAINING_BUILDINGS: dict = {
 
 # Maximum 2D distance (game units) between a hidden unit's last known
 # position and a building's center to consider the unit "inside" that
-# building. Buildings have radii of ~1–2.5 game units and units must be
+# building. Buildings have radii of ~1-2.5 game units and units must be
 # touching the building to enter, so 5.0 provides a comfortable buffer
 # while avoiding false positives from nearby-but-unrelated buildings.
+#
+# Used by Tier 2 (gas mining detection) and Tier 4 (fallback distance
+# heuristic) in the 4-tier status resolution system. Not used by Tier 1
+# (passengers field) which is authoritative and needs no distance check.
 INSIDE_BUILDING_DISTANCE_THRESHOLD: float = 5.0

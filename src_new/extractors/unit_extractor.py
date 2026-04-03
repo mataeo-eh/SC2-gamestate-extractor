@@ -585,20 +585,43 @@ class UnitExtractor:
 
         return units_data
 
-    def resolve_hidden_units(self, buildings_data: Dict[str, Dict]) -> Dict[str, Dict]:
+    def resolve_hidden_units(
+        self,
+        buildings_data: Dict[str, Dict],
+        passenger_map: Optional[Dict[int, Dict]] = None,
+    ) -> Dict[str, Dict]:
         """
-        Match hidden units to nearby compatible buildings and return data entries.
+        Resolve hidden units using a 4-tier status resolution system.
 
         After extract() runs, some units may be tracked (in tag_to_readable_id)
         but not visible in the current observation (not in _current_tags). These
-        are units that temporarily entered a building — gas miners inside
-        refineries, marines inside bunkers, SCVs loaded into command centers, etc.
+        are units that temporarily entered a container -- gas miners inside
+        refineries, marines inside bunkers, SCVs loaded into command centers,
+        troops inside Medivacs, etc.
 
-        This method cross-references each hidden unit's last known position with
-        the current frame's building positions to find the containing building.
-        If a compatible building is found within INSIDE_BUILDING_DISTANCE_THRESHOLD,
-        the unit is reported as "inside <building_type>" with the building's
-        coordinates in the position column.
+        Resolution tiers (checked in order for each hidden unit):
+
+        Tier 1 -- PASSENGERS (primary for non-gas containers):
+            If the unit's tag appears in passenger_map (built from containers
+            with cargo_space_max > 0), the unit is authoritatively inside that
+            container. Gas refineries have cargo_space_max=0 and never appear
+            in passenger_map.
+
+        Tier 2 -- GAS MINING (distance heuristic for gas refineries):
+            Gas refineries are NOT containers in the engine's data model --
+            workers literally despawn during gas harvesting. The distance
+            heuristic against gas buildings is the primary method for gas
+            mining detection.
+
+        Tier 3 -- AUTHORITATIVE DEATH:
+            dead_units is the sole source of truth for unit death. This is
+            handled in extract(), not here. By the time resolve_hidden_units()
+            runs, dead tags have already been removed from tag_to_readable_id.
+
+        Tier 4 -- FALLBACK (distance heuristic for remaining buildings):
+            For any remaining unresolved disappearances, the distance heuristic
+            checks against all non-gas UNIT_CONTAINING_BUILDINGS. Units that
+            still don't match stay NaN (unresolved hidden state).
 
         Call this AFTER extract() and AFTER extracting buildings for the same
         player and frame. The returned dict should be merged into the units_data
@@ -609,16 +632,21 @@ class UnitExtractor:
                             for the same player and frame. Keys are readable IDs
                             (e.g., 'p1_refinery_001'), values are data dicts with
                             '_lifecycle', 'pos_(X,Y,Z)', 'unit_type_name', etc.
+            passenger_map: Dict mapping passenger tags (int) to container info
+                           dicts with 'building_type' (str) and 'building_pos'
+                           (str). Built by StateExtractor._collect_passenger_maps()
+                           from units with cargo_space_max > 0. Defaults to empty
+                           dict for backward compatibility.
 
         Returns:
             Dict mapping readable_id to data dict for each hidden unit matched
-            to a building. Example entry:
+            to a container. Example entry:
                 'p1_scv_005': {
                     'tag': 12345,
                     '_lifecycle': 'inside refinery',
                     'pos_(X,Y,Z)': '(42.5, 63.0, 11.98)',
                 }
-            Units not matched to any building are omitted (their columns stay NaN).
+            Units not matched to any container are omitted (columns stay NaN).
 
         Depends on / calls:
             - self._current_tags (set by extract())
@@ -632,6 +660,9 @@ class UnitExtractor:
             INSIDE_BUILDING_DISTANCE_THRESHOLD,
         )
 
+        if passenger_map is None:
+            passenger_map = {}
+
         resolved: Dict[str, Dict] = {}
 
         # Identify hidden tags: tracked (have readable IDs) but not currently
@@ -642,12 +673,50 @@ class UnitExtractor:
         if not hidden_tags:
             return resolved
 
-        # Build a list of candidate buildings that can contain units.
-        # Skip destroyed/cancelled buildings (can't contain units) and
-        # buildings still under construction (can't be entered yet).
-        candidate_buildings: List[Dict] = []
+        # --- Tier 1: Passenger-based resolution (non-gas containers) ---------
+        # Check each hidden tag against the passenger_map built from units
+        # with cargo_space_max > 0. This is the authoritative, API-driven
+        # detection for Medivacs, Bunkers, Command Centers, etc.
+        tier1_resolved: Set[int] = set()
+        for tag in hidden_tags:
+            if tag in passenger_map:
+                readable_id = self.tag_to_readable_id[tag]
+                container_info = passenger_map[tag]
+                # building_type from passenger_map uses get_unit_type_name()
+                # (e.g. "Bunker", "Medivac"). Lowercase it for lifecycle string
+                # consistency with the distance heuristic path.
+                container_type_lower = container_info['building_type'].lower()
+                resolved[readable_id] = {
+                    'tag': tag,
+                    '_lifecycle': f"inside {container_type_lower}",
+                    'pos_(X,Y,Z)': container_info['building_pos'],
+                }
+                tier1_resolved.add(tag)
+
+        # Remove Tier 1 resolved tags from the set needing further resolution
+        remaining_hidden = hidden_tags - tier1_resolved
+
+        if not remaining_hidden:
+            return resolved
+
+        # --- Build candidate building lists for Tier 2 and Tier 4 ------------
+        # Split buildings into gas refineries (Tier 2) and non-gas containers
+        # (Tier 4) since they serve different resolution tiers.
+        #
+        # Gas building type names (lowercase) for identification:
+        gas_building_types = frozenset({
+            'refinery', 'refineryrich',
+            'assimilator', 'assimilatorrich',
+            'extractor', 'extractorrich',
+        })
+
+        gas_buildings: List[Dict] = []       # Tier 2 candidates
+        non_gas_buildings: List[Dict] = []   # Tier 4 candidates
+
         for building_id, building_data in buildings_data.items():
             lifecycle = building_data.get('_lifecycle', '')
+            # Skip destroyed/cancelled buildings (can't contain units) and
+            # buildings still under construction (can't be entered yet).
             if lifecycle not in ('existing', 'completed'):
                 continue
 
@@ -665,50 +734,107 @@ class UnitExtractor:
             except (ValueError, IndexError):
                 continue
 
-            candidate_buildings.append({
+            building_entry = {
                 'building_type': building_type,
                 'position': pos,
                 'pos_string': pos_str,
                 'compatible_units': UNIT_CONTAINING_BUILDINGS[building_type],
-            })
+            }
 
-        if not candidate_buildings:
-            return resolved
+            if building_type in gas_building_types:
+                gas_buildings.append(building_entry)
+            else:
+                non_gas_buildings.append(building_entry)
 
-        # For each hidden unit, find the nearest compatible building
-        for tag in hidden_tags:
-            readable_id = self.tag_to_readable_id[tag]
-            last_pos = self.last_known_positions.get(tag)
-            unit_type = self.last_known_unit_type.get(tag)
+        # --- Tier 2: Gas mining detection (distance heuristic) ---------------
+        # Gas refineries have cargo_space_max=0 and never populate passengers.
+        # Workers literally despawn during gas harvesting. The distance
+        # heuristic is the primary detection method for gas mining.
+        tier2_resolved: Set[int] = set()
+        if gas_buildings:
+            for tag in remaining_hidden:
+                readable_id = self.tag_to_readable_id[tag]
+                last_pos = self.last_known_positions.get(tag)
+                unit_type = self.last_known_unit_type.get(tag)
 
-            if last_pos is None or unit_type is None:
-                continue
-
-            best_building = None
-            best_distance = INSIDE_BUILDING_DISTANCE_THRESHOLD
-
-            for building in candidate_buildings:
-                # Check unit-type compatibility (None = any unit accepted)
-                compatible = building['compatible_units']
-                if compatible is not None and unit_type not in compatible:
+                if last_pos is None or unit_type is None:
                     continue
 
-                # 2D distance (x, y); z is elevation and irrelevant for proximity
-                dx = last_pos[0] - building['position'][0]
-                dy = last_pos[1] - building['position'][1]
-                dist = (dx * dx + dy * dy) ** 0.5
+                best_building = None
+                best_distance = INSIDE_BUILDING_DISTANCE_THRESHOLD
 
-                if dist < best_distance:
-                    best_distance = dist
-                    best_building = building
+                for building in gas_buildings:
+                    # Check unit-type compatibility (e.g., only SCVs in Refineries)
+                    compatible = building['compatible_units']
+                    if compatible is not None and unit_type not in compatible:
+                        continue
 
-            if best_building is not None:
-                resolved[readable_id] = {
-                    'tag': tag,
-                    '_lifecycle': f"inside {best_building['building_type']}",
-                    'pos_(X,Y,Z)': best_building['pos_string'],
-                }
+                    # 2D distance (x, y); z is elevation and irrelevant
+                    dx = last_pos[0] - building['position'][0]
+                    dy = last_pos[1] - building['position'][1]
+                    dist = (dx * dx + dy * dy) ** 0.5
 
+                    if dist < best_distance:
+                        best_distance = dist
+                        best_building = building
+
+                if best_building is not None:
+                    resolved[readable_id] = {
+                        'tag': tag,
+                        '_lifecycle': f"inside {best_building['building_type']}",
+                        'pos_(X,Y,Z)': best_building['pos_string'],
+                    }
+                    tier2_resolved.add(tag)
+
+        # Remove Tier 2 resolved tags
+        remaining_hidden = remaining_hidden - tier2_resolved
+
+        if not remaining_hidden:
+            return resolved
+
+        # --- Tier 4: Fallback distance heuristic (non-gas buildings) ---------
+        # For any remaining unresolved disappearances, check against non-gas
+        # UNIT_CONTAINING_BUILDINGS (Bunkers, Command Centers, Nydus, etc.).
+        # This catches cases where the passengers field was empty even for
+        # loaded transports (unconfirmed edge case) or Nydus transit.
+        if non_gas_buildings:
+            for tag in remaining_hidden:
+                readable_id = self.tag_to_readable_id[tag]
+                last_pos = self.last_known_positions.get(tag)
+                unit_type = self.last_known_unit_type.get(tag)
+
+                if last_pos is None or unit_type is None:
+                    continue
+
+                best_building = None
+                best_distance = INSIDE_BUILDING_DISTANCE_THRESHOLD
+
+                for building in non_gas_buildings:
+                    # Check unit-type compatibility (None = any unit accepted)
+                    compatible = building['compatible_units']
+                    if compatible is not None and unit_type not in compatible:
+                        continue
+
+                    # 2D distance (x, y); z is elevation and irrelevant
+                    dx = last_pos[0] - building['position'][0]
+                    dy = last_pos[1] - building['position'][1]
+                    dist = (dx * dx + dy * dy) ** 0.5
+
+                    if dist < best_distance:
+                        best_distance = dist
+                        best_building = building
+
+                if best_building is not None:
+                    resolved[readable_id] = {
+                        'tag': tag,
+                        '_lifecycle': f"inside {best_building['building_type']}",
+                        'pos_(X,Y,Z)': best_building['pos_string'],
+                    }
+
+        # Units that remain unresolved after all tiers are omitted --
+        # their columns stay NaN (unresolved hidden state). They will
+        # naturally reappear if temporarily hidden, or be marked destroyed
+        # when they appear in dead_units (handled in extract()).
         return resolved
 
     @staticmethod

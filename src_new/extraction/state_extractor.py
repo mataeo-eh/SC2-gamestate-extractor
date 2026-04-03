@@ -20,7 +20,7 @@ from the returned dict -- the pipeline adds them afterward.
 from typing import Dict, List, Any, Optional
 import logging
 
-from ..extractors.unit_extractor import UnitExtractor
+from ..extractors.unit_extractor import UnitExtractor, get_unit_type_name
 from ..extractors.building_extractor import BuildingExtractor
 from ..extractors.upgrade_extractor import UpgradeExtractor
 
@@ -203,15 +203,26 @@ class StateExtractor:
         state['p1_buildings'] = self.extract_buildings(obs_p1, player_id=1)
         state['p2_buildings'] = self.extract_buildings(obs_p1, player_id=2)
 
-        # Resolve hidden units: match disappeared-but-not-dead units to nearby
-        # buildings. Workers mining gas enter refineries and leave raw_data.units
-        # temporarily; marines can load into bunkers; SCVs into command centers.
-        # resolve_hidden_units() cross-references each hidden unit's last known
-        # position with the current frame's building positions and returns
-        # "inside <building_type>" entries with the building's coordinates.
+        # Build passenger maps from the raw observation. For every unit with
+        # cargo_space_max > 0 (Medivacs, Bunkers, Command Centers, Overlord
+        # Transports, Warp Prisms, etc.), collect its passengers into a dict
+        # keyed by passenger tag. Gas refineries have cargo_space_max=0 and are
+        # NOT included -- gas mining workers are handled by the distance
+        # heuristic in resolve_hidden_units() instead.
+        #
+        # The passenger_maps are split per player (owner) so each player's
+        # unit extractor only sees passengers from its own containers.
+        passenger_maps = self._collect_passenger_maps(obs_p1)
+
+        # Resolve hidden units using the 4-tier system:
+        #   Tier 1: passengers field (for non-gas containers with cargo_space_max > 0)
+        #   Tier 2: Distance heuristic for gas refineries (cargo_space_max=0)
+        #   Tier 3: dead_units (sole authority for death -- handled in extract())
+        #   Tier 4: Distance heuristic fallback for remaining buildings
         for player_num in [1, 2]:
             hidden = self.unit_extractors[player_num].resolve_hidden_units(
-                state[f'p{player_num}_buildings']
+                state[f'p{player_num}_buildings'],
+                passenger_map=passenger_maps.get(player_num, {}),
             )
             state[f'p{player_num}_units'].update(hidden)
 
@@ -229,6 +240,72 @@ class StateExtractor:
         state['messages'] = self.extract_messages(obs_p1)
 
         return state
+
+    def _collect_passenger_maps(self, obs) -> Dict[int, Dict[int, Dict]]:
+        """
+        Scan raw observation units for containers with passengers loaded.
+
+        Iterates all units in raw_data.units that have cargo_space_max > 0
+        (Medivacs, Bunkers, Command Centers, Overlord Transports, Warp Prisms,
+        etc.) and collects their passengers into per-player maps. Gas refineries
+        have cargo_space_max=0 and are excluded -- gas mining workers are NOT
+        modeled as passengers by the SC2 engine.
+
+        The returned maps are keyed by player owner so that each player's
+        UnitExtractor receives only passengers from its own containers.
+
+        Args:
+            obs: SC2 observation (ResponseObservation) from controller.observe().
+                 Uses obs.observation.raw_data.units to access unit protos.
+
+        Returns:
+            Dict mapping player_id (int) to a passenger_map dict:
+            {
+                player_id: {
+                    passenger_tag (int): {
+                        'building_type': str,   # e.g. 'Bunker', 'Medivac'
+                        'building_pos': str,     # e.g. '(42.5, 63.0, 11.98)'
+                    },
+                    ...
+                },
+                ...
+            }
+            Empty dict for a player if no passengers are loaded.
+
+        Depends on / calls:
+            - get_unit_type_name() from unit_extractor (type ID -> name)
+            - obs.observation.raw_data.units (protobuf unit list)
+        """
+        raw_data = obs.observation.raw_data
+        # Per-player passenger maps: {player_id: {passenger_tag: info_dict}}
+        passenger_maps: Dict[int, Dict[int, Dict]] = {1: {}, 2: {}}
+
+        for unit in raw_data.units:
+            # Only process player-owned units (owner 1 or 2)
+            if unit.owner not in (1, 2):
+                continue
+
+            # Only containers with actual cargo capacity (excludes gas
+            # refineries which have cargo_space_max=0)
+            if unit.cargo_space_max <= 0:
+                continue
+
+            # Skip if no passengers currently loaded
+            if not unit.passengers:
+                continue
+
+            # Resolve container info once per container
+            container_type_name = get_unit_type_name(unit.unit_type)
+            container_pos_str = f"({unit.pos.x}, {unit.pos.y}, {unit.pos.z})"
+
+            # Record each passenger tag with its container's info
+            for passenger in unit.passengers:
+                passenger_maps[unit.owner][passenger.tag] = {
+                    'building_type': container_type_name,
+                    'building_pos': container_pos_str,
+                }
+
+        return passenger_maps
 
     def extract_units(self, obs, player_id: int) -> Dict[str, Dict]:
         """
