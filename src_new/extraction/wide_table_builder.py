@@ -49,6 +49,20 @@ class WideTableBuilder:
         self.schema = schema
         # Player name mapping: {player_num: sanitized_name} e.g. {1: "really", 2: "what"}
         self.player_names: Dict[int, str] = {}
+
+        # Cached template row: a dict with all current schema columns set to
+        # their missing value (NaN). Rebuilt when schema column count changes.
+        # Using dict.copy() on this template is much faster than iterating
+        # get_missing_value() per column per frame.
+        self._template_row: Dict[str, Any] = {}
+        self._template_row_col_count: int = 0
+
+        # Cached attribute suffix lists per entity prefix. Once a prefix is
+        # registered, its applicable suffixes never change, so we cache the
+        # result of _get_unit_attr_suffixes_in_schema / _get_building_attr_suffixes_in_schema.
+        self._unit_suffix_cache: Dict[str, List[str]] = {}
+        self._building_suffix_cache: Dict[str, List[str]] = {}
+
         logger.info("WideTableBuilder initialized")
 
     def set_player_names(self, player_names: Dict[int, str]) -> None:
@@ -75,10 +89,17 @@ class WideTableBuilder:
         Returns:
             Dictionary with all columns, NaN for missing values.
         """
-        # Initialize row with all columns as missing values
-        row = {}
-        for col in self.schema.get_column_list():
-            row[col] = self.schema.get_missing_value(col)
+        # Initialize row from cached template (dict.copy is much faster than
+        # iterating get_missing_value per column). Rebuild template when schema
+        # grows (new entities add columns dynamically during the game loop).
+        current_col_count = len(self.schema.get_column_list())
+        if current_col_count != self._template_row_col_count:
+            self._template_row = {
+                col: self.schema.get_missing_value(col)
+                for col in self.schema.get_column_list()
+            }
+            self._template_row_col_count = current_col_count
+        row = self._template_row.copy()
 
         # Add base columns
         game_loop = extracted_state.get('game_loop', 0)
@@ -175,8 +196,13 @@ class WideTableBuilder:
         prefix = self._get_column_prefix(player, unit_id)
         lifecycle = unit_data.get('_lifecycle', 'existing')
 
-        # Determine which attribute suffixes exist for this unit in the schema
-        attr_suffixes = self._get_unit_attr_suffixes_in_schema(prefix, row)
+        # Use cached suffix list per prefix. Once a unit is registered in the
+        # schema, its applicable suffixes never change mid-game.
+        if prefix in self._unit_suffix_cache:
+            attr_suffixes = self._unit_suffix_cache[prefix]
+        else:
+            attr_suffixes = self._get_unit_attr_suffixes_in_schema(prefix, row)
+            self._unit_suffix_cache[prefix] = attr_suffixes
 
         if not attr_suffixes:
             # This unit has no columns in the schema (e.g., never completed)
@@ -233,8 +259,13 @@ class WideTableBuilder:
         prefix = self._get_column_prefix(player, building_id)
         lifecycle = building_data.get('_lifecycle', 'existing')
 
-        # Determine which attribute suffixes exist for this building in the schema
-        attr_suffixes = self._get_building_attr_suffixes_in_schema(prefix, row)
+        # Use cached suffix list per prefix. Once a building is registered in
+        # the schema, its applicable suffixes never change mid-game.
+        if prefix in self._building_suffix_cache:
+            attr_suffixes = self._building_suffix_cache[prefix]
+        else:
+            attr_suffixes = self._get_building_attr_suffixes_in_schema(prefix, row)
+            self._building_suffix_cache[prefix] = attr_suffixes
 
         if not attr_suffixes:
             return
