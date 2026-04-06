@@ -118,8 +118,14 @@ class ParallelReplayProcessor:
 
         start_time = time.time()
 
-        # Process replays in parallel
-        with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
+        # Process replays in parallel. The initializer runs once per worker
+        # process (not per task), handling FLAGS parsing and logging setup
+        # that would otherwise repeat for every replay submission.
+        with ProcessPoolExecutor(
+            max_workers=self.num_workers,
+            initializer=_worker_initializer,
+            initargs=(self.log_file_path,),
+        ) as executor:
             # Submit all jobs
             future_to_replay = {
                 executor.submit(
@@ -127,7 +133,6 @@ class ParallelReplayProcessor:
                     replay_path,
                     output_dir,
                     self.config,
-                    self.log_file_path
                 ): replay_path
                 for replay_path in replay_paths
             }
@@ -330,40 +335,25 @@ class ParallelReplayProcessor:
         return self.process_replay_batch(retry_paths, output_dir)
 
 
-# Worker function for parallel processing
-def _worker_process_replay(
-    replay_path: Path,
-    output_dir: Path,
-    config: Dict[str, Any],
-    log_file_path: Optional[str] = None
-) -> Tuple[bool, float, Optional[str]]:
+# Worker initializer: runs once per worker process, not per task.
+# Handles FLAGS parsing and logging setup that would otherwise repeat
+# for every replay submission. ProcessPoolExecutor calls this once when
+# each worker process is spawned.
+def _worker_initializer(log_file_path: Optional[str] = None) -> None:
     """
-    Worker function for parallel replay processing.
+    One-time initialization for each worker process.
 
-    This function is executed in a separate process by ProcessPoolExecutor.
-    It creates its own ReplayExtractionPipeline instance and processes a
-    single replay.
+    Configures logging and parses absl FLAGS for pysc2. Called by
+    ProcessPoolExecutor(initializer=...) once per worker process,
+    NOT once per replay task.
 
     Args:
-        replay_path: Path to replay file
-        output_dir: Output directory
-        config: Configuration dictionary
-        log_file_path: Absolute path to the shared log file for worker logging
-
-    Returns:
-        Tuple of (success, processing_time, error_message):
-        - success: True if processing succeeded
-        - processing_time: Time in seconds
-        - error_message: Error string if failed, None if successful
-
-    # TODO: Test case - Worker processes replay successfully
-    # TODO: Test case - Worker handles exceptions gracefully
-    # TODO: Test case - Worker returns correct timing information
+        log_file_path: Absolute path to the shared log file for worker logging.
+                       None means no file logging (console only).
     """
-    import time
     import logging
 
-    # Configure logging for this worker process (must happen before any log calls)
+    # Configure logging for this worker process (must happen before any log calls).
     # On Windows, spawned processes do not inherit the parent's logging config.
     if log_file_path:
         from src_new.pipeline.logging_config import setup_worker_logging
@@ -377,6 +367,38 @@ def _worker_process_replay(
         FLAGS(['worker'], known_only=True)
     except:
         pass  # FLAGS already parsed, ignore
+
+    init_logger = logging.getLogger(__name__)
+    init_logger.debug("Worker process initialized (FLAGS parsed, logging configured)")
+
+
+# Worker function for parallel processing
+def _worker_process_replay(
+    replay_path: Path,
+    output_dir: Path,
+    config: Dict[str, Any],
+) -> Tuple[bool, float, Optional[str]]:
+    """
+    Worker function for parallel replay processing.
+
+    This function is executed in a separate process by ProcessPoolExecutor.
+    It creates its own ReplayExtractionPipeline instance and processes a
+    single replay. FLAGS and logging are already initialized by
+    _worker_initializer(), which runs once per worker process.
+
+    Args:
+        replay_path: Path to replay file
+        output_dir: Output directory
+        config: Configuration dictionary
+
+    Returns:
+        Tuple of (success, processing_time, error_message):
+        - success: True if processing succeeded
+        - processing_time: Time in seconds
+        - error_message: Error string if failed, None if successful
+    """
+    import time
+    import logging
 
     worker_logger = logging.getLogger(__name__)
 
