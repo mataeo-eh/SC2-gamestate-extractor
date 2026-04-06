@@ -11,6 +11,7 @@ from typing import Dict, Any, Optional, List
 from pathlib import Path
 import logging
 
+import numpy as np
 from absl import flags
 
 from ..extraction.replay_loader import ReplayLoader
@@ -234,7 +235,13 @@ class ReplayExtractionPipeline:
                 f"Economy snapshots loaded: player {pid} has {snap_count} snapshot(s)"
             )
 
-        rows = []
+        # Column-oriented accumulation: dict of lists instead of list of dicts.
+        # pd.DataFrame(column_dict) is significantly faster than
+        # pd.DataFrame(list_of_dicts) for wide tables (1000+ columns) because
+        # pandas can directly wrap each list as a Series without scanning every
+        # dict for keys. New columns added mid-game are backfilled with NaN.
+        column_data: Dict[str, list] = {}
+        row_count = 0
         all_messages = []
 
         with self.replay_loader.start_sc2_instance() as controller:
@@ -359,7 +366,22 @@ class ReplayExtractionPipeline:
                     # Build wide-format row — schema is now complete for all entities
                     # seen so far; future entities will get columns in later iterations.
                     row = self.wide_table_builder.build_row(state)
-                    rows.append(row)
+
+                    # Accumulate in column-oriented format for faster DataFrame
+                    # construction. When new columns appear (dynamic schema), we
+                    # backfill them with NaN for all previous rows.
+                    for col, val in row.items():
+                        if col not in column_data:
+                            # New column: backfill previous rows with NaN
+                            column_data[col] = [np.nan] * row_count
+                        column_data[col].append(val)
+                    # Ensure columns from previous rows that aren't in this row
+                    # (shouldn't happen since build_row inits all schema cols, but
+                    # defensive) get NaN appended for this row.
+                    for col in column_data:
+                        if len(column_data[col]) <= row_count:
+                            column_data[col].append(np.nan)
+                    row_count += 1
 
                     messages = state.get('messages', [])
                     all_messages.extend(messages)
@@ -378,7 +400,7 @@ class ReplayExtractionPipeline:
                     continue
 
             logger.info(
-                f"Observer mode complete. Extracted {len(rows)} rows, "
+                f"Observer mode complete. Extracted {row_count} rows, "
                 f"{len(all_messages)} messages"
             )
 
@@ -395,8 +417,8 @@ class ReplayExtractionPipeline:
         }
 
         logger.info(f"Writing game state to {output_files['game_state']}")
-        self.parquet_writer.write_game_state(
-            rows, output_files['game_state'], self.schema_manager
+        self.parquet_writer.write_game_state_columnar(
+            column_data, output_files['game_state'], self.schema_manager
         )
 
         # Build and write comprehensive metadata JSON that makes the
@@ -405,7 +427,7 @@ class ReplayExtractionPipeline:
         metadata_dict = build_metadata(
             metadata=metadata,
             columns=self.schema_manager.columns,
-            total_rows=len(rows),
+            total_rows=row_count,
             parquet_filename=parquet_filename,
             all_messages=all_messages,
         )
@@ -417,7 +439,7 @@ class ReplayExtractionPipeline:
             'metadata': metadata,
             'stats': {
                 'total_loops': max_loops,
-                'rows_written': len(rows),
+                'rows_written': row_count,
             },
         }
 

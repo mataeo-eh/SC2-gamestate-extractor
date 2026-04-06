@@ -104,6 +104,65 @@ class ParquetWriter:
             logger.error(f"Failed to write parquet: {e}")
             raise IOError(f"Failed to write parquet: {e}")
 
+    def write_game_state_columnar(
+        self,
+        column_data: Dict[str, list],
+        output_path: Path,
+        schema: SchemaManager
+    ) -> None:
+        """
+        Write game state from column-oriented data (dict of lists) to parquet.
+
+        This is faster than write_game_state() because pd.DataFrame(column_dict)
+        can directly wrap each list as a Series, avoiding the expensive key-scanning
+        step that pd.DataFrame(list_of_dicts) requires for wide tables.
+
+        Args:
+            column_data: Dict mapping column names to lists of values.
+                         All lists must have the same length.
+            output_path: Path to output parquet file
+            schema: SchemaManager with column definitions
+
+        Raises:
+            ValueError: If column_data is empty
+            IOError: If write fails
+        """
+        if not column_data:
+            raise ValueError("Cannot write empty column_data")
+
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Determine row count from first column's list length
+        first_col = next(iter(column_data.values()))
+        num_rows = len(first_col)
+        logger.info(f"Writing {num_rows} rows to {output_path} (columnar path)")
+
+        # Build DataFrame from column-oriented dict (fast path)
+        df = pd.DataFrame(column_data)
+
+        # Reorder columns according to schema
+        schema_columns = schema.get_column_list()
+        df = df.reindex(columns=schema_columns)
+
+        # Convert types according to schema
+        df = self._convert_types(df, schema)
+
+        # Write to parquet
+        try:
+            df.to_parquet(
+                output_path,
+                engine='pyarrow',
+                compression=self.compression,
+                index=False,
+            )
+            logger.info(f"Successfully wrote {num_rows} rows to {output_path}")
+            logger.info(f"  File size: {output_path.stat().st_size / 1024:.2f} KB")
+
+        except Exception as e:
+            logger.error(f"Failed to write parquet: {e}")
+            raise IOError(f"Failed to write parquet: {e}")
+
     def append_rows(
         self,
         rows: List[Dict[str, Any]],
