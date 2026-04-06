@@ -4,6 +4,7 @@ import os
 import pprint
 from tqdm import tqdm
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 load_dotenv()
 
 
@@ -104,115 +105,141 @@ def fetch_bot_match_ids(auth, base_url, bot_ids: list, max_replays: int = None, 
 
 import time
 
-def download_replays(auth, base_url, match_ids: list, print_output: bool = True, max_retries: int = 3):
+def _download_single_replay(auth, base_url, match_id, print_output: bool = True, max_retries: int = 3):
     """
-    Downloads replays for given match IDs
+    Downloads a single replay for a given match ID. Designed to run inside a
+    ThreadPoolExecutor worker. All I/O is network-bound so threads work well
+    despite the GIL.
+
+    Args:
+        auth: Authorization header
+        base_url: Base URL for the API
+        match_id: Match ID to download the replay for
+    Kwargs:
+        print_output (bool): Whether to print the output (default = True)
+        max_retries (int): Maximum number of retry attempts for recoverable errors (default = 3)
+    Returns:
+        Tuple of (match_id, success: bool, error_reason: str or None)
+    """
+    # Check if replay has already been downloaded
+    filename = f'replays/match_{match_id}.SC2Replay'
+    if os.path.exists(filename):
+        return (match_id, True, None)  # Already exists, count as success
+
+    for attempt in range(max_retries):
+        try:
+            # Get info for each match
+            response = requests.get(f'{base_url}/results/?match={match_id}', headers=auth)
+
+            # Handle recoverable errors with retry
+            if response.status_code in [429, 500, 502, 503]:
+                wait_time = 2 ** attempt  # 1s, 2s, 4s
+                time.sleep(wait_time)
+                continue
+
+            # Handle non-recoverable client errors
+            if response.status_code == 404:
+                return (match_id, False, "404 Not Found")
+
+            if 400 <= response.status_code < 500:
+                return (match_id, False, f"HTTP {response.status_code}")
+
+            response.raise_for_status()
+
+            # Parse JSON with error handling
+            try:
+                result = response.json()
+            except requests.exceptions.JSONDecodeError:
+                if attempt < max_retries - 1:
+                    time.sleep(2 ** attempt)
+                    continue
+                return (match_id, False, "Invalid JSON")
+
+            # Get replay URL
+            replay_url = result['results'][0]['replay_file']
+
+            if replay_url:
+                # Stream the replay download in chunks to reduce peak memory
+                # when many downloads run concurrently.
+                replay_response = requests.get(replay_url, stream=True)
+                replay_response.raise_for_status()
+
+                with open(filename, 'wb') as f:
+                    for chunk in replay_response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+                return (match_id, True, None)
+            else:
+                return (match_id, False, "No replay URL")
+
+        except requests.exceptions.RequestException as e:
+            if attempt < max_retries - 1:
+                time.sleep(2 ** attempt)
+            else:
+                return (match_id, False, str(e))
+
+    return (match_id, False, f"Max retries ({max_retries}) exceeded")
+
+
+def download_replays(auth, base_url, match_ids: list, print_output: bool = True,
+                     max_retries: int = 3, max_workers: int = 8):
+    """
+    Downloads replays for given match IDs using concurrent threads.
+
+    Downloads are I/O-bound (network), so ThreadPoolExecutor provides true
+    concurrency despite the GIL. Each worker handles one match ID with retry
+    logic and streaming file writes.
+
     Args:
         auth: Authorization header
         base_url: Base URL for the API
         match_ids (list): List of match IDs to download replays for
     Kwargs:
         print_output (bool): Whether to print the output (default = True)
-        max_retries (int): Maximum number of retry attempts for recoverable errors (default = 3)
+        max_retries (int): Maximum number of retry attempts per match (default = 3)
+        max_workers (int): Number of concurrent download threads (default = 8).
+                           Higher values increase throughput but use more memory
+                           and connections. 8 is a good balance for most APIs.
     Returns:
         Number of replays downloaded (int)
     """
     num_replays = 0
     failed_matches = []
-    
-    # Iterate over match IDs to download replays
-    for match_id in tqdm(match_ids, desc="Downloading replays", leave=False):
-        # Check if replay has already been downloaded
-        if os.path.exists(f'replays/match_{match_id}.SC2Replay'):
-            print(f"Replay for match {match_id} already exists. Skipping download.")
-            continue
-        
-        # Retry logic for this match
-        success = False
-        for attempt in range(max_retries):
-            try:
-                # Get info for each match
-                response = requests.get(f'{base_url}/results/?match={match_id}', headers=auth)
-                
-                # Handle recoverable errors with retry
-                if response.status_code in [429, 500, 502, 503]:
-                    wait_time = 2 ** attempt  # 1s, 2s, 4s
-                    if print_output:
-                        print(f"Recoverable error {response.status_code} for match {match_id}. Retrying in {wait_time}s... (attempt {attempt + 1}/{max_retries})")
-                    time.sleep(wait_time)
-                    continue
-                
-                # Handle non-recoverable client errors
-                if response.status_code == 404:
-                    if print_output:
-                        print(f"Match {match_id} not found (404). Skipping.")
-                    failed_matches.append((match_id, "404 Not Found"))
-                    break
-                
-                if 400 <= response.status_code < 500:
-                    if print_output:
-                        print(f"Client error {response.status_code} for match {match_id}. Skipping.")
-                    failed_matches.append((match_id, f"HTTP {response.status_code}"))
-                    break
-                
-                # Raise for any other errors
-                response.raise_for_status()
-                
-                # Parse JSON with error handling
-                try:
-                    result = response.json()
-                except requests.exceptions.JSONDecodeError:
-                    if attempt < max_retries - 1:
-                        wait_time = 2 ** attempt
-                        if print_output:
-                            print(f"Invalid JSON response for match {match_id}. Retrying in {wait_time}s... (attempt {attempt + 1}/{max_retries})")
-                        time.sleep(wait_time)
-                        continue
-                    else:
-                        if print_output:
-                            print(f"Invalid JSON for match {match_id} after {max_retries} attempts. Skipping.")
-                        failed_matches.append((match_id, "Invalid JSON"))
-                        break
-                
-                # Get replay URL
-                if print_output:
-                    pprint.pprint(result)
-                    
-                replay_url = result['results'][0]['replay_file']
-                
-                if replay_url:  # Check it's not null
-                    replay_response = requests.get(replay_url)
-                    replay_response.raise_for_status()
-                    
-                    # Use the actual match_id variable for filename
-                    filename = f'replays/match_{match_id}.SC2Replay'
-                    
-                    # Save replay file
-                    with open(filename, 'wb') as f:
-                        f.write(replay_response.content)
-                    
-                    print(f"Downloaded: {filename}")
-                    num_replays += 1
-                    success = True
-                    break
-                else:
-                    if print_output:
-                        print(f"No replay file available for match {match_id}. Skipping.")
-                    failed_matches.append((match_id, "No replay URL"))
-                    break
-                    
-            except requests.exceptions.RequestException as e:
-                # Network errors - retry
-                if attempt < max_retries - 1:
-                    wait_time = 2 ** attempt
-                    if print_output:
-                        print(f"Network error for match {match_id}: {e}. Retrying in {wait_time}s... (attempt {attempt + 1}/{max_retries})")
-                    time.sleep(wait_time)
-                else:
-                    if print_output:
-                        print(f"Network error for match {match_id} after {max_retries} attempts. Skipping.")
-                    failed_matches.append((match_id, str(e)))
-    
+
+    # Filter out already-downloaded replays before submitting to thread pool
+    pending_ids = [
+        mid for mid in match_ids
+        if not os.path.exists(f'replays/match_{mid}.SC2Replay')
+    ]
+    skipped = len(match_ids) - len(pending_ids)
+    if skipped and print_output:
+        print(f"Skipping {skipped} already-downloaded replays.")
+
+    if not pending_ids:
+        if print_output:
+            print("All replays already downloaded.")
+        return 0
+
+    # Download replays concurrently using a thread pool.
+    # ThreadPoolExecutor releases the GIL during I/O (network, disk), so
+    # multiple threads download truly in parallel.
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_match = {
+            executor.submit(
+                _download_single_replay, auth, base_url, mid,
+                print_output=False, max_retries=max_retries,
+            ): mid
+            for mid in pending_ids
+        }
+
+        for future in tqdm(as_completed(future_to_match), total=len(pending_ids),
+                           desc="Downloading replays", leave=False):
+            match_id, success, error = future.result()
+            if success:
+                num_replays += 1
+            else:
+                failed_matches.append((match_id, error))
+
     # Report failures at the end
     if failed_matches and print_output:
         print(f"\n{'='*50}")
@@ -220,7 +247,7 @@ def download_replays(auth, base_url, match_ids: list, print_output: bool = True,
         for match_id, reason in failed_matches:
             print(f"  - Match {match_id}: {reason}")
         print(f"{'='*50}\n")
-    
+
     return num_replays
 
 def main(bots: list, print_output = True, max_replays=None):
