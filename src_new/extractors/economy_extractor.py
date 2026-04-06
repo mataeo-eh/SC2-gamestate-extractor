@@ -67,6 +67,13 @@ _FIELD_MAP = {
 _ECONOMY_KEYS = [entry[0] for entry in _FIELD_MAP.values()]
 
 
+# Module-level pre-computed game loop arrays for binary search.
+# Built once by load_economy_snapshots(), consumed by get_economy_at_loop().
+# Keyed by player_id (int). Each worker process has its own copy since
+# ProcessPoolExecutor spawns separate processes.
+_precomputed_game_loops: Dict[int, List[int]] = {}
+
+
 def _make_zeroed_snapshot() -> Dict[str, float]:
     """
     Build a snapshot dict with all economy keys set to zero.
@@ -178,6 +185,13 @@ def load_economy_snapshots(replay_path: str) -> Dict[int, List[Dict[str, float]]
     for pid in snapshots:
         snapshots[pid].sort(key=lambda s: s['game_loop'])
 
+    # Pre-compute game loop arrays for binary search in get_economy_at_loop().
+    # Built once here instead of rebuilding a list comprehension on every call
+    # (called ~40,000 times per replay: 2 players x ~20,000 game loops).
+    _precomputed_game_loops.clear()
+    for pid in snapshots:
+        _precomputed_game_loops[pid] = [s['game_loop'] for s in snapshots[pid]]
+
     logger.info(
         f"Loaded {event_count} SPlayerStatsEvent(s) for "
         f"{len(snapshots)} player(s) from replay"
@@ -232,11 +246,17 @@ def get_economy_at_loop(
         # No snapshots at all for this player — return zeros
         return _make_zeroed_snapshot()
 
-    # Binary search: find the rightmost snapshot with game_loop <= requested game_loop.
-    # We build a list of game_loops for bisect_right. bisect_right returns the
-    # insertion point AFTER any existing entries equal to game_loop, so index - 1
-    # gives us the last snapshot at or before the target.
-    game_loops = [s['game_loop'] for s in player_snaps]
+    # Use pre-computed game loop array for O(log n) binary search.
+    # The array is built once by load_economy_snapshots() instead of
+    # rebuilding a list comprehension on every call.
+    game_loops = _precomputed_game_loops.get(player_id)
+    if game_loops is None:
+        # Fallback: build on the fly if called outside normal pipeline flow
+        game_loops = [s['game_loop'] for s in player_snaps]
+
+    # bisect_right returns the insertion point AFTER any existing entries
+    # equal to game_loop, so index - 1 gives us the last snapshot at or
+    # before the target.
     idx = bisect_right(game_loops, game_loop)
 
     if idx == 0:
