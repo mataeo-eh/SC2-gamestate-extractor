@@ -496,8 +496,24 @@ class SchemaManager:
         """
         Return ordered list of all columns.
 
+        Returns the internal list directly (no copy) for performance in
+        hot-path callers like build_row() that only iterate it. Callers
+        that need to modify the list should use get_column_list_copy().
+
         Returns:
-            List of column names in order
+            List of column names in order (direct reference, do not mutate)
+        """
+        return self.columns
+
+    def get_column_list_copy(self) -> List[str]:
+        """
+        Return a copy of the ordered column list (safe to mutate).
+
+        Use this when the caller needs to modify the returned list.
+        For read-only iteration (e.g., build_row), use get_column_list().
+
+        Returns:
+            Copy of column names list
         """
         return self.columns.copy()
 
