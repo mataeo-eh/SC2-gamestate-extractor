@@ -31,6 +31,11 @@ from src_new.shared_constants import BUILDING_TYPES
 
 logger = logging.getLogger(__name__)
 
+# Module-level cache for building type ID -> name lookups.
+# The mapping is static per game version, so caching eliminates redundant
+# pysc2_units.get_unit_type() calls across frames.
+_building_type_name_cache: Dict[int, str] = {}
+
 # Module-level API-derived building type ID set. When populated by
 # set_building_type_ids_global(), is_building() uses O(1) integer lookup
 # instead of string name conversion + frozenset membership test.
@@ -71,16 +76,27 @@ def get_building_type_name(unit_type_id: int) -> str:
     """
     Convert building type ID to human-readable name.
 
+    Uses a module-level cache (_building_type_name_cache) to avoid redundant
+    pysc2 lookups. The type ID -> name mapping is static per game version,
+    so caching is safe and eliminates repeated calls across frames.
+
     Args:
         unit_type_id: SC2 building type ID
 
     Returns:
         Building type name string
     """
+    cached = _building_type_name_cache.get(unit_type_id)
+    if cached is not None:
+        return cached
+
     try:
-        return pysc2_units.get_unit_type(unit_type_id).name
+        name = pysc2_units.get_unit_type(unit_type_id).name
     except (KeyError, AttributeError):
-        return f"Unknown({unit_type_id})"
+        name = f"Unknown({unit_type_id})"
+
+    _building_type_name_cache[unit_type_id] = name
+    return name
 
 
 # ---------------------------------------------------------------------------
