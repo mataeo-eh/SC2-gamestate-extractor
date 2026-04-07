@@ -5,7 +5,7 @@ This component wraps the pipeline.ReplayLoader and provides a clean interface
 for the extraction pipeline with perfect information observation settings.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from pathlib import Path
 import logging
 
@@ -494,3 +494,84 @@ def load_replay_with_metadata(replay_path: Path, config: Optional[Dict[str, Any]
     except Exception as e:
         controller.__exit__(None, None, None)
         raise
+
+
+# --- Duration and timeout constants for the pre-filter ---
+# AIArena cuts matches off at ~1 hour if no winner is decided. These matches
+# land consistently at exactly 3600 seconds (±100s tolerance for slight
+# variance). Bots in these games are typically "derping out" — no meaningful
+# strategy can be extracted.
+_TIMEOUT_DURATION_MIN_SECONDS = 3500
+_TIMEOUT_DURATION_MAX_SECONDS = 3700
+
+# s2protocol player result codes (from replay.details m_result field)
+_RESULT_UNDECIDED = 0
+_RESULT_VICTORY = 1
+# _RESULT_DEFEAT = 2
+# _RESULT_TIE = 3
+
+
+def check_replay_dominated(replay_path: Path) -> Tuple[bool, str]:
+    """
+    Lightweight pre-filter that reads the raw replay file (no SC2 engine)
+    to decide whether a replay should be skipped before extraction.
+
+    A replay is skipped when:
+    - No player achieved victory (all results are undecided/tie), OR
+    - The game duration falls in the 3500-3700 second range (AIArena's
+      one-hour timeout window for misbehaving bots)
+
+    These replays contain no meaningful strategic information — the bots
+    were running aimlessly and no useful ML training signal can be
+    extracted from them.
+
+    Args:
+        replay_path: Path to the .SC2Replay file.
+
+    Returns:
+        Tuple of (should_skip, reason):
+        - should_skip: True if the replay should be filtered out.
+        - reason: Human-readable explanation (empty string when not skipped).
+
+    Depends on / calls:
+        - mpyq.MPQArchive for reading the replay's MPQ container
+        - s2protocol for decoding the header (duration) and details (results)
+    """
+    try:
+        archive = mpyq.MPQArchive(str(replay_path))
+
+        # --- Duration from header ---
+        header_content = archive.header['user_data_header']['content']
+        header = s2versions.latest().decode_replay_header(header_content)
+        elapsed_loops = header['m_elapsedGameLoops']
+        duration_seconds = elapsed_loops / 22.4
+
+        # --- Player results from details ---
+        base_build = header['m_version']['m_baseBuild']
+        protocol = s2versions.build(base_build)
+        details_raw = archive.read_file('replay.details')
+        details = protocol.decode_replay_details(details_raw)
+
+        has_winner = any(
+            p['m_result'] == _RESULT_VICTORY
+            for p in details['m_playerList']
+        )
+
+        # Check: no winner
+        if not has_winner:
+            return True, f"no winner (duration: {duration_seconds:.0f}s)"
+
+        # Check: timeout duration range (AIArena 1-hour cutoff)
+        if _TIMEOUT_DURATION_MIN_SECONDS <= duration_seconds <= _TIMEOUT_DURATION_MAX_SECONDS:
+            return True, f"timeout duration ({duration_seconds:.0f}s in {_TIMEOUT_DURATION_MIN_SECONDS}-{_TIMEOUT_DURATION_MAX_SECONDS}s range)"
+
+        return False, ""
+
+    except Exception as e:
+        # If we can't read the replay metadata, don't skip — let the main
+        # pipeline handle the error with full logging.
+        logger.warning(
+            f"Pre-filter could not read {replay_path.name}: {e}. "
+            f"Not skipping — will attempt full extraction."
+        )
+        return False, ""

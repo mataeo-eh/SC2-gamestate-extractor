@@ -278,6 +278,11 @@ class ParquetWriter:
                     # Convert lists to JSON strings for parquet compatibility
                     if col == MESSAGES_COLUMN:
                         df[col] = df[col].apply(self._serialize_messages_for_parquet)
+                        # Cast to StringDtype so the column is always large_string
+                        # in parquet, even when all values are NaN (which pandas
+                        # would otherwise infer as float64/double, causing type
+                        # conflicts during reconcile_parts concatenation).
+                        df[col] = df[col].astype('string')
                     else:
                         # Unit/building attribute columns contain mixed types:
                         # numeric values (float) for real data AND lifecycle state
@@ -570,13 +575,45 @@ class ParquetWriter:
             f"Reconciling {len(part_files)} part files into {output_path}"
         )
 
-        # Read all parts as PyArrow tables. promote_options='default' fills
-        # missing columns with null when schemas differ across parts.
+        # Read all parts as PyArrow tables and normalize column types.
+        # Different batches can have type mismatches for the same column —
+        # e.g. Messages is large_string when messages exist but double when
+        # all values are NaN (pandas infers all-NaN as float64). Cast any
+        # non-large_string column that appears as large_string in other
+        # parts so concat_tables can merge them.
         tables = []
         for pf in part_files:
             tables.append(pq.read_table(pf))
 
-        unified = pa.concat_tables(tables, promote_options='default')
+        # Build the target type for each column: if ANY part has large_string,
+        # all parts should use large_string for that column.
+        target_types: Dict[str, pa.DataType] = {}
+        for table in tables:
+            for i, field in enumerate(table.schema):
+                if field.type == pa.large_string():
+                    target_types[field.name] = pa.large_string()
+                elif field.name not in target_types:
+                    target_types[field.name] = field.type
+
+        # Cast mismatched columns in each table to the target type.
+        normalized = []
+        for table in tables:
+            new_columns = []
+            new_fields = []
+            for i, field in enumerate(table.schema):
+                target = target_types.get(field.name, field.type)
+                col = table.column(i)
+                if field.type != target:
+                    # Cast the column (e.g. double -> large_string).
+                    # For all-null/NaN float columns this produces null strings.
+                    col = col.cast(target)
+                    field = pa.field(field.name, target)
+                new_columns.append(col)
+                new_fields.append(field)
+            normalized.append(pa.table(new_columns, schema=pa.schema(new_fields)))
+        tables = normalized
+
+        unified = pa.concat_tables(tables, promote_options='permissive')
         logger.info(
             f"  Unified table: {unified.num_rows} rows x "
             f"{unified.num_columns} columns"
