@@ -60,7 +60,7 @@ Usage:
     python quickstart.py --output data/quickstart --engineer-features --discretize -dataset
 
     # Testing
-    python quickstart.py --process-replay-directory replays --output data/quickstart --workers 2 -dataset --num-replays 5 -e -d
+    python quickstart.py --process-replay-directory replays --output data/quickstart --workers 2 -dataset --num-replays 5 -e -d -s -EDA
 """
 from absl import flags
 import sys
