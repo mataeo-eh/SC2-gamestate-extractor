@@ -24,7 +24,6 @@ from .schema_manager import SchemaManager, UNIT_BASE_ATTRIBUTES, UNIT_SHIELD_ATT
 from src_new.shared_constants import (
     UNIT_LIFECYCLE_OVERRIDE_STATES,
     BUILDING_LIFECYCLE_OVERRIDE_STATES,
-    ECONOMY_COLUMN_SUFFIXES,
 )
 
 
@@ -50,18 +49,22 @@ class WideTableBuilder:
         # Player name mapping: {player_num: sanitized_name} e.g. {1: "really", 2: "what"}
         self.player_names: Dict[int, str] = {}
 
-        # Cached template row: a dict with all current schema columns set to
-        # their missing value (NaN). Rebuilt when schema column count changes.
-        # Using dict.copy() on this template is much faster than iterating
-        # get_missing_value() per column per frame.
-        self._template_row: Dict[str, Any] = {}
-        self._template_row_col_count: int = 0
+        # --- Performance cache 1: row template ---
+        # Pre-built dict mapping every schema column to its missing value (NaN).
+        # build_row() calls dict.copy() on this instead of iterating all columns
+        # from scratch each step. Invalidated by comparing _cached_col_count to
+        # the current schema length — when they differ, new columns have been
+        # added and the template must be rebuilt.
+        self._row_template: Dict[str, Any] = {}
+        self._cached_col_count: int = 0
 
-        # Cached attribute suffix lists per entity prefix. Once a prefix is
-        # registered, its applicable suffixes never change, so we cache the
-        # result of _get_unit_attr_suffixes_in_schema / _get_building_attr_suffixes_in_schema.
-        self._unit_suffix_cache: Dict[str, List[str]] = {}
-        self._building_suffix_cache: Dict[str, List[str]] = {}
+        # --- Performance cache 2: per-entity attribute suffix lists ---
+        # Maps entity prefix -> (cached_col_count, [suffixes]).
+        # Avoids recomputing string concatenations + dict lookups for every
+        # unit/building at every step. Entries are invalidated per-prefix when
+        # the schema column count changes (new entities may have been registered,
+        # so a prefix that previously returned [] might now return real suffixes).
+        self._entity_suffix_cache: Dict[str, tuple] = {}
 
         logger.info("WideTableBuilder initialized")
 
@@ -79,6 +82,43 @@ class WideTableBuilder:
         }
         logger.info(f"Player names set: {self.player_names}")
 
+    def _get_row_template(self) -> Dict[str, Any]:
+        """
+        Return a fresh copy of the pre-built row template dict.
+
+        The template maps every current schema column to its missing value (NaN).
+        On the first call, or whenever the schema has grown (new entity/upgrade
+        columns added dynamically during extraction), the template is rebuilt to
+        include the new columns. Subsequent calls with an unchanged schema just
+        return dict.copy() of the cached template — O(N) copy instead of N
+        individual get_missing_value() calls.
+
+        Cache invalidation signal: len(self.schema.get_column_list()) is an O(1)
+        check. When it differs from _cached_col_count, new columns have been
+        added since the last rebuild and we must update the template.
+
+        Returns:
+            A new dict with all schema columns set to their missing values.
+
+        Depends on / calls:
+            - self.schema.get_column_list() — to enumerate current columns
+            - self.schema.get_missing_value() — only for columns not yet in template
+        """
+        current_col_count = len(self.schema.get_column_list())
+
+        # Rebuild only when schema has grown — avoids redundant work on stable frames.
+        if current_col_count != self._cached_col_count:
+            # Add only the NEW columns to the existing template dict so we
+            # don't re-fetch missing values for the many columns already cached.
+            for col in self.schema.get_column_list():
+                if col not in self._row_template:
+                    self._row_template[col] = self.schema.get_missing_value(col)
+            self._cached_col_count = current_col_count
+
+        # Return an independent copy so callers can mutate it freely without
+        # corrupting the cached template for the next step.
+        return self._row_template.copy()
+
     def build_row(self, extracted_state: Dict[str, Any]) -> Dict[str, Any]:
         """
         Transform extracted state to wide-format row.
@@ -89,20 +129,9 @@ class WideTableBuilder:
         Returns:
             Dictionary with all columns, NaN for missing values.
         """
-        # Initialize row from cached template (dict.copy is much faster than
-        # iterating get_missing_value per column). When the schema grows (new
-        # entities add columns dynamically during the game loop), only the NEW
-        # columns are added to the template — O(new_columns) instead of
-        # rebuilding all O(total_columns). This eliminates the per-step
-        # slowdown spike that occurred whenever a new unit was produced
-        # mid-game (Fix 3).
-        current_col_count = len(self.schema.get_column_list())
-        if current_col_count != self._template_row_col_count:
-            for col in self.schema.get_column_list():
-                if col not in self._template_row:
-                    self._template_row[col] = self.schema.get_missing_value(col)
-            self._template_row_col_count = current_col_count
-        row = self._template_row.copy()
+        # Initialize row from the cached template. _get_row_template() handles
+        # schema-growth invalidation and returns a fresh dict.copy() each call.
+        row = self._get_row_template()
 
         # Add base columns
         game_loop = extracted_state.get('game_loop', 0)
@@ -125,19 +154,12 @@ class WideTableBuilder:
                 for building_id, building_data in buildings.items():
                     self.add_building_to_row(row, f'p{player_num}', building_id, building_data)
 
-        # Add economy for both players
-        for player_num in [1, 2]:
-            economy_key = f'p{player_num}_economy'
-            if economy_key in extracted_state:
-                economy = extracted_state[economy_key]
-                self.add_economy_to_row(row, f'p{player_num}', economy)
-
-        # Add upgrades for both players
-        for player_num in [1, 2]:
-            upgrades_key = f'p{player_num}_upgrades'
-            if upgrades_key in extracted_state:
-                upgrades = extracted_state[upgrades_key]
-                self.add_upgrades_to_row(row, f'p{player_num}', upgrades)
+        # Economy and upgrade columns are NOT populated here.
+        # They are appended to the final parquet in a single post-processing
+        # pass by extraction_pipeline._add_tracker_columns() after all batches
+        # are stitched. See that method for the economy (forward-filled from
+        # SPlayerStatsEvent) and upgrade (p1_upgrades / p2_upgrades event strings)
+        # column definitions.
 
         # Add unit counts
         for player_num in [1, 2]:
@@ -199,13 +221,9 @@ class WideTableBuilder:
         prefix = self._get_column_prefix(player, unit_id)
         lifecycle = unit_data.get('_lifecycle', 'existing')
 
-        # Use cached suffix list per prefix. Once a unit is registered in the
-        # schema, its applicable suffixes never change mid-game.
-        if prefix in self._unit_suffix_cache:
-            attr_suffixes = self._unit_suffix_cache[prefix]
-        else:
-            attr_suffixes = self._get_unit_attr_suffixes_in_schema(prefix, row)
-            self._unit_suffix_cache[prefix] = attr_suffixes
+        # Determine which attribute suffixes exist for this unit in the schema,
+        # using the shared _entity_suffix_cache for both units and buildings.
+        attr_suffixes = self._get_unit_attr_suffixes_in_schema(prefix, row)
 
         if not attr_suffixes:
             # This unit has no columns in the schema (e.g., never completed)
@@ -262,13 +280,9 @@ class WideTableBuilder:
         prefix = self._get_column_prefix(player, building_id)
         lifecycle = building_data.get('_lifecycle', 'existing')
 
-        # Use cached suffix list per prefix. Once a building is registered in
-        # the schema, its applicable suffixes never change mid-game.
-        if prefix in self._building_suffix_cache:
-            attr_suffixes = self._building_suffix_cache[prefix]
-        else:
-            attr_suffixes = self._get_building_attr_suffixes_in_schema(prefix, row)
-            self._building_suffix_cache[prefix] = attr_suffixes
+        # Determine which attribute suffixes exist for this building in the schema,
+        # using the shared _entity_suffix_cache for both units and buildings.
+        attr_suffixes = self._get_building_attr_suffixes_in_schema(prefix, row)
 
         if not attr_suffixes:
             return
@@ -290,7 +304,13 @@ class WideTableBuilder:
         """
         Get the list of attribute suffixes for a unit that exist in the schema.
 
-        Checks base attributes plus conditional shield/energy attributes.
+        Checks base attributes plus conditional shield/energy attributes. Results
+        are cached in _entity_suffix_cache keyed by prefix. Each cache entry stores
+        (cached_col_count, suffixes). The entry is invalidated — and the suffix
+        list recomputed — whenever the schema column count has grown since the last
+        lookup. This handles the edge case where a unit appears as 'unit_started'
+        (no schema columns yet, returns []) before its columns are registered on
+        completion: the count change triggers a recompute on the next step.
 
         Args:
             prefix: Column name prefix (e.g., 'p1_botname_marine_001')
@@ -298,7 +318,20 @@ class WideTableBuilder:
 
         Returns:
             List of attribute suffix strings that have columns in the schema
+
+        Depends on / calls:
+            - self._entity_suffix_cache — shared cache for both units and buildings
+            - self._cached_col_count — current schema size, updated by _get_row_template()
         """
+        current_col_count = self._cached_col_count
+
+        # Return cached result if the schema hasn't grown since last lookup.
+        if prefix in self._entity_suffix_cache:
+            cached_count, cached_suffixes = self._entity_suffix_cache[prefix]
+            if cached_count == current_col_count:
+                return cached_suffixes
+
+        # Cache miss or schema grew — recompute the suffix list.
         suffixes = []
         all_possible = (
             UNIT_BASE_ATTRIBUTES
@@ -309,19 +342,41 @@ class WideTableBuilder:
             col_name = f'{prefix}_{suffix}'
             if col_name in row:
                 suffixes.append(suffix)
+
+        # Store result with the current column count so future steps skip recompute.
+        self._entity_suffix_cache[prefix] = (current_col_count, suffixes)
         return suffixes
 
     def _get_building_attr_suffixes_in_schema(self, prefix: str, row: Dict[str, Any]) -> List[str]:
         """
         Get the list of attribute suffixes for a building that exist in the schema.
 
+        Results are cached in _entity_suffix_cache keyed by prefix. Each cache
+        entry stores (cached_col_count, suffixes). The entry is invalidated — and
+        the suffix list recomputed — whenever the schema column count has grown
+        since the last lookup. This handles buildings that appear as
+        'building_started' before their columns are registered.
+
         Args:
-            prefix: Column name prefix
-            row: Row dictionary
+            prefix: Column name prefix (e.g., 'p1_botname_barracks_001')
+            row: Row dictionary (to check which columns exist)
 
         Returns:
             List of attribute suffix strings that have columns in the schema
+
+        Depends on / calls:
+            - self._entity_suffix_cache — shared cache for both units and buildings
+            - self._cached_col_count — current schema size, updated by _get_row_template()
         """
+        current_col_count = self._cached_col_count
+
+        # Return cached result if the schema hasn't grown since last lookup.
+        if prefix in self._entity_suffix_cache:
+            cached_count, cached_suffixes = self._entity_suffix_cache[prefix]
+            if cached_count == current_col_count:
+                return cached_suffixes
+
+        # Cache miss or schema grew — recompute the suffix list.
         suffixes = []
         all_possible = (
             BUILDING_BASE_ATTRIBUTES
@@ -332,6 +387,9 @@ class WideTableBuilder:
             col_name = f'{prefix}_{suffix}'
             if col_name in row:
                 suffixes.append(suffix)
+
+        # Store result with the current column count so future steps skip recompute.
+        self._entity_suffix_cache[prefix] = (current_col_count, suffixes)
         return suffixes
 
     def add_economy_to_row(
@@ -522,23 +580,21 @@ class WideTableBuilder:
 
     def get_row_summary(self, row: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Get summary statistics for a row.
+        Get summary statistics for a row (units and buildings only).
 
-        Builds economy entries dynamically from ECONOMY_COLUMN_SUFFIXES so
-        that new economy metrics added to shared_constants are automatically
-        reflected here without hardcoding column names.
+        Economy and upgrade columns are not present in rows produced by the
+        extraction loop — they are appended to the final parquet by
+        _add_tracker_columns() after stitching.
 
         Called by: external callers for debugging / logging row snapshots.
-        Depends on: ECONOMY_COLUMN_SUFFIXES from shared_constants.
 
         Args:
             row: Row dictionary
 
         Returns:
-            Summary dictionary with base stats and all economy columns for
-            both players.
+            Summary dictionary with base stats.
         """
-        summary = {
+        return {
             'game_loop': row.get('game_loop'),
             'timestamp_seconds': row.get('timestamp_seconds'),
             'total_columns': len(row),
@@ -547,12 +603,3 @@ class WideTableBuilder:
                 if v is None or (isinstance(v, float) and np.isnan(v))
             ),
         }
-
-        # Add all economy columns for both players, constructed from the
-        # shared constant so the summary stays in sync automatically.
-        for suffix in ECONOMY_COLUMN_SUFFIXES:
-            for p in ['p1', 'p2']:
-                col = f'{p}_{suffix}'
-                summary[col] = row.get(col)
-
-        return summary

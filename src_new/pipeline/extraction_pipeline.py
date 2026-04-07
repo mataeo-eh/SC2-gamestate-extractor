@@ -19,7 +19,8 @@ from ..extraction.state_extractor import StateExtractor
 from ..extraction.schema_manager import SchemaManager
 from ..extraction.wide_table_builder import WideTableBuilder
 from ..extraction.parquet_writer import ParquetWriter
-from ..extractors.economy_extractor import load_economy_snapshots, get_economy_at_loop
+from ..extractors.economy_extractor import load_economy_snapshots
+from ..extractors.upgrade_extractor import load_upgrade_snapshots
 from ..extraction.metadata_writer import build_metadata, save_metadata
 
 
@@ -32,16 +33,20 @@ class ReplayExtractionPipeline:
 
     This class orchestrates the complete extraction workflow:
     1. Load replay with perfect information settings
-    2. Build static schema columns from player names (economy, upgrades)
-    3. Iterate through game loops in observer mode
-    4. Extract state at each loop using per-player perspective switching
-    5. Add entity columns (units, buildings) on-demand as they are first seen
-    6. Build wide-format rows
-    7. Write parquet and metadata files
+    2. Build static schema columns from player names (units and buildings only)
+    3. Iterate through game loops in observer mode — single observe() per loop
+    4. Add entity columns (units, buildings) on-demand as they are first seen
+    5. Flush rows to part files in batches; stitch parts into final parquet
+    6. Post-process the final parquet: read replay tracker events and append
+       economy columns (forward-filled from SPlayerStatsEvent) and upgrade
+       columns (p1_upgrades / p2_upgrades, comma-separated names at completion
+       game_loop, NaN otherwise)
+    7. Write metadata JSON
 
-    Observer mode is the only supported processing path. It uses a single
-    replay pass with per-player perspective switching to get correct
-    economy/upgrade data for both players.
+    Economy and upgrades are deliberately excluded from the hot extraction
+    loop and added in a single post-processing pass after stitching. This
+    keeps the core loop focused on unit/building state and avoids per-loop
+    binary-search overhead.
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -171,16 +176,24 @@ class ReplayExtractionPipeline:
         output_dir: Path,
     ) -> Dict[str, Any]:
         """
-        Observer mode: single replay pass with per-player perspective switching.
+        Observer mode: single replay pass with one observation per game step.
 
         This is the only supported processing mode. The replay is started without
         a fixed player perspective (observer mode). At each game step:
         1. Step the replay forward one unit
-        2. Switch to P1 perspective and observe (P1 economy, units, buildings)
-        3. Switch to P2 perspective and observe (P2 economy, upgrades)
-        4. Extract complete state combining both observations
-        5. Add columns for any new entities seen this frame (dynamic schema)
-        6. Build wide-format row and append to rows list
+        2. Observe once — raw_data.units is perspective-invariant in observer mode
+        3. Extract unit and building state (economy and upgrades are intentionally
+           excluded from this loop — they are added in a post-processing pass after
+           all batches are stitched)
+        4. Add entity columns for any new units/buildings seen this frame
+        5. Build a wide-format row and flush to part files in batches
+
+        Perspective switching is intentionally NOT used. Diagnostic testing
+        confirmed that in observer mode, raw_data.player.upgrade_ids is always
+        empty regardless of which player perspective is active, and raw_data.units
+        is identical across all perspectives. One observe() per loop (down from
+        five API calls: step + switch + obs + switch + obs) gives a ~60% reduction
+        in SC2 engine round-trips per replay.
 
         Schema is built in two stages:
         - Static columns (economy, upgrades) are added once via build_base_schema()
@@ -196,8 +209,6 @@ class ReplayExtractionPipeline:
             Dict with keys: output_files, metadata, stats
 
         Depends on / calls:
-            - load_economy_snapshots() -- pre-parses s2protocol tracker events
-            - get_economy_at_loop() -- forward-fills economy into each row
             - replay_loader.load_replay()
             - replay_loader.start_sc2_instance()
             - replay_loader.get_replay_info()
@@ -205,12 +216,12 @@ class ReplayExtractionPipeline:
             - WideTableBuilder(schema_manager)
             - wide_table_builder.set_player_names()
             - replay_loader.start_replay(observer_mode=True)
-            - replay_loader.switch_player_perspective()
             - state_extractor.extract_observation_observer_mode()
             - schema_manager.ensure_unit_columns()
             - schema_manager.ensure_building_columns()
             - wide_table_builder.build_row()
-            - parquet_writer.write_game_state()
+            - parquet_writer.reconcile_parts()
+            - _add_tracker_columns() -- post-processing: economy + upgrades
             - build_metadata() + save_metadata() from metadata_writer
         """
         logger.info("Starting observer mode processing")
@@ -218,22 +229,6 @@ class ReplayExtractionPipeline:
         # Load replay before opening SC2 instance — this is the ONLY load,
         # no pre-scan pass is needed.
         self.replay_loader.load_replay(replay_path)
-
-        # Parse economy snapshots from the replay file via s2protocol BEFORE
-        # launching the SC2 engine. This avoids the observer-mode bug where
-        # the engine returns all-zero economy data (player_common/score_details
-        # are empty when observed_player_id=0). The snapshots are emitted by
-        # the replay tracker at ~160 game-loop intervals; we forward-fill them
-        # into each row inside the game loop below.
-        economy_snapshots = load_economy_snapshots(str(replay_path))
-
-        # Log how many snapshots were loaded per player so operators can
-        # verify that the replay contains economy data before the loop starts.
-        for pid in sorted(economy_snapshots.keys()):
-            snap_count = len(economy_snapshots[pid])
-            logger.info(
-                f"Economy snapshots loaded: player {pid} has {snap_count} snapshot(s)"
-            )
 
         # --- Batch streaming accumulation ---
         # Instead of accumulating the entire replay in memory, we collect rows
@@ -311,35 +306,28 @@ class ReplayExtractionPipeline:
                     # Step replay forward one unit
                     controller.step(self.step_size)
 
-                    # Get P1-perspective observation (units, buildings, P1 economy)
-                    self.replay_loader.switch_player_perspective(controller, player_id=1)
-                    obs_p1 = controller.observe()
+                    # Single observe — raw_data.units is perspective-invariant in
+                    # observer mode, so one call captures all unit/building data for
+                    # both players. Perspective switching was previously used here to
+                    # attempt per-player upgrade_ids reads, but diagnostic testing
+                    # confirmed upgrade_ids is always empty in observer mode regardless
+                    # of active perspective. Economy and upgrades are handled entirely
+                    # in _add_tracker_columns() after stitching — not in this loop.
+                    obs = controller.observe()
 
                     # player_result is populated when the game ends
-                    if obs_p1.player_result:
+                    if obs.player_result:
                         logger.info(f"Observer mode: Replay ended at loop {game_loop}")
                         break
 
-                    game_loop = obs_p1.observation.game_loop
+                    game_loop = obs.observation.game_loop
 
-                    # Get P2-perspective observation (P2 economy, P2 upgrades)
-                    self.replay_loader.switch_player_perspective(controller, player_id=2)
-                    obs_p2 = controller.observe()
-
-                    # Combine both perspectives into a single state dict
+                    # Extract unit and building state from the single observation.
+                    # Economy and upgrades are excluded here — they are appended to
+                    # the final parquet by _add_tracker_columns() after stitching.
                     state = self.state_extractor.extract_observation_observer_mode(
-                        obs_p1, obs_p2, game_loop
+                        obs, obs, game_loop
                     )
-
-                    # Inject economy data from s2protocol snapshots.
-                    # state_extractor no longer populates p1_economy / p2_economy
-                    # because the SC2 engine returns zeroed economy in observer mode.
-                    # Instead we forward-fill from the pre-parsed tracker snapshots:
-                    # get_economy_at_loop() returns the most recent snapshot at or
-                    # before this game_loop via O(log n) binary search, giving each
-                    # row accurate economy values without needing per-player engine obs.
-                    state['p1_economy'] = get_economy_at_loop(economy_snapshots, 1, game_loop)
-                    state['p2_economy'] = get_economy_at_loop(economy_snapshots, 2, game_loop)
 
                     # --- Dynamic column creation ---
                     # Add unit columns the first time each completed unit is seen.
@@ -458,6 +446,11 @@ class ReplayExtractionPipeline:
             parts_dir, output_files['game_state']
         )
 
+        # Post-process: add economy and upgrade columns from tracker events.
+        # These are intentionally excluded from the hot extraction loop for
+        # speed. This single pandas pass appends them to the final parquet.
+        self._add_tracker_columns(output_files['game_state'], replay_path)
+
         # Build and write comprehensive metadata JSON that makes the
         # parquet file self-documenting for dataset consumers.
         parquet_filename = f"{replay_name}_game_state.parquet"
@@ -479,6 +472,138 @@ class ReplayExtractionPipeline:
                 'rows_written': row_count,
             },
         }
+
+    def _add_tracker_columns(
+        self,
+        parquet_path: Path,
+        replay_path: Path,
+    ) -> None:
+        """
+        Post-process the stitched parquet to append economy and upgrade columns.
+
+        Called once after reconcile_parts() produces the final parquet. Reads the
+        parquet into a DataFrame, parses replay tracker events for economy and
+        upgrade data, joins them in, then writes the augmented DataFrame back to
+        the same path.
+
+        Economy columns (p1_minerals, p1_vespene, p1_supply_used, p1_supply_cap,
+        p1_collection_rate_minerals, p1_collection_rate_vespene, and p2_*
+        equivalents) are forward-filled from SPlayerStatsEvent snapshots using
+        pandas merge_asof. Rows before the first snapshot receive 0.
+
+        Upgrade columns (p1_upgrades, p2_upgrades) contain a comma-separated
+        string of upgrade names completed at that exact game_loop, NaN where no
+        upgrade completed. Multiple upgrades at the same loop are alphabetically
+        sorted before joining. This mirrors the Messages column convention.
+
+        Args:
+            parquet_path: Path to the reconciled parquet file. Read and
+                          overwritten in-place with the additional columns.
+            replay_path: Path to the .SC2Replay file used to parse tracker events.
+
+        Depends on / calls:
+            - load_economy_snapshots() from economy_extractor
+            - load_upgrade_snapshots() from upgrade_extractor
+            - pandas.read_parquet / DataFrame.to_parquet
+            - pandas.merge_asof for forward-filling economy snapshots
+        """
+        import pandas as pd
+        from collections import defaultdict
+
+        logger.info(f"Post-processing: adding tracker columns to {parquet_path.name}")
+
+        # Read the stitched parquet. Rows are already ordered by game_loop
+        # from extraction, but sort defensively to satisfy merge_asof.
+        df = pd.read_parquet(parquet_path)
+        df = df.sort_values('game_loop').reset_index(drop=True)
+
+        # -----------------------------------------------------------------
+        # Economy columns — forward-filled from SPlayerStatsEvent snapshots
+        # -----------------------------------------------------------------
+        economy_snapshots = load_economy_snapshots(str(replay_path))
+        economy_fields = [
+            'minerals', 'vespene', 'supply_used', 'supply_cap',
+            'collection_rate_minerals', 'collection_rate_vespene',
+        ]
+
+        for player_id in [1, 2]:
+            player_snaps = economy_snapshots.get(player_id, [])
+
+            if not player_snaps:
+                logger.warning(
+                    f"No economy snapshots for player {player_id} — "
+                    f"setting economy columns to 0"
+                )
+                for field in economy_fields:
+                    df[f'p{player_id}_{field}'] = 0
+                continue
+
+            # Build a DataFrame of snapshots: columns are game_loop + field names
+            eco_df = pd.DataFrame(player_snaps)
+            eco_df = eco_df.sort_values('game_loop').reset_index(drop=True)
+
+            # Prefix field columns with the player identifier so they do not
+            # collide when merging both players in sequence.
+            eco_df = eco_df.rename(columns={
+                field: f'p{player_id}_{field}'
+                for field in economy_fields
+                if field in eco_df.columns
+            })
+
+            # merge_asof with direction='backward': for every row's game_loop,
+            # attach the most recent snapshot whose game_loop <= that value.
+            # This is a vectorised forward-fill — O(n log n) total.
+            df = pd.merge_asof(df, eco_df, on='game_loop', direction='backward')
+
+            # Rows before the first snapshot (early game_loops with no data yet)
+            # receive NaN from merge_asof; fill with 0.
+            for field in economy_fields:
+                col = f'p{player_id}_{field}'
+                if col in df.columns:
+                    df[col] = df[col].fillna(0)
+
+            logger.info(
+                f"Economy columns added for player {player_id} "
+                f"({len(player_snaps)} snapshot(s))"
+            )
+
+        # -----------------------------------------------------------------
+        # Upgrade columns — one event string per completion game_loop
+        # -----------------------------------------------------------------
+        upgrade_snapshots = load_upgrade_snapshots(str(replay_path))
+
+        for player_id in [1, 2]:
+            col = f'p{player_id}_upgrades'
+
+            # Group upgrades by the game_loop they completed on.
+            per_loop: Dict[int, list] = defaultdict(list)
+            for gl, name in upgrade_snapshots.get(player_id, []):
+                per_loop[gl].append(name)
+
+            # Build a {game_loop: "Name1,Name2"} lookup. Names within the same
+            # loop are alphabetically sorted so the output is deterministic.
+            upgrade_map = {
+                gl: ','.join(sorted(names))
+                for gl, names in per_loop.items()
+            }
+
+            # Map onto the DataFrame: NaN for loops with no completion event,
+            # matching the convention used by the Messages column.
+            df[col] = df['game_loop'].map(upgrade_map)
+
+            completed_count = sum(len(v) for v in per_loop.values())
+            logger.info(
+                f"Upgrade column {col} added "
+                f"({completed_count} completion event(s))"
+            )
+
+        # Write the augmented DataFrame back to the same parquet path.
+        compression = self.config.get('compression', 'snappy')
+        df.to_parquet(parquet_path, compression=compression, index=False)
+
+        logger.info(
+            f"Tracker columns written successfully to {parquet_path.name}"
+        )
 
     def _build_api_type_data(self, controller) -> Dict[str, Any]:
         """

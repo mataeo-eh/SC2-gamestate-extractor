@@ -2,23 +2,246 @@
 UpgradeExtractor: Extracts upgrade data from SC2 observations.
 
 This component handles:
-- Extracting upgrade completion from raw player data
-- Tracking upgrade completion across frames
-- Looking up upgrade names via pysc2.lib.upgrades
-- Parsing upgrade category and level
-- Detecting newly completed upgrades
-- Tracking upgrade lifecycle (started, cancelled, completed) via building order scanning
-- Maintaining a registry of all upgrades discovered during a game
+- Extracting upgrade completion from replay tracker events (primary path)
+- Parsing upgrade category and level from upgrade name strings
+- Providing per-loop upgrade snapshots via get_upgrades_at_loop()
+
+Primary API (used by extraction_pipeline.py):
+    load_upgrade_snapshots(replay_path) -> dict
+        Parses replay tracker events once before the game loop begins.
+        Returns all SUpgradeEvent completions grouped by player, sorted by game_loop.
+    get_upgrades_at_loop(snapshots, player_id, game_loop) -> dict
+        Returns the set of upgrades completed at or before a given game_loop.
+        Uses binary search for O(log n) lookup. Called once per player per loop.
+
+    This mirrors the pattern used by economy_extractor.py for SPlayerStatsEvent.
+
+    NOTE on upgrade_ids from the SC2 engine:
+        In observer mode (observed_player_id=0), raw_data.player.upgrade_ids is
+        always empty regardless of which player perspective is active via
+        RequestObserverAction. This was verified empirically: switching perspective
+        in observer mode does NOT populate upgrade_ids. Only a direct replay load
+        with observed_player_id=1 or 2 exposes them, which requires a full replay
+        restart. The UpgradeExtractor class below (engine-based) is therefore
+        a no-op in the pipeline's observer mode path and is retained only for
+        reference or non-observer use cases.
+
+    NOTE on upgrade start time:
+        Tracker events only record upgrade *completion*. started_loop is set to None.
+        In the future, started_loop can be back-calculated by subtracting the known
+        research duration for each upgrade type (a searchable table exists per patch
+        version) from completed_loop. This is left as a future enhancement.
 """
 
+from bisect import bisect_right
 from typing import Dict, List, Set, Tuple, Optional
 import logging
 import re
 
+import mpyq
+from s2protocol import versions as s2versions
+
 from pysc2.lib import upgrades as pysc2_upgrades
 
 
+# ---------------------------------------------------------------------------
+# Tracker-event-based upgrade loading (primary pipeline path)
+# ---------------------------------------------------------------------------
+
+# s2protocol tracker event type for upgrade completions
+_UPGRADE_EVENT = 'NNet.Replay.Tracker.SUpgradeEvent'
+
+# Cosmetic upgrade name prefixes to exclude from pipeline data.
+# These are client-side visual effects, not tech upgrades.
+_COSMETIC_PREFIXES = ('Spray',)
+
+# Module-level pre-computed game loop arrays for binary search.
+# Built once by load_upgrade_snapshots(), consumed by get_upgrades_at_loop().
+# Keyed by player_id (int). Each worker process has its own copy.
+_precomputed_upgrade_loops: Dict[int, List[int]] = {}
+
+
 logger = logging.getLogger(__name__)
+
+
+def load_upgrade_snapshots(replay_path: str) -> Dict[int, List[Tuple[int, str]]]:
+    """
+    Parse a replay file and extract all SUpgradeEvent upgrade completions.
+
+    Opens the replay as an MPQ archive, decodes tracker events using the
+    protocol version embedded in the replay header, and collects every
+    SUpgradeEvent (upgrade completion) per player. Cosmetic upgrades
+    (e.g. Sprays) are filtered out.
+
+    Returns a dict mapping player_id (1-indexed) to a list of
+    (game_loop, upgrade_name) tuples, sorted by game_loop ascending.
+    This list is consumed by get_upgrades_at_loop() to forward-fill
+    upgrade state into each row of the pipeline output.
+
+    This follows the same pattern as load_economy_snapshots() in
+    economy_extractor.py. Call this once before the game loop begins.
+
+    Args:
+        replay_path: Absolute or relative path to the .SC2Replay file.
+
+    Returns:
+        Dict mapping player_id (int, 1-indexed) to sorted list of
+        (game_loop: int, upgrade_name: str) tuples. Players with no
+        meaningful upgrades get an empty list.
+
+    Raises:
+        FileNotFoundError: If replay_path does not exist.
+
+    Depends on / calls:
+        - mpyq.MPQArchive: opens the MPQ container
+        - s2protocol.versions: decodes the replay header and tracker events
+        - Called by extraction_pipeline._observer_mode_processing()
+    """
+    logger.info(f"Loading upgrade snapshots from: {replay_path}")
+
+    archive = mpyq.MPQArchive(replay_path)
+
+    # Decode the header to determine the correct protocol version
+    header_content = archive.header['user_data_header']['content']
+    header = s2versions.latest().decode_replay_header(header_content)
+    base_build = header['m_version']['m_baseBuild']
+
+    logger.debug(f"Upgrade snapshot base build: {base_build}")
+
+    protocol = s2versions.build(base_build)
+    tracker_raw = archive.read_file('replay.tracker.events')
+
+    # Accumulate (game_loop, upgrade_name) pairs per player
+    events_per_player: Dict[int, List[Tuple[int, str]]] = {}
+
+    event_count = 0
+    for event in protocol.decode_replay_tracker_events(tracker_raw):
+        if event['_event'] != _UPGRADE_EVENT:
+            continue
+
+        event_count += 1
+
+        player_id = event['m_playerId']
+        game_loop = event['_gameloop']
+
+        # upgrade name arrives as bytes in some protocol versions
+        name = event['m_upgradeTypeName']
+        if isinstance(name, bytes):
+            name = name.decode('utf-8')
+
+        # Skip cosmetic upgrades (Sprays, etc.)
+        if any(name.startswith(prefix) for prefix in _COSMETIC_PREFIXES):
+            logger.debug(f"Skipping cosmetic upgrade: {name}")
+            continue
+
+        events_per_player.setdefault(player_id, []).append((game_loop, name))
+
+    # Sort each player's events by game_loop (should already be ordered,
+    # but sort defensively)
+    for pid in events_per_player:
+        events_per_player[pid].sort(key=lambda t: t[0])
+
+    # Pre-compute game loop arrays for O(log n) binary search in get_upgrades_at_loop().
+    # Built once here instead of rebuilding on every call.
+    _precomputed_upgrade_loops.clear()
+    for pid, pairs in events_per_player.items():
+        _precomputed_upgrade_loops[pid] = [gl for gl, _ in pairs]
+
+    logger.info(
+        f"Loaded {event_count} SUpgradeEvent(s) across "
+        f"{len(events_per_player)} player(s) from replay"
+    )
+
+    return events_per_player
+
+
+def get_upgrades_at_loop(
+    snapshots: Dict[int, List[Tuple[int, str]]],
+    player_id: int,
+    game_loop: int,
+) -> Dict[str, Dict]:
+    """
+    Return all upgrades completed at or before a given game loop for a player.
+
+    Uses binary search on the sorted (game_loop, upgrade_name) list from
+    load_upgrade_snapshots() to find every upgrade with game_loop <= the
+    requested game_loop. Builds and returns a dict in the same format as
+    UpgradeExtractor.extract() so that downstream schema and row-building
+    code requires no changes.
+
+    Args:
+        snapshots: Dict returned by load_upgrade_snapshots().
+                   Maps player_id -> sorted list of (game_loop, upgrade_name).
+        player_id: Which player to query (1-indexed, typically 1 or 2).
+        game_loop: The current game loop. Returns all upgrades completed
+                   at or before this loop.
+
+    Returns:
+        Dict mapping lowercase upgrade name to upgrade detail dict:
+        {
+            'terraninfantryweaponslevel1': {
+                'upgrade_name': 'TerranInfantryWeaponsLevel1',
+                'category': 'weapons',
+                'level': 1,
+                'status': 'completed',
+                'completed_loop': 5510,
+                'started_loop': None,
+                # NOTE: started_loop is always None. It can be back-calculated
+                # in a future enhancement by subtracting the known research
+                # duration for each upgrade type (available in per-patch tables)
+                # from completed_loop.
+            },
+            ...
+        }
+        Returns an empty dict if no upgrades have been completed yet.
+
+    Depends on / calls:
+        - _precomputed_upgrade_loops (module-level cache built by load_upgrade_snapshots)
+        - parse_upgrade_details() for category and level parsing
+        - bisect_right for O(log n) search
+        - Called by extraction_pipeline._observer_mode_processing() per player per loop
+    """
+    player_events = snapshots.get(player_id, [])
+
+    if not player_events:
+        return {}
+
+    # Use pre-computed game loop array for O(log n) binary search
+    game_loops = _precomputed_upgrade_loops.get(player_id)
+    if game_loops is None:
+        # Fallback: build on the fly if called outside normal pipeline flow
+        game_loops = [gl for gl, _ in player_events]
+
+    # bisect_right gives insertion point after any equal game_loop values,
+    # so [:idx] includes all upgrades completed at or before game_loop
+    idx = bisect_right(game_loops, game_loop)
+
+    completed = player_events[:idx]
+
+    result = {}
+    for completed_loop, name in completed:
+        category, level = parse_upgrade_details(name)
+        key = name.lower()
+        result[key] = {
+            'upgrade_name': name,
+            'category': category,
+            'level': level,
+            'status': 'completed',
+            'completed_loop': completed_loop,
+            'started_loop': None,
+        }
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Engine-based upgrade extraction (NOTE: no-op in observer mode)
+# ---------------------------------------------------------------------------
+# The functions and class below read raw_data.player.upgrade_ids from the SC2
+# engine observation. In observer mode (observed_player_id=0), upgrade_ids is
+# always empty regardless of perspective switching — this was confirmed by
+# diagnostic testing. These remain for non-observer use cases only.
+# ---------------------------------------------------------------------------
 
 
 def get_upgrade_name(upgrade_id: int) -> str:

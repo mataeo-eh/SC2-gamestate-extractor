@@ -218,13 +218,11 @@ class SchemaManager:
         """
         Build the static portion of the schema using player names from replay metadata.
 
-        This replaces build_schema_from_replay(). Instead of launching a full SC2
-        instance to pre-scan the replay, it builds only the columns whose structure is
-        known before extraction begins: game metadata and economy columns.
-        Unit and building columns are added dynamically during extraction via
-        ensure_unit_columns() and ensure_building_columns().
-        Upgrade columns are registered dynamically via add_upgrade_column() as each
-        new upgrade is discovered during extraction.
+        Registers only the columns produced by the core extraction loop:
+        game_loop, timestamp_seconds, Messages, and dynamically-added unit and
+        building columns. Economy and upgrade columns are intentionally excluded
+        here — they are appended to the final parquet after stitching by
+        extraction_pipeline._add_tracker_columns().
 
         Call this AFTER get_replay_info() has returned player names, and BEFORE
         creating the WideTableBuilder or starting the game loop.
@@ -235,19 +233,14 @@ class SchemaManager:
 
         Calls:
             - self.set_player_names(player_names) -- sanitizes and stores names
-            - self._add_economy_columns() -- adds p1_minerals, p1_vespene, etc.
 
         Note:
-            _add_base_columns() is already called in __init__() and does not need
-            to be called here. The static base columns (game_loop, timestamp_seconds,
-            Messages) are present from object creation.
-
-            Upgrade columns are no longer pre-registered here. They are added
-            dynamically via add_upgrade_column() when each upgrade is first
-            encountered during extraction.
+            _add_base_columns() is already called in __init__() and provides
+            game_loop, timestamp_seconds, and Messages. Unit and building columns
+            are added dynamically during extraction via ensure_unit_columns() and
+            ensure_building_columns().
         """
         self.set_player_names(player_names)
-        self._add_economy_columns()
         logger.info(
             f"Base schema built with {len(self.columns)} static columns"
         )
