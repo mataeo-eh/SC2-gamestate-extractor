@@ -235,14 +235,25 @@ class ReplayExtractionPipeline:
                 f"Economy snapshots loaded: player {pid} has {snap_count} snapshot(s)"
             )
 
-        # Column-oriented accumulation: dict of lists instead of list of dicts.
-        # pd.DataFrame(column_dict) is significantly faster than
-        # pd.DataFrame(list_of_dicts) for wide tables (1000+ columns) because
-        # pandas can directly wrap each list as a Series without scanning every
-        # dict for keys. New columns added mid-game are backfilled with NaN.
+        # --- Batch streaming accumulation ---
+        # Instead of accumulating the entire replay in memory, we collect rows
+        # into column_data and flush to a parquet part file every BATCH_SIZE
+        # rows. This caps peak memory at BATCH_SIZE * column_count instead of
+        # total_rows * column_count. After the game loop, reconcile_parts()
+        # merges all part files into a single parquet with a unified schema
+        # (PyArrow fills missing columns in earlier parts with null).
+        BATCH_SIZE = 2000
         column_data: Dict[str, list] = {}
-        row_count = 0
+        batch_row_count = 0   # rows in current batch
+        row_count = 0         # total rows across all batches
+        part_index = 0        # current part file number
         all_messages = []
+
+        # Parts directory sits next to the final output file and is cleaned up
+        # after reconciliation.
+        replay_name = replay_path.stem
+        parquet_dir = output_dir / 'parquet'
+        parts_dir = parquet_dir / f"_parts_{replay_name}"
 
         with self.replay_loader.start_sc2_instance() as controller:
             # Read replay metadata: player names, game duration, etc.
@@ -369,19 +380,34 @@ class ReplayExtractionPipeline:
 
                     # Accumulate in column-oriented format for faster DataFrame
                     # construction. When new columns appear (dynamic schema), we
-                    # backfill them with NaN for all previous rows.
+                    # backfill them with NaN for previous rows IN THIS BATCH
+                    # only — earlier batches are already flushed to disk and will
+                    # gain these columns during reconcile_parts().
                     for col, val in row.items():
                         if col not in column_data:
-                            # New column: backfill previous rows with NaN
-                            column_data[col] = [np.nan] * row_count
+                            # New column: backfill previous rows in current batch
+                            column_data[col] = [np.nan] * batch_row_count
                         column_data[col].append(val)
-                    # Ensure columns from previous rows that aren't in this row
-                    # (shouldn't happen since build_row inits all schema cols, but
-                    # defensive) get NaN appended for this row.
+                    # Defensive: ensure all existing columns get a value for this row
                     for col in column_data:
-                        if len(column_data[col]) <= row_count:
+                        if len(column_data[col]) <= batch_row_count:
                             column_data[col].append(np.nan)
+                    batch_row_count += 1
                     row_count += 1
+
+                    # Flush batch to a part file when it reaches BATCH_SIZE.
+                    # This frees the Python lists in column_data, capping peak
+                    # memory at BATCH_SIZE * column_count.
+                    if batch_row_count >= BATCH_SIZE:
+                        self.parquet_writer.write_batch_part(
+                            column_data, parts_dir, part_index,
+                            self.schema_manager,
+                        )
+                        # write_batch_part calls column_data.clear() internally,
+                        # but we reassign to a fresh dict for clarity.
+                        column_data = {}
+                        batch_row_count = 0
+                        part_index += 1
 
                     messages = state.get('messages', [])
                     all_messages.extend(messages)
@@ -405,8 +431,8 @@ class ReplayExtractionPipeline:
             )
 
         # --- Write output files ---
-        replay_name = replay_path.stem
-        parquet_dir = output_dir / 'parquet'
+        # replay_name and parquet_dir were set up before the game loop for
+        # the parts directory; json_dir is new here.
         json_dir = output_dir / 'json'
         parquet_dir.mkdir(parents=True, exist_ok=True)
         json_dir.mkdir(parents=True, exist_ok=True)
@@ -416,9 +442,20 @@ class ReplayExtractionPipeline:
             'metadata': json_dir / f"{replay_name}_metadata.json",
         }
 
+        # Flush any remaining rows in the last (partial) batch.
+        if batch_row_count > 0:
+            self.parquet_writer.write_batch_part(
+                column_data, parts_dir, part_index,
+                self.schema_manager,
+            )
+            column_data = {}
+            part_index += 1
+
+        # Reconcile all part files into one final parquet.
+        # PyArrow fills columns missing in earlier parts with null.
         logger.info(f"Writing game state to {output_files['game_state']}")
-        self.parquet_writer.write_game_state_columnar(
-            column_data, output_files['game_state'], self.schema_manager
+        self.parquet_writer.reconcile_parts(
+            parts_dir, output_files['game_state']
         )
 
         # Build and write comprehensive metadata JSON that makes the

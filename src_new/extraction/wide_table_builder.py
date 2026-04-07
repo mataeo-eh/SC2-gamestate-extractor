@@ -90,14 +90,17 @@ class WideTableBuilder:
             Dictionary with all columns, NaN for missing values.
         """
         # Initialize row from cached template (dict.copy is much faster than
-        # iterating get_missing_value per column). Rebuild template when schema
-        # grows (new entities add columns dynamically during the game loop).
+        # iterating get_missing_value per column). When the schema grows (new
+        # entities add columns dynamically during the game loop), only the NEW
+        # columns are added to the template — O(new_columns) instead of
+        # rebuilding all O(total_columns). This eliminates the per-step
+        # slowdown spike that occurred whenever a new unit was produced
+        # mid-game (Fix 3).
         current_col_count = len(self.schema.get_column_list())
         if current_col_count != self._template_row_col_count:
-            self._template_row = {
-                col: self.schema.get_missing_value(col)
-                for col in self.schema.get_column_list()
-            }
+            for col in self.schema.get_column_list():
+                if col not in self._template_row:
+                    self._template_row[col] = self.schema.get_missing_value(col)
             self._template_row_col_count = current_col_count
         row = self._template_row.copy()
 

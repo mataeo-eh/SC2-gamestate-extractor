@@ -3,6 +3,13 @@ ParquetWriter: Writes wide-format data to parquet files.
 
 This component handles writing the wide-format game state data to parquet
 files with proper compression and schema handling.
+
+Supports two write modes:
+1. Single-shot: accumulate all rows, write once (write_game_state / write_game_state_columnar)
+2. Batch streaming: write numbered part files during extraction, then reconcile
+   all parts into one final parquet with a unified schema (write_batch_part /
+   reconcile_parts). This caps peak memory at batch_size * column_count instead
+   of total_rows * column_count.
 """
 
 from typing import List, Dict, Any, Optional
@@ -10,6 +17,7 @@ from pathlib import Path
 import logging
 import json
 
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -138,8 +146,13 @@ class ParquetWriter:
         num_rows = len(first_col)
         logger.info(f"Writing {num_rows} rows to {output_path} (columnar path)")
 
-        # Build DataFrame from column-oriented dict (fast path)
+        # Build DataFrame from column-oriented dict (fast path).
+        # Clear the source dict immediately after construction to free the
+        # Python lists while the DataFrame (backed by contiguous numpy arrays)
+        # is still alive. This avoids holding two full copies of the data at
+        # peak memory (Fix 1).
         df = pd.DataFrame(column_data)
+        column_data.clear()
 
         # Reorder columns according to schema
         schema_columns = schema.get_column_list()
@@ -229,12 +242,22 @@ class ParquetWriter:
         """
         Convert DataFrame types according to schema.
 
+        Uses vectorized pandas operations instead of per-element .apply(lambda)
+        for significantly faster conversion on wide tables (Fix 2). For object
+        columns, .astype('string') natively converts non-NaN values to their
+        string representation and maps NaN to pd.NA — identical to the old
+        lambda but executed at C level inside pandas.
+
         Args:
             df: DataFrame to convert
             schema: SchemaManager with type definitions
 
         Returns:
             DataFrame with converted types
+
+        Depends on / calls:
+            - schema.get_dtype() for per-column type lookup
+            - _serialize_messages_for_parquet() for the Messages column
         """
         for col in df.columns:
             dtype = schema.get_dtype(col)
@@ -262,10 +285,9 @@ class ParquetWriter:
                         # "cancelled", "building_started", "under_construction").
                         # PyArrow cannot handle mixed float+string columns, so convert
                         # everything to pandas StringDtype. NaN values are preserved as
-                        # pd.NA (the missing value for StringDtype).
-                        df[col] = df[col].apply(
-                            lambda v: str(v) if pd.notna(v) else pd.NA
-                        ).astype('string')
+                        # pd.NA automatically by .astype('string'). This is vectorized
+                        # (C-level) and replaces the old per-element .apply(lambda).
+                        df[col] = df[col].astype('string')
                 else:
                     # Default to object
                     logger.warning(f"Unknown dtype '{dtype}' for column '{col}', using object")
@@ -446,6 +468,139 @@ class ParquetWriter:
 
         return report
 
+    def write_batch_part(
+        self,
+        column_data: Dict[str, list],
+        parts_dir: Path,
+        part_index: int,
+        schema: SchemaManager,
+    ) -> Path:
+        """
+        Write one batch of column-oriented data to a numbered part file.
+
+        Each part file is a standalone parquet file with whatever columns exist
+        in the batch. Later, reconcile_parts() reads all parts and unifies them
+        into a single parquet with a consistent schema (columns that don't exist
+        in earlier parts are filled with NaN by PyArrow during concatenation).
+
+        After building the DataFrame from column_data, the source dict is
+        cleared immediately to free Python-list memory (Fix 1).
+
+        Args:
+            column_data: Dict mapping column names to lists of values.
+                         All lists must have the same length.
+            parts_dir: Directory to write part files into.
+            part_index: Zero-based batch number (used in filename).
+            schema: SchemaManager with column definitions and type info.
+
+        Returns:
+            Path to the written part file.
+
+        Depends on / calls:
+            - pd.DataFrame() for column-oriented construction
+            - _convert_types() for schema-driven type casting
+            - df.to_parquet() for writing
+        """
+        parts_dir.mkdir(parents=True, exist_ok=True)
+        part_path = parts_dir / f"_part_{part_index:04d}.parquet"
+
+        first_col = next(iter(column_data.values()))
+        num_rows = len(first_col)
+        logger.info(
+            f"Writing batch part {part_index}: {num_rows} rows, "
+            f"{len(column_data)} columns -> {part_path.name}"
+        )
+
+        # Build DataFrame and free the source lists immediately (Fix 1).
+        df = pd.DataFrame(column_data)
+        column_data.clear()
+
+        # Reorder to match schema (only columns present in this batch)
+        schema_columns = [c for c in schema.get_column_list() if c in df.columns]
+        df = df.reindex(columns=schema_columns)
+
+        # Convert types
+        df = self._convert_types(df, schema)
+
+        df.to_parquet(
+            part_path,
+            engine='pyarrow',
+            compression=self.compression,
+            index=False,
+        )
+        logger.info(
+            f"  Part {part_index} written: {part_path.stat().st_size / 1024:.1f} KB"
+        )
+        return part_path
+
+    def reconcile_parts(
+        self,
+        parts_dir: Path,
+        output_path: Path,
+    ) -> None:
+        """
+        Read all part files from parts_dir and write a single unified parquet.
+
+        PyArrow handles schema reconciliation automatically: columns that exist
+        in some parts but not others are filled with null. The result is
+        identical to what write_game_state_columnar would produce from the full
+        column_data dict, but peak memory only needs to hold one part at a time
+        during writing plus the final concatenated table.
+
+        After reconciliation, the part files are deleted.
+
+        Args:
+            parts_dir: Directory containing _part_NNNN.parquet files.
+            output_path: Path to the final unified parquet file.
+
+        Depends on / calls:
+            - pq.read_table() for reading individual parts
+            - pa.concat_tables() for schema-aware concatenation
+            - pq.write_table() for writing the final file
+        """
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Collect part files in order
+        part_files = sorted(parts_dir.glob("_part_*.parquet"))
+        if not part_files:
+            raise ValueError(f"No part files found in {parts_dir}")
+
+        logger.info(
+            f"Reconciling {len(part_files)} part files into {output_path}"
+        )
+
+        # Read all parts as PyArrow tables. promote_options='default' fills
+        # missing columns with null when schemas differ across parts.
+        tables = []
+        for pf in part_files:
+            tables.append(pq.read_table(pf))
+
+        unified = pa.concat_tables(tables, promote_options='default')
+        logger.info(
+            f"  Unified table: {unified.num_rows} rows x "
+            f"{unified.num_columns} columns"
+        )
+
+        # Write final parquet
+        pq.write_table(
+            unified,
+            output_path,
+            compression=self.compression,
+        )
+        logger.info(
+            f"  Final parquet: {output_path.stat().st_size / 1024:.1f} KB"
+        )
+
+        # Clean up part files and directory
+        for pf in part_files:
+            pf.unlink()
+        # Remove parts directory if empty
+        try:
+            parts_dir.rmdir()
+        except OSError:
+            pass
+
     def write_batch_streaming(
         self,
         rows_iterator,
@@ -455,6 +610,10 @@ class ParquetWriter:
     ) -> int:
         """
         Write rows in batches for memory-efficient streaming.
+
+        NOTE: This is the older list-of-dicts streaming method. For the
+        column-oriented batch approach used by the extraction pipeline, see
+        write_batch_part() + reconcile_parts().
 
         Args:
             rows_iterator: Iterator yielding row dictionaries
