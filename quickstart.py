@@ -346,8 +346,15 @@ def find_sample_replay():
     return None
 
 
-def process_replay_example(replay_path: Path, output_dir: Path):
-    """Process a replay and display results."""
+def process_replay_example(replay_path: Path, output_dir: Path, step_size: int = 1):
+    """
+    Process a replay and display results.
+
+    Args:
+        replay_path: Path to the .SC2Replay file
+        output_dir: Directory to write output files
+        step_size: Number of game loops to advance per step (default: 1)
+    """
     print("=" * 70)
     print("Processing Replay")
     print("=" * 70)
@@ -370,7 +377,8 @@ def process_replay_example(replay_path: Path, output_dir: Path):
     try:
         result = process_replay_quick(
             replay_path=replay_path,
-            output_dir=output_dir
+            output_dir=output_dir,
+            config={'step_size': step_size}
         )
     except Exception as e:
         print(f"❌ Processing failed: {e}")
@@ -543,6 +551,12 @@ def main():
         action="store_true",
         help="Extract all bot strategies (Tag: prefixed messages) from processed JSON metadata into a strategies directory."
     )
+    parser.add_argument(
+        "-ss", "--step-size",
+        type=int,
+        default=1,
+        help="Number of game loops to advance per step during extraction (default: 1). Increase to sample less frequently."
+    )
 
     args = parser.parse_args()
 
@@ -584,7 +598,11 @@ def main():
     # Process all replays in directory if passed
     if args.process_replay_directory:
         from src_new.pipeline.parallel_processor import ParallelReplayProcessor
-        processor = ParallelReplayProcessor(num_workers=args.workers, log_file_path=log_file_path)
+        processor = ParallelReplayProcessor(
+            config={'step_size': args.step_size},
+            num_workers=args.workers,
+            log_file_path=log_file_path
+        )
         # Process all replays in a directory
         results = processor.process_replay_directory(
             replay_dir=args.process_replay_directory,
@@ -609,7 +627,7 @@ def main():
         args.output.mkdir(parents=True, exist_ok=True)
 
         # Process replay
-        success = process_replay_example(replay_path, args.output)
+        success = process_replay_example(replay_path, args.output, step_size=args.step_size)
 
         if success:
             print("✓ Quick start complete!")
