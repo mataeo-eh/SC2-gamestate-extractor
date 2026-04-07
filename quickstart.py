@@ -51,9 +51,10 @@ Usage:
 
     # With strategy list curation
     python quickstart.py --list-strategies
+    python quickstart.py -s
 
     # Full pipeline usage
-    python quickstart.py --process-replay-directory replays --output data/quickstart --workers 3 --download-replays --bots really what why -dataset --num-replays 100
+    python quickstart.py --process-replay-directory replays --output data/quickstart --workers 3 --download-replays --bots really what why -dataset --num-replays 100 -s
 
     # Feature Engineering and Discretization
     python quickstart.py --output data/quickstart --engineer-features --discretize -dataset
