@@ -13,6 +13,8 @@ import logging
 import time
 
 from .extraction_pipeline import ReplayExtractionPipeline
+from ..extraction.parquet_writer import ParquetWriter
+from ..extraction.replay_loader import check_replay_dominated
 
 
 logger = logging.getLogger(__name__)
@@ -87,6 +89,17 @@ class ParallelReplayProcessor:
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
+        # --- Reconcile orphaned part directories ---
+        # If a previous run extracted batch parts but failed during
+        # reconciliation (e.g. string/large_string type mismatch), the
+        # _parts_<replay_stem> directories will still be sitting in the
+        # parquet output directory. Stitch them into final parquet files
+        # BEFORE the skip-check so they appear as already-processed and
+        # don't get re-extracted from scratch.
+        parquet_dir = output_dir / 'parquet'
+        if parquet_dir.exists():
+            self._reconcile_orphaned_parts(parquet_dir)
+
         # Make a copy of the replays list to iterate through it
         replays_list_copy = replay_paths.copy()
         replay_paths = [] # make the list empty so it can be populated with un-parsed replays
@@ -100,6 +113,15 @@ class ParallelReplayProcessor:
             if matching_files:
                 print(f"File: {stem} already processed (found at {matching_files[0].relative_to(output_dir)}). Skipping.")
                 continue # Move onto next replay if current replay has already been parsed
+
+            # Pre-filter: skip replays with no winner or AIArena timeout duration.
+            # This reads the raw replay file (fast, no SC2 engine) to avoid
+            # wasting time extracting replays where bots were misbehaving.
+            should_skip, skip_reason = check_replay_dominated(replay_path)
+            if should_skip:
+                print(f"File: {stem} skipped by pre-filter ({skip_reason}).")
+                logger.info(f"Pre-filter skipped {stem}: {skip_reason}")
+                continue
 
             # Add the not yet processed replay path to the list to be processed
             replay_paths.append(replay_path)
@@ -192,6 +214,78 @@ class ParallelReplayProcessor:
         logger.info("=" * 60)
 
         return results
+
+    def _reconcile_orphaned_parts(self, parquet_dir: Path) -> None:
+        """
+        Find _parts_* directories left over from failed runs and reconcile them.
+
+        Each _parts_<replay_stem> directory contains numbered part parquet files
+        from the batch streaming writer. This method stitches each one into a
+        single <replay_stem>_game_state.parquet file using ParquetWriter.reconcile_parts(),
+        then logs the result. Directories that fail reconciliation are logged
+        and left in place for manual inspection.
+
+        Called before the skip-check so that successfully reconciled replays
+        appear as already-processed and are not re-extracted.
+
+        Args:
+            parquet_dir: The parquet output directory (e.g. output_dir / 'parquet')
+
+        Depends on / calls:
+            - ParquetWriter.reconcile_parts() for the actual stitching
+        """
+        # Find all _parts_* directories in the parquet output directory
+        parts_dirs = sorted(parquet_dir.glob("_parts_*"))
+        if not parts_dirs:
+            return
+
+        logger.info(f"Found {len(parts_dirs)} orphaned parts directories to reconcile")
+        print(f"Found {len(parts_dirs)} orphaned parts directories — reconciling before processing...")
+
+        writer = ParquetWriter(
+            compression=self.config.get('compression', 'snappy')
+        )
+
+        reconciled = 0
+        failed = 0
+        for parts_dir in parts_dirs:
+            # Derive replay stem from directory name: _parts_match_1234 -> match_1234
+            replay_stem = parts_dir.name[len("_parts_"):]
+            output_path = parquet_dir / f"{replay_stem}_game_state.parquet"
+
+            # Skip if the final parquet already exists (parts dir just wasn't cleaned up)
+            if output_path.exists():
+                logger.debug(f"Final parquet already exists for {replay_stem}, cleaning up parts dir")
+                # Clean up the orphaned parts directory
+                import shutil
+                shutil.rmtree(parts_dir, ignore_errors=True)
+                reconciled += 1
+                continue
+
+            # Check that the parts directory actually contains part files
+            part_files = sorted(parts_dir.glob("_part_*.parquet"))
+            if not part_files:
+                logger.warning(f"Parts directory {parts_dir.name} is empty, removing")
+                parts_dir.rmdir()
+                continue
+
+            try:
+                writer.reconcile_parts(parts_dir, output_path)
+                reconciled += 1
+                logger.info(f"Reconciled {parts_dir.name} -> {output_path.name}")
+                print(f"  Reconciled: {replay_stem}")
+            except Exception as e:
+                failed += 1
+                logger.error(f"Failed to reconcile {parts_dir.name}: {e}")
+                print(f"  FAILED to reconcile {replay_stem}: {e}")
+
+        logger.info(
+            f"Orphaned parts reconciliation complete: "
+            f"{reconciled} reconciled, {failed} failed"
+        )
+        print(
+            f"Reconciliation complete: {reconciled} reconciled, {failed} failed"
+        )
 
     def process_replay_directory(
         self,
