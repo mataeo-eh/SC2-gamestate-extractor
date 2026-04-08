@@ -60,7 +60,7 @@ Usage:
     python quickstart.py --output data/quickstart --engineer-features --discretize -dataset
 
     # Testing
-    python quickstart.py --process-replay-directory replays --output data/quickstart --workers 2 -dataset --num-replays 5 -e -d -s -EDA
+    python SC2-gamestate-extractor/quickstart.py --process-replay-directory replays --output data/quickstart --workers 1 -dataset -s -EDA
 """
 from absl import flags
 import sys
@@ -77,6 +77,10 @@ from src_new.pipeline.logging_config import setup_logging
 
 from dotenv import load_dotenv
 import os
+
+# Import strategy extraction logic from the dedicated script so the logic
+# lives in one place and quickstart.py stays a thin orchestrator.
+from scripts.Create_strats_list import extract_strategies
 
 # Load variables from .env file
 load_dotenv()
@@ -146,114 +150,6 @@ def run_eda_notebooks(output_dir: Path):
             # Kernel death, missing dependencies, or other unexpected error.
             print(f"  FAILED: {nb_path.name}")
             print(f"    Unexpected error: {exc}")
-
-
-def extract_strategies(output_dir: Path):
-    """Scan all JSON metadata files and incrementally build a labelable strategy index.
-
-    Reads each metadata JSON one at a time from {output_dir}/json/, extracts
-    messages that start with "Tag:", maps them to player names, and merges new
-    player:strategy pairs into the existing strategies.json. Existing entries
-    (including user-applied labels) are preserved.
-
-    Output schema:
-        {
-            "PlayerName": {
-                "StrategyName": "<ADD_LABEL_HERE>",  // new, unlabeled
-                "OtherStrat": "1"                     // user already labeled
-            }
-        }
-
-    Label values: 0 = not cheese, 1 = cheese, 999 = not a strategy.
-
-    Parameters:
-        output_dir (Path): The --output directory (e.g. Path('data/quickstart')).
-                           Expects a 'json/' subdirectory with *_metadata.json files.
-
-    Returns:
-        Path: Path to the written strategies.json file.
-
-    Depends on / calls:
-        - json.load / json.dump (stdlib)
-        - collections.defaultdict
-    """
-    import json
-    from collections import defaultdict
-
-    json_dir = output_dir / "json"
-    if not json_dir.exists():
-        print(f"  No json directory found at {json_dir}")
-        return None
-
-    metadata_files = list(json_dir.glob("*_metadata.json"))
-    if not metadata_files:
-        print(f"  No metadata JSON files found in {json_dir}")
-        return None
-
-    # Load existing strategies.json to preserve previously applied labels
-    strategies_dir = output_dir / "strategies"
-    out_path = strategies_dir / "strategies.json"
-    existing = {}
-    if out_path.exists():
-        with open(out_path, "r", encoding="utf-8") as f:
-            existing = json.load(f)
-        print(f"  Loaded existing strategies.json ({sum(len(v) for v in existing.values())} entries)")
-
-    print(f"  Scanning {len(metadata_files)} metadata files...")
-
-    # Collect new player:strategy pairs found across all metadata files.
-    # Uses a set per player for O(1) dedup during scanning.
-    new_pairs = defaultdict(set)
-
-    for meta_path in metadata_files:
-        with open(meta_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        # Build player_id -> player_name lookup for this file
-        players = data.get("players", {})
-        id_to_name = {
-            1: players.get("p1", {}).get("name"),
-            2: players.get("p2", {}).get("name"),
-        }
-
-        # Extract Tag: prefixed messages
-        messages = data.get("messages", {}).get("messages", [])
-        for msg in messages:
-            text = msg.get("message", "")
-            if text.startswith("Tag:"):
-                player_name = id_to_name.get(msg.get("player_id"))
-                if player_name:
-                    # Strip "Tag:" prefix and surrounding whitespace
-                    strategy = text[4:].strip()
-                    if strategy:
-                        new_pairs[player_name].add(strategy)
-
-    # Merge: preserve existing labels, add new pairs with placeholder
-    added_count = 0
-    result = {}
-    # Start from existing entries to preserve labels and ordering
-    all_players = sorted(set(list(existing.keys()) + list(new_pairs.keys())))
-    for player in all_players:
-        player_existing = existing.get(player, {})
-        # Handle migration from old list-based schema to new dict-based schema
-        if isinstance(player_existing, list):
-            player_existing = {}
-        result[player] = dict(player_existing)  # copy existing labels
-        for strategy in sorted(new_pairs.get(player, [])):
-            if strategy not in result[player]:
-                result[player][strategy] = "<ADD_LABEL_HERE>"
-                added_count += 1
-
-    # Create strategies directory if it doesn't exist
-    strategies_dir.mkdir(parents=True, exist_ok=True)
-
-    # Write merged result to disk
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, indent=2)
-
-    total = sum(len(v) for v in result.values())
-    print(f"  {total} total strategies across {len(result)} players ({added_count} new)")
-    return out_path
 
 
 def check_prerequisites():
