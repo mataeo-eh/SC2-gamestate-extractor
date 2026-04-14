@@ -69,8 +69,9 @@ def fetch_bot_match_ids(auth, base_url, bot_ids: list, max_replays: int = None, 
     for bot_id in tqdm(bot_ids, desc="Processing bots"):
         # Reset replay counter for each bot
         bot_match_count = 0
-        # Get matches for a given bot id
-        url = f'{base_url}/match-participations/?bot={bot_id}'
+        # Get matches for a given bot id, ordered by newest first so that
+        # max_replays fetches the most recent matches rather than the oldest.
+        url = f'{base_url}/match-participations/?bot={bot_id}&ordering=-id'
         pbar = None
         while url and (max_replays is None or bot_match_count < max_replays):
             response = requests.get(url, headers=auth)

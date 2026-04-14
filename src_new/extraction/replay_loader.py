@@ -575,3 +575,62 @@ def check_replay_dominated(replay_path: Path) -> Tuple[bool, str]:
             f"Not skipping — will attempt full extraction."
         )
         return False, ""
+
+
+def check_map_available(replay_path: Path, maps_dir: Path = Path('./maps')) -> Tuple[bool, str]:
+    """
+    Lightweight pre-filter that uses sc2reader to identify the replay's map,
+    then verifies a matching .SC2Map file exists in the local maps directory.
+
+    Skipping here avoids launching SC2 only for it to immediately fail with a
+    map-not-found error, which wastes significant startup time per replay.
+
+    The map is looked up by normalizing sc2reader's map_name to a filename
+    (spaces replaced with underscores) and checking for a matching .SC2Map in
+    maps_dir. The error message uses map_hash because that is the identifier
+    SC2 reports internally when a map cannot be found.
+
+    Args:
+        replay_path: Path to the .SC2Replay file.
+        maps_dir:    Path to the local maps directory (default: ./maps,
+                     relative to the working directory where the pipeline runs).
+
+    Returns:
+        Tuple of (should_skip, reason):
+        - should_skip: True if no matching map file is found locally.
+        - reason: Human-readable explanation (empty string when not skipped).
+
+    Depends on / calls:
+        - sc2reader.load_replay() at load_level=1 (details only, no SC2 engine)
+    """
+    try:
+        replay = sc2reader.load_replay(str(replay_path), load_level=1)
+
+        map_hash = getattr(replay, 'map_hash', None)
+        map_name = getattr(replay, 'map_name', None)
+
+        # If sc2reader cannot identify the map at all, let the pipeline decide.
+        if map_hash is None and map_name is None:
+            return False, ""
+
+        if map_name:
+            # sc2reader gives names like "PylonAIE v4"; the local maps directory
+            # stores them as "PylonAIE_v4.SC2Map" (spaces replaced by underscores).
+            normalized_name = map_name.replace(' ', '_')
+            expected_file = maps_dir / f"{normalized_name}.SC2Map"
+            if expected_file.exists():
+                return False, ""  # Map file found locally — safe to proceed
+
+        # Map not found. Use map_hash in the message (falls back to map_name
+        # if the replay has no hash, e.g. bot replays with empty cache_handles).
+        identifier = map_hash if map_hash is not None else map_name
+        return True, f"Map could not be opened because {identifier} not found in maps directory"
+
+    except Exception as e:
+        # If sc2reader cannot read the replay, don't skip — let the main
+        # pipeline handle the error with full logging.
+        logger.warning(
+            f"Map availability check could not read {replay_path.name}: {e}. "
+            f"Not skipping — will attempt full extraction."
+        )
+        return False, ""

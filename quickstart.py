@@ -60,7 +60,7 @@ Usage:
     python quickstart.py --output data/quickstart --engineer-features --discretize -dataset
 
     # Testing
-    python SC2-gamestate-extractor/quickstart.py --process-replay-directory replays --output data/quickstart --workers 1 -dataset -s -EDA
+    python SC2-gamestate-extractor/quickstart.py --process-replay-directory replays --output data/quickstart --workers 2 -dataset -s -EDA --download-replays --bots Eris Deimos --num-replays 100
 """
 from absl import flags
 import sys

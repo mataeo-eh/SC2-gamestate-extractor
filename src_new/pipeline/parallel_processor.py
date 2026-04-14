@@ -14,7 +14,7 @@ import time
 
 from .extraction_pipeline import ReplayExtractionPipeline
 from ..extraction.parquet_writer import ParquetWriter
-from ..extraction.replay_loader import check_replay_dominated
+from ..extraction.replay_loader import check_replay_dominated, check_map_available
 
 
 logger = logging.getLogger(__name__)
@@ -121,6 +121,15 @@ class ParallelReplayProcessor:
             if should_skip:
                 print(f"File: {stem} skipped by pre-filter ({skip_reason}).")
                 logger.info(f"Pre-filter skipped {stem}: {skip_reason}")
+                continue
+
+            # Pre-filter: skip replays whose map file is absent from ./maps.
+            # Launching SC2 for a missing map wastes the full engine startup
+            # time before failing — catching it here is orders of magnitude faster.
+            should_skip, skip_reason = check_map_available(replay_path)
+            if should_skip:
+                print(f"File: {stem} skipped by pre-filter ({skip_reason}).")
+                logger.error(skip_reason)
                 continue
 
             # Add the not yet processed replay path to the list to be processed
