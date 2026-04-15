@@ -16,36 +16,57 @@ def authorize():
     auth = {'Authorization': f'Token {token}'}
     return auth, base_url
 
-def get_bot_id_by_name(auth, base_url, bot_name: str, print_output: bool = True,):
+def get_bot_ids_by_names(auth, base_url, bot_names: list, print_output: bool = True):
     """
-    Finds and returns the bot ID for a given bot name.
-    Returns None if not found.
+    Finds and returns bot IDs for all given bot names in a single paginated pass.
+
+    Rather than making one API pass per bot name, this function checks every
+    remaining name on each page, so all names are resolved in one traversal.
+
+    Args:
+        auth: Authorization header
+        base_url: Base URL for the API
+        bot_names (list): List of bot name strings to look up
+    Kwargs:
+        print_output (bool): Whether to print found IDs (default = True)
+    Returns:
+        dict mapping each found bot name to its integer ID.
+        Names that were not found are omitted from the result.
     """
+    # Use a set so we can cheaply remove names once they are found
+    remaining = set(bot_names)
+    found = {}  # {bot_name: bot_id}
+
     url = f"{base_url}/bots/"
     pbar = None
-    while url:
+    while url and remaining:
         response = requests.get(url, headers=auth)
         response.raise_for_status()
         data = response.json()
-        
-        # Initialize progress bar once
+
+        # Initialize progress bar once we know the total
         if pbar is None:
             total = data.get("count")
             pbar = tqdm(total=total, desc="Fetching bots", unit="bots")
 
-        # Check each bot on this page
+        # Check every bot on this page against every still-unresolved name
         for bot in data["results"]:
-            if bot_name.lower() in bot.get("name", "").lower():
-                if print_output:
-                    print(f"ID found for {bot_name}: {bot['id']}")
-                return bot["id"]  # Found it, return immediately
-        
-        # Update the progress bar
-        pbar.update(len(data["results"]))
+            bot_api_name = bot.get("name", "").lower()
+            for name in list(remaining):  # list() so we can mutate remaining mid-loop
+                if name.lower() in bot_api_name:
+                    found[name] = bot["id"]
+                    remaining.discard(name)
+                    if print_output:
+                        print(f"ID found for {name}: {bot['id']}")
 
-        url = data.get("next")  # Check next page
-    
-    return None  # Not found
+        pbar.update(len(data["results"]))
+        url = data.get("next")  # Move to next page
+
+    if remaining and print_output:
+        for name in remaining:
+            print(f"Warning: no bot found matching '{name}'")
+
+    return found
 
 
 def fetch_bot_match_ids(auth, base_url, bot_ids: list, max_replays: int = None, print_output: bool = True):
@@ -156,7 +177,9 @@ def _download_single_replay(auth, base_url, match_id, print_output: bool = True,
                     continue
                 return (match_id, False, "Invalid JSON")
 
-            # Get replay URL
+            # Get replay URL — results may be empty if the match has no replay yet
+            if not result.get('results'):
+                return (match_id, False, "No results returned (replay not available)")
             replay_url = result['results'][0]['replay_file']
 
             if replay_url:
@@ -264,8 +287,8 @@ def main(bots: list, print_output = True, max_replays=None):
         # Authorize API usage for this session
         auth, url = authorize()
 
-        bot_ids = [get_bot_id_by_name(auth, url, name, print_output=print_output) for name in bots]
-        bot_ids = [id for id in bot_ids if id is not None]  # Filter out any not-found
+        # Single paginated pass finds all bot IDs simultaneously
+        bot_ids = list(get_bot_ids_by_names(auth, url, bots, print_output=print_output).values())
 
         # Fetch and download matches for the bot IDs
         match_ids = fetch_bot_match_ids(auth, url, bot_ids, max_replays=max_replays, print_output=print_output)[1]
