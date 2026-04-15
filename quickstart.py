@@ -447,6 +447,7 @@ def main():
         action="store_true",
         help="Extract all bot strategies (Tag: prefixed messages) from processed JSON metadata into a strategies directory."
     )
+    # Step size 22 == 1s real time
     parser.add_argument(
         "-ss", "--step-size",
         type=int,
