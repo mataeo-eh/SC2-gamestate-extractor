@@ -579,16 +579,20 @@ def check_replay_dominated(replay_path: Path) -> Tuple[bool, str]:
 
 def check_map_available(replay_path: Path, maps_dir: Path = Path('./maps')) -> Tuple[bool, str]:
     """
-    Lightweight pre-filter that uses sc2reader to identify the replay's map,
-    then verifies a matching .SC2Map file exists in the local maps directory.
+    Lightweight pre-filter that reads the replay's map name directly from the
+    MPQ archive via mpyq + s2protocol, then verifies a matching .SC2Map file
+    exists in the local maps directory.
 
     Skipping here avoids launching SC2 only for it to immediately fail with a
     map-not-found error, which wastes significant startup time per replay.
 
-    The map is looked up by normalizing sc2reader's map_name to a filename
-    (spaces replaced with underscores) and checking for a matching .SC2Map in
-    maps_dir. The error message uses map_hash because that is the identifier
-    SC2 reports internally when a map cannot be found.
+    The map is looked up by normalizing the map title to a filename (spaces
+    replaced with underscores) and checking for a matching .SC2Map in maps_dir.
+
+    Note: previously used sc2reader.load_replay(load_level=1) here, but that
+    throws 'list index out of range' on certain replay formats. The mpyq +
+    s2protocol approach (the same fallback used by _extract_replay_metadata)
+    is more reliable because it reads only replay.details — no event parsing.
 
     Args:
         replay_path: Path to the .SC2Replay file.
@@ -601,34 +605,60 @@ def check_map_available(replay_path: Path, maps_dir: Path = Path('./maps')) -> T
         - reason: Human-readable explanation (empty string when not skipped).
 
     Depends on / calls:
-        - sc2reader.load_replay() at load_level=1 (details only, no SC2 engine)
+        - mpyq.MPQArchive (reads the raw .SC2Replay MPQ archive)
+        - s2protocol.versions (decodes replay header and details)
     """
     try:
-        replay = sc2reader.load_replay(str(replay_path), load_level=1)
+        archive = mpyq.MPQArchive(str(replay_path))
 
-        map_hash = getattr(replay, 'map_hash', None)
-        map_name = getattr(replay, 'map_name', None)
+        # Decode the replay header to obtain the base build number, which
+        # selects the correct s2protocol decoder for this replay version.
+        header_content = archive.header['user_data_header']['content']
+        header = s2versions.latest().decode_replay_header(header_content)
+        base_build = header['m_version']['m_baseBuild']
+        protocol = s2versions.build(base_build)
 
-        # If sc2reader cannot identify the map at all, let the pipeline decide.
-        if map_hash is None and map_name is None:
-            return False, ""
+        # Decode replay.details to get both the exact filename and the display title.
+        details_raw = archive.read_file('replay.details')
+        details = protocol.decode_replay_details(details_raw)
 
-        if map_name:
-            # sc2reader gives names like "PylonAIE v4"; the local maps directory
-            # stores them as "PylonAIE_v4.SC2Map" (spaces replaced by underscores).
-            normalized_name = map_name.replace(' ', '_')
-            expected_file = maps_dir / f"{normalized_name}.SC2Map"
-            if expected_file.exists():
-                return False, ""  # Map file found locally — safe to proceed
+        map_filename = details.get('m_mapFileName', None)
+        if isinstance(map_filename, bytes):
+            map_filename = map_filename.decode('utf-8', errors='replace')
 
-        # Map not found. Use map_hash in the message (falls back to map_name
-        # if the replay has no hash, e.g. bot replays with empty cache_handles).
-        identifier = map_hash if map_hash is not None else map_name
-        return True, f"Map could not be opened because {identifier} not found in maps directory"
+        map_title = details.get('m_title', None)
+        if isinstance(map_title, bytes):
+            map_title = map_title.decode('utf-8', errors='replace')
+
+        # --- Strategy 1: exact match on m_mapFileName ---
+        # m_mapFileName stores the precise versioned filename used for the match
+        # (e.g. "PylonAIE_v4.SC2Map").  Prefer this over the generic display
+        # title (m_title = "Pylon AIE") because it allows version-specific
+        # matching: a replay on v2 correctly fails to find v4 on disk.
+        if map_filename:
+            exact_file = maps_dir / map_filename
+            if exact_file.exists():
+                return False, ""  # Exact versioned map found — safe to proceed
+            return True, f"Map could not be opened because '{map_filename}' not found in maps directory"
+
+        # --- Strategy 2: prefix match on m_title (fallback) ---
+        # Used when m_mapFileName is absent (e.g. older replay formats).
+        # Strips spaces from the display title and checks whether any local
+        # .SC2Map stem (with underscores removed) starts with that string:
+        #   "Pylon AIE" → "pylonaie"  matches  "PylonAIE_v4" → "pylonaiev4"
+        if not map_title:
+            return False, ""  # No map info at all — let the pipeline decide
+
+        norm_title = map_title.replace(' ', '').lower()
+        for map_file in maps_dir.glob('*.SC2Map'):
+            if map_file.stem.replace('_', '').lower().startswith(norm_title):
+                return False, ""
+
+        return True, f"Map could not be opened because '{map_title}' not found in maps directory"
 
     except Exception as e:
-        # If sc2reader cannot read the replay, don't skip — let the main
-        # pipeline handle the error with full logging.
+        # If the archive cannot be read, don't skip — let the main pipeline
+        # handle the error with full logging.
         logger.warning(
             f"Map availability check could not read {replay_path.name}: {e}. "
             f"Not skipping — will attempt full extraction."
