@@ -90,7 +90,6 @@ load_dotenv()
 # of where the user invokes the script from.
 SCRIPT_DIR = Path(__file__).resolve().parent
 EDA_NOTEBOOKS = [
-    SCRIPT_DIR / "EDA" / "raw_data_summary.ipynb",
     SCRIPT_DIR / "EDA" / "data_verification.ipynb",
 ]
 
@@ -440,7 +439,7 @@ def main():
     parser.add_argument(
         "-EDA", "--EDA-notebook",
         action="store_true",
-        help="Run EDA notebooks (raw_data_summary, data_verification) on the output data via papermill."
+        help="Run the data_verification EDA notebook on the output data via papermill."
     )
     parser.add_argument(
         "-s", "--list-strategies",
