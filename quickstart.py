@@ -29,13 +29,21 @@ Usage:
     python quickstart.py --process-replay-directory path/to/replay/directory --workers 3
     python quickstart.py -batch path/to/replay/directory -w 3
 
-    # With downloading new replays
+    # With downloading new replays from specific bots
     python quickstart.py --bots really why what --download-replays
     python quickstart.py --bots really why what -dr
 
         # Downloading custom number of replays (default is all)
         python quickstart.py --bots really why what --download-replays --num-replays 1
         python quickstart.py --bots really why what -dr -nr 1
+
+    # With downloading the most recent replays from the full-game ladder (no bots required)
+    python quickstart.py --download-replays --ladder
+    python quickstart.py -dr -l
+
+        # Download a specific number of ladder replays
+        python quickstart.py --download-replays --ladder --num-replays 50
+        python quickstart.py -dr -l -nr 50
 
     # With updating kaggle dataset
     python quickstart.py --update-kaggle-dataset
@@ -411,6 +419,15 @@ def main():
         help='List of bot names to download replays for (default: None)'
     )
     parser.add_argument(
+        '-l', '--ladder',
+        action='store_true',
+        help=(
+            'Download replays from the full-game ladder instead of specific bots. '
+            'Mutually exclusive with --bots. Competition IDs are cached in '
+            'src_new/utils/Macro_ladder.json and refreshed automatically when stale.'
+        )
+    )
+    parser.add_argument(
         '-batch', '--process-replay-directory',
         type=Path,
         help="Process all replays in specified directory using parallel replay processing"
@@ -484,12 +501,23 @@ def main():
         print("Please fix the issues above and try again.")
         sys.exit(1)
 
-    # Downlaod replays if passed
+    # Download replays if passed — either from specific bots or the full ladder
     if args.download_replays:
-        from src_new.data_processing.fetch_bot_replays import main as download_replays
-        if not args.bots:
-            raise RuntimeError("You must pass names of bots to download replays for to download_replays")
-        download_replays(args.bots, max_replays = args.num_replays, print_output = args.verbose)
+        if args.ladder and args.bots:
+            raise RuntimeError("--ladder and --bots are mutually exclusive. Use one or the other.")
+        if args.ladder:
+            # Fetch the most recent X replays from the full-game ladder.
+            # Competition IDs are cached in src_new/utils/Macro_ladder.json.
+            from src_new.data_processing.fetch_bot_replays import main_ladder
+            main_ladder(max_replays=args.num_replays, print_output=args.verbose)
+        else:
+            # Fetch replays only for the specified bot names.
+            from src_new.data_processing.fetch_bot_replays import main as download_bot_replays
+            if not args.bots:
+                raise RuntimeError(
+                    "You must pass either --bots <names> or --ladder when using --download-replays."
+                )
+            download_bot_replays(args.bots, max_replays=args.num_replays, print_output=args.verbose)
 
     # Process all replays in directory if passed
     if args.process_replay_directory:

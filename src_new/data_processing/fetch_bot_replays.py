@@ -1,11 +1,19 @@
+import logging
 import requests
 from dotenv import load_dotenv
 import os
 import pprint
 from tqdm import tqdm
 import json
+import datetime
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 load_dotenv()
+
+# Module-level logger — handlers are configured by setup_logging() in quickstart.py
+# before any of these functions are called, so log output goes to both the
+# timestamped log file (DEBUG+) and the console (INFO+) automatically.
+logger = logging.getLogger(__name__)
 
 
 def authorize():
@@ -274,6 +282,339 @@ def download_replays(auth, base_url, match_ids: list, print_output: bool = True,
 
     return num_replays
 
+# ---------------------------------------------------------------------------
+# Ladder-wide replay fetching (no specific bot required)
+# ---------------------------------------------------------------------------
+
+def _load_ladder_cache(cache_path: str) -> dict:
+    """
+    Load the Macro_ladder.json competition ID cache from disk.
+
+    The cache is a dict of {date_string: [comp_id, ...]} that persists
+    previously discovered full-game competition IDs across runs so the
+    script avoids a full API scan on every invocation.
+
+    Args:
+        cache_path (str): Path to Macro_ladder.json
+    Returns:
+        dict: Cached competition ID registry, or {} if the file is absent/empty/corrupt
+    """
+    path = Path(cache_path)
+    if not path.exists():
+        logger.debug("Ladder cache not found at %s — starting with empty cache.", cache_path)
+        return {}
+    try:
+        with open(path, 'r') as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            logger.warning(
+                "Ladder cache at %s contained unexpected type %s — treating as empty.",
+                cache_path, type(data).__name__
+            )
+            return {}
+        logger.debug("Loaded ladder cache from %s (%d date entries).", cache_path, len(data))
+        return data
+    except (json.JSONDecodeError, IOError) as exc:
+        logger.warning(
+            "Failed to read ladder cache at %s (%s) — treating as empty.", cache_path, exc
+        )
+        return {}
+
+
+def _save_ladder_cache(cache_path: str, data: dict) -> None:
+    """
+    Persist the Macro_ladder.json competition ID cache to disk.
+
+    Args:
+        cache_path (str): Path to Macro_ladder.json
+        data (dict): {date_string: [comp_id, ...]} registry to write
+    """
+    path = Path(cache_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=2)
+    logger.debug("Ladder cache saved to %s.", cache_path)
+
+
+def _query_full_game_competition_ids(auth, base_url, print_output: bool = True) -> list:
+    """
+    Query the aiarena API for all competitions that are NOT micro challenges.
+
+    Filters by checking whether the competition name contains the substring
+    "micro" (case-insensitive). Any competition whose name does NOT contain
+    "micro" is treated as a full-game competition. This logic intentionally
+    leaves open the future option to invert the filter (name must contain
+    "micro") in order to support a micro-only pipeline without restructuring.
+
+    Calls:
+        authorize() — caller is responsible for passing auth and base_url
+        requests.get — paginates through /api/competitions/
+
+    Args:
+        auth: Authorization header dict
+        base_url (str): Base aiarena API URL
+        print_output (bool): Whether to log at INFO (True) or DEBUG (False) level (default True)
+    Returns:
+        list: Integer competition IDs for all non-micro competitions found
+    """
+    # Helper so callers can suppress INFO-level noise when running non-interactively.
+    log = logger.info if print_output else logger.debug
+
+    url = f"{base_url}/competitions/"
+    comp_ids = []
+    pbar = None
+
+    log("Querying aiarena API for full-game competitions (excluding 'micro' names)...")
+
+    while url:
+        response = requests.get(url, headers=auth)
+        response.raise_for_status()
+        data = response.json()
+
+        if pbar is None:
+            total = data.get("count", 0)
+            pbar = tqdm(total=total, desc="Scanning competitions", unit="comp",
+                        disable=not print_output)
+
+        for comp in data["results"]:
+            name = comp.get("name", "")
+            if "micro" not in name.lower():
+                comp_ids.append(comp["id"])
+                logger.debug("Accepted competition: '%s' (id=%s)", name, comp["id"])
+            else:
+                logger.debug("Skipped micro competition: '%s' (id=%s)", name, comp["id"])
+
+        pbar.update(len(data["results"]))
+        url = data.get("next")
+
+    if pbar:
+        pbar.close()
+
+    log("Found %d full-game competition(s).", len(comp_ids))
+    return comp_ids
+
+
+def _validate_competition_id(auth, base_url, comp_id: int) -> bool:
+    """
+    Check whether a competition ID is still accessible via the API.
+
+    A competition is considered valid as long as the API returns HTTP 200
+    for its detail endpoint. Closed or finished competitions remain valid
+    because their rounds and replays are still retrievable.
+
+    Calls:
+        requests.get — hits /api/competitions/<comp_id>/
+
+    Args:
+        auth: Authorization header dict
+        base_url (str): Base aiarena API URL
+        comp_id (int): Competition ID to check
+    Returns:
+        bool: True if the competition exists (HTTP 200), False otherwise
+    """
+    try:
+        response = requests.get(f"{base_url}/competitions/{comp_id}/", headers=auth)
+        if response.status_code == 200:
+            logger.debug("Competition ID %s is valid.", comp_id)
+            return True
+        logger.debug(
+            "Competition ID %s returned HTTP %s — treating as invalid.",
+            comp_id, response.status_code
+        )
+        return False
+    except requests.exceptions.RequestException as exc:
+        logger.warning(
+            "Request error while validating competition ID %s: %s", comp_id, exc
+        )
+        return False
+
+
+def fetch_ladder_match_ids(auth, base_url, max_replays: int, cache_path: str,
+                           print_output: bool = True) -> tuple:
+    """
+    Collect match IDs from the full-game ladder without targeting specific bots.
+
+    Uses Macro_ladder.json to avoid a full competition scan on every run:
+
+    Cache resolution order:
+      1. Load the cache; sort date keys descending (most recent first).
+      2. For each date entry, validate each stored competition ID.
+      3. Use the valid IDs from the most-recent date that has at least one valid ID.
+      4. If every date entry is exhausted (all IDs invalid or cache is empty):
+         query the API for fresh competition IDs, append them to the cache under
+         today's date, and save. Old entries are kept for auditing.
+
+    Match collection:
+      For each valid competition, fetch completed rounds ordered most-recent first
+      (?complete=true&ordering=-started), then fetch all matches per round. Stop
+      as soon as max_replays match IDs have been accumulated.
+
+    Calls:
+        _load_ladder_cache — reads Macro_ladder.json
+        _validate_competition_id — checks each cached ID against the API
+        _query_full_game_competition_ids — full API scan when cache is stale
+        _save_ladder_cache — persists updated cache to disk
+        requests.get — paginates /api/rounds/ and /api/matches/
+
+    Args:
+        auth: Authorization header dict
+        base_url (str): Base aiarena API URL
+        max_replays (int): Maximum number of match IDs to collect (None = unlimited)
+        cache_path (str): Path to Macro_ladder.json
+        print_output (bool): Whether to log at INFO (True) or DEBUG (False) level (default True)
+    Returns:
+        Tuple of (count: int, match_ids: list) — same shape as fetch_bot_match_ids
+    """
+    # Route messages to INFO (visible on console) or DEBUG (file only) based on
+    # print_output, mirroring how the bot pipeline uses the print_output flag.
+    log = logger.info if print_output else logger.debug
+
+    # --- Step 1: Resolve valid competition IDs ---
+    cache = _load_ladder_cache(cache_path)
+    valid_comp_ids = []
+
+    if cache:
+        # Work through date keys newest-first; stop at the first date
+        # that yields at least one still-valid competition ID.
+        sorted_dates = sorted(cache.keys(), reverse=True)
+        for date_key in sorted_dates:
+            candidate_ids = cache[date_key]
+            logger.debug(
+                "Validating %d cached competition ID(s) from %s...",
+                len(candidate_ids), date_key
+            )
+            validated = [
+                cid for cid in candidate_ids
+                if _validate_competition_id(auth, base_url, cid)
+            ]
+            if validated:
+                valid_comp_ids = validated
+                log(
+                    "Using %d valid cached competition ID(s) from %s.",
+                    len(valid_comp_ids), date_key
+                )
+                break
+            else:
+                logger.warning(
+                    "All competition IDs from %s are no longer valid — checking older entries.",
+                    date_key
+                )
+
+    # Cache was empty or every entry had no reachable IDs — query fresh.
+    if not valid_comp_ids:
+        logger.warning(
+            "No valid cached competition IDs found. Querying API for full-game competitions..."
+        )
+        valid_comp_ids = _query_full_game_competition_ids(auth, base_url, print_output=print_output)
+        if not valid_comp_ids:
+            logger.error("No full-game competitions found on aiarena — cannot fetch ladder replays.")
+            raise RuntimeError(
+                "No full-game competitions found on aiarena. Cannot fetch ladder replays."
+            )
+
+        # Append new IDs to the cache under today's date.
+        # If today already has an entry (e.g. two runs on the same day),
+        # merge and deduplicate while preserving order.
+        today = datetime.date.today().isoformat()  # e.g. "2026-04-19"
+        existing_today = cache.get(today, [])
+        # dict.fromkeys preserves insertion order and removes duplicates
+        merged = list(dict.fromkeys(existing_today + valid_comp_ids))
+        cache[today] = merged
+        _save_ladder_cache(cache_path, cache)
+        log("Saved %d competition ID(s) to cache under %s.", len(valid_comp_ids), today)
+
+    # --- Step 2: Collect match IDs from recent completed rounds ---
+    os.makedirs('replays', exist_ok=True)
+    match_ids = []
+
+    for comp_id in valid_comp_ids:
+        if max_replays is not None and len(match_ids) >= max_replays:
+            break
+
+        log("Fetching completed rounds for competition %s...", comp_id)
+
+        # Request only completed rounds so every match inside has a replay.
+        # ordering=-started puts the most recently started rounds first.
+        rounds_url = (
+            f"{base_url}/rounds/"
+            f"?competition={comp_id}&complete=true&ordering=-started"
+        )
+
+        while rounds_url and (max_replays is None or len(match_ids) < max_replays):
+            response = requests.get(rounds_url, headers=auth)
+            response.raise_for_status()
+            rounds_data = response.json()
+
+            for round_obj in tqdm(rounds_data["results"], desc="Rounds", unit="round",
+                                  disable=not print_output, leave=False):
+                if max_replays is not None and len(match_ids) >= max_replays:
+                    break
+
+                round_id = round_obj["id"]
+                logger.debug("Fetching matches for round %s...", round_id)
+                matches_url = f"{base_url}/matches/?round={round_id}"
+
+                while matches_url and (max_replays is None or len(match_ids) < max_replays):
+                    match_response = requests.get(matches_url, headers=auth)
+                    match_response.raise_for_status()
+                    matches_data = match_response.json()
+
+                    for match in matches_data["results"]:
+                        match_ids.append(match["id"])
+                        if max_replays is not None and len(match_ids) >= max_replays:
+                            break
+
+                    matches_url = matches_data.get("next")
+
+            rounds_url = rounds_data.get("next")
+
+    log("Total match IDs fetched from ladder: %d", len(match_ids))
+    return len(match_ids), match_ids
+
+
+def main_ladder(max_replays: int = None, cache_path: str = None, print_output: bool = True) -> None:
+    """
+    Entry point for fetching and downloading replays from the full-game ladder.
+
+    Mirrors the structure of main() but targets the entire ladder instead of
+    specific bots. Competition IDs are resolved via Macro_ladder.json so the
+    API is only scanned when the cache is empty or all cached IDs are stale.
+
+    Calls:
+        authorize — reads AIARENA_TOKEN and AIARENA_NET_URL from environment
+        fetch_ladder_match_ids — resolves competition IDs and collects match IDs
+        download_replays — downloads the replay files (shared with bot pipeline)
+
+    Args:
+        max_replays (int): Maximum number of replays to download (default None = all)
+        cache_path (str): Path to Macro_ladder.json. Defaults to
+                          src_new/utils/Macro_ladder.json relative to this file.
+        print_output (bool): Whether to log at INFO (True) or DEBUG (False) level (default True)
+    """
+    log = logger.info if print_output else logger.debug
+
+    if cache_path is None:
+        # Resolve the default cache path relative to this module's location
+        # so it works regardless of the working directory the script is run from.
+        cache_path = Path(__file__).parent.parent / "utils" / "Macro_ladder.json"
+
+    logger.info("Starting ladder replay download pipeline (max_replays=%s).", max_replays)
+    try:
+        auth, url = authorize()
+        _, match_ids = fetch_ladder_match_ids(
+            auth, url, max_replays, str(cache_path), print_output=print_output
+        )
+        log("Finished fetching ladder match IDs.")
+        if match_ids:
+            num_replays = download_replays(auth, url, match_ids, print_output=print_output)
+            logger.info("Ladder pipeline complete. Total replays downloaded: %d", num_replays)
+        else:
+            logger.warning("No match IDs were collected — no replays downloaded.")
+    except Exception as e:
+        logger.error("Ladder replay download pipeline failed: %s", e, exc_info=True)
+        raise RuntimeError(f"Error in ladder replay download pipeline: {e}")
+
+
 def main(bots: list, print_output = True, max_replays=None):
     """ 
     Main function to fetch and download bot replays 
@@ -305,11 +646,11 @@ def main(bots: list, print_output = True, max_replays=None):
 
 
 if __name__ == "__main__":
-    bots = ["really","why","what"]
-    main(bots, max_replays = 1, print_output=True)
+    #bots = ["really","why","what"]
+    #main(bots, max_replays = 1, print_output=True)
     #auth, base_url = authorize()
     #bots = fetch_bot_id(auth, base_url, bot_name="really")
     #bots = fetch_bots_list(auth, base_url, max=10, bot="really")
     #print(bots)
     #fetch_bot_match_ids(auth, base_url, bot_ids=[934], print_output=True)
-
+    pass
