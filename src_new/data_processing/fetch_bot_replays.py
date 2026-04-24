@@ -338,13 +338,20 @@ def _save_ladder_cache(cache_path: str, data: dict) -> None:
 
 def _query_full_game_competition_ids(auth, base_url, print_output: bool = True) -> list:
     """
-    Query the aiarena API for all competitions that are NOT micro challenges.
+    Query the aiarena API for currently-OPEN full-game competitions.
 
-    Filters by checking whether the competition name contains the substring
-    "micro" (case-insensitive). Any competition whose name does NOT contain
-    "micro" is treated as a full-game competition. This logic intentionally
-    leaves open the future option to invert the filter (name must contain
-    "micro") in order to support a micro-only pipeline without restructuring.
+    Filters applied (a competition must satisfy ALL of these):
+      - status == "open"    — only the currently-live season yields fresh
+                              replays. Closed seasons remain reachable via
+                              HTTP 200 but their S3 replay files have been
+                              cleaned, so every download would fail silently.
+      - game_mode == 1      — 1 is full-game (macro), 2 is micro. Filtering
+                              on game_mode is more reliable than name-matching
+                              on "micro" (which can break if naming changes).
+
+    In practice aiarena runs exactly one macro ladder at a time, so this
+    normally returns a list of length 1. Returning a list (not a single ID)
+    keeps the caller's loop structure unchanged if that ever changes.
 
     Calls:
         authorize() — caller is responsible for passing auth and base_url
@@ -355,7 +362,7 @@ def _query_full_game_competition_ids(auth, base_url, print_output: bool = True) 
         base_url (str): Base aiarena API URL
         print_output (bool): Whether to log at INFO (True) or DEBUG (False) level (default True)
     Returns:
-        list: Integer competition IDs for all non-micro competitions found
+        list: Integer competition IDs for all open full-game competitions
     """
     # Helper so callers can suppress INFO-level noise when running non-interactively.
     log = logger.info if print_output else logger.debug
@@ -364,7 +371,7 @@ def _query_full_game_competition_ids(auth, base_url, print_output: bool = True) 
     comp_ids = []
     pbar = None
 
-    log("Querying aiarena API for full-game competitions (excluding 'micro' names)...")
+    log("Querying aiarena API for OPEN full-game competitions (status='open', game_mode=1)...")
 
     while url:
         response = requests.get(url, headers=auth)
@@ -378,11 +385,20 @@ def _query_full_game_competition_ids(auth, base_url, print_output: bool = True) 
 
         for comp in data["results"]:
             name = comp.get("name", "")
-            if "micro" not in name.lower():
+            status = comp.get("status")
+            game_mode = comp.get("game_mode")
+
+            if status == "open" and game_mode == 1:
                 comp_ids.append(comp["id"])
-                logger.debug("Accepted competition: '%s' (id=%s)", name, comp["id"])
+                logger.debug(
+                    "Accepted competition: '%s' (id=%s, status=%s, game_mode=%s)",
+                    name, comp["id"], status, game_mode,
+                )
             else:
-                logger.debug("Skipped micro competition: '%s' (id=%s)", name, comp["id"])
+                logger.debug(
+                    "Skipped competition: '%s' (id=%s, status=%s, game_mode=%s)",
+                    name, comp["id"], status, game_mode,
+                )
 
         pbar.update(len(data["results"]))
         url = data.get("next")
@@ -390,17 +406,19 @@ def _query_full_game_competition_ids(auth, base_url, print_output: bool = True) 
     if pbar:
         pbar.close()
 
-    log("Found %d full-game competition(s).", len(comp_ids))
+    log("Found %d open full-game competition(s).", len(comp_ids))
     return comp_ids
 
 
 def _validate_competition_id(auth, base_url, comp_id: int) -> bool:
     """
-    Check whether a competition ID is still accessible via the API.
+    Check whether a competition ID is currently OPEN (live) via the API.
 
-    A competition is considered valid as long as the API returns HTTP 200
-    for its detail endpoint. Closed or finished competitions remain valid
-    because their rounds and replays are still retrievable.
+    Closed competitions still return HTTP 200 from the detail endpoint, so
+    a plain status-code check is not enough to identify a usable comp:
+    their S3 replay files have been cleaned and the download pipeline would
+    silently collect zero replays. This function requires the competition
+    to be reachable AND have status == "open" before treating it as valid.
 
     Calls:
         requests.get — hits /api/competitions/<comp_id>/
@@ -410,16 +428,36 @@ def _validate_competition_id(auth, base_url, comp_id: int) -> bool:
         base_url (str): Base aiarena API URL
         comp_id (int): Competition ID to check
     Returns:
-        bool: True if the competition exists (HTTP 200), False otherwise
+        bool: True if the competition exists and has status == "open", False otherwise
     """
     try:
         response = requests.get(f"{base_url}/competitions/{comp_id}/", headers=auth)
-        if response.status_code == 200:
-            logger.debug("Competition ID %s is valid.", comp_id)
+        if response.status_code != 200:
+            logger.debug(
+                "Competition ID %s returned HTTP %s — treating as invalid.",
+                comp_id, response.status_code
+            )
+            return False
+
+        # HTTP 200 alone is not sufficient: historical seasons are reachable
+        # but no longer serve replays. Require status=='open' so we never
+        # spend the pipeline's max_replays budget chasing cleaned-up matches.
+        try:
+            data = response.json()
+        except requests.exceptions.JSONDecodeError as exc:
+            logger.warning(
+                "Competition ID %s returned non-JSON body (%s) — treating as invalid.",
+                comp_id, exc
+            )
+            return False
+
+        status = data.get("status")
+        if status == "open":
+            logger.debug("Competition ID %s is valid (status='open').", comp_id)
             return True
         logger.debug(
-            "Competition ID %s returned HTTP %s — treating as invalid.",
-            comp_id, response.status_code
+            "Competition ID %s is not open (status=%r) — treating as invalid.",
+            comp_id, status
         )
         return False
     except requests.exceptions.RequestException as exc:
