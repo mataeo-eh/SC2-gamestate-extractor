@@ -1,0 +1,631 @@
+{
+  "count": 78,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 41522,
+      "number": 78,
+      "competition": 36,
+      "started": "2026-04-22T14:23:47.654544Z",
+      "finished": "2026-04-23T08:38:39.136726Z",
+      "complete": true
+    },
+    {
+      "id": 41521,
+      "number": 77,
+      "competition": 36,
+      "started": "2026-04-21T20:12:22.994502Z",
+      "finished": "2026-04-22T15:49:20.205056Z",
+      "complete": true
+    },
+    {
+      "id": 41520,
+      "number": 76,
+      "competition": 36,
+      "started": "2026-04-21T01:04:15.103833Z",
+      "finished": "2026-04-21T22:00:00.191860Z",
+      "complete": true
+    },
+    {
+      "id": 41519,
+      "number": 75,
+      "competition": 36,
+      "started": "2026-04-20T06:27:35.351526Z",
+      "finished": "2026-04-21T02:23:26.475854Z",
+      "complete": true
+    },
+    {
+      "id": 41518,
+      "number": 74,
+      "competition": 36,
+      "started": "2026-04-19T14:13:19.828693Z",
+      "finished": "2026-04-20T08:30:00.190264Z",
+      "complete": true
+    },
+    {
+      "id": 41517,
+      "number": 73,
+      "competition": 36,
+      "started": "2026-04-18T22:41:45.421161Z",
+      "finished": "2026-04-19T18:06:38.703377Z",
+      "complete": true
+    },
+    {
+      "id": 41516,
+      "number": 72,
+      "competition": 36,
+      "started": "2026-04-18T06:24:25.177167Z",
+      "finished": "2026-04-19T00:09:45.221240Z",
+      "complete": true
+    },
+    {
+      "id": 41515,
+      "number": 71,
+      "competition": 36,
+      "started": "2026-04-17T14:40:03.463506Z",
+      "finished": "2026-04-18T07:41:15.123959Z",
+      "complete": true
+    },
+    {
+      "id": 41514,
+      "number": 70,
+      "competition": 36,
+      "started": "2026-04-16T23:22:48.363153Z",
+      "finished": "2026-04-17T16:30:00.269377Z",
+      "complete": true
+    },
+    {
+      "id": 41513,
+      "number": 69,
+      "competition": 36,
+      "started": "2026-04-16T05:43:33.769767Z",
+      "finished": "2026-04-17T00:29:44.827784Z",
+      "complete": true
+    },
+    {
+      "id": 41512,
+      "number": 68,
+      "competition": 36,
+      "started": "2026-04-15T13:43:19.479285Z",
+      "finished": "2026-04-16T07:31:42.991304Z",
+      "complete": true
+    },
+    {
+      "id": 41511,
+      "number": 67,
+      "competition": 36,
+      "started": "2026-04-14T21:20:17.023759Z",
+      "finished": "2026-04-15T15:30:00.216829Z",
+      "complete": true
+    },
+    {
+      "id": 41510,
+      "number": 66,
+      "competition": 36,
+      "started": "2026-04-14T05:08:54.333481Z",
+      "finished": "2026-04-14T22:30:00.280328Z",
+      "complete": true
+    },
+    {
+      "id": 41509,
+      "number": 65,
+      "competition": 36,
+      "started": "2026-04-13T12:00:56.430078Z",
+      "finished": "2026-04-14T07:00:00.201162Z",
+      "complete": true
+    },
+    {
+      "id": 41508,
+      "number": 64,
+      "competition": 36,
+      "started": "2026-04-12T19:12:21.802392Z",
+      "finished": "2026-04-13T13:30:00.253425Z",
+      "complete": true
+    },
+    {
+      "id": 41507,
+      "number": 63,
+      "competition": 36,
+      "started": "2026-04-12T02:29:58.627952Z",
+      "finished": "2026-04-12T21:30:00.166235Z",
+      "complete": true
+    },
+    {
+      "id": 41506,
+      "number": 62,
+      "competition": 36,
+      "started": "2026-04-11T06:04:58.638483Z",
+      "finished": "2026-04-12T03:23:16.189466Z",
+      "complete": true
+    },
+    {
+      "id": 41505,
+      "number": 61,
+      "competition": 36,
+      "started": "2026-04-10T12:54:45.307881Z",
+      "finished": "2026-04-11T07:48:05.937792Z",
+      "complete": true
+    },
+    {
+      "id": 41504,
+      "number": 60,
+      "competition": 36,
+      "started": "2026-04-09T21:12:19.439515Z",
+      "finished": "2026-04-10T14:16:13.974502Z",
+      "complete": true
+    },
+    {
+      "id": 41503,
+      "number": 59,
+      "competition": 36,
+      "started": "2026-04-09T03:53:14.134690Z",
+      "finished": "2026-04-09T23:30:00.222521Z",
+      "complete": true
+    },
+    {
+      "id": 41502,
+      "number": 58,
+      "competition": 36,
+      "started": "2026-04-08T09:04:46.071812Z",
+      "finished": "2026-04-09T06:00:00.309346Z",
+      "complete": true
+    },
+    {
+      "id": 41501,
+      "number": 57,
+      "competition": 36,
+      "started": "2026-04-07T15:58:18.577394Z",
+      "finished": "2026-04-09T03:31:30.854994Z",
+      "complete": true
+    },
+    {
+      "id": 41500,
+      "number": 56,
+      "competition": 36,
+      "started": "2026-04-07T01:31:44.778115Z",
+      "finished": "2026-04-08T09:04:30.334924Z",
+      "complete": true
+    },
+    {
+      "id": 41499,
+      "number": 55,
+      "competition": 36,
+      "started": "2026-04-05T09:17:54.309290Z",
+      "finished": "2026-04-07T04:57:31.751809Z",
+      "complete": true
+    },
+    {
+      "id": 41498,
+      "number": 54,
+      "competition": 36,
+      "started": "2026-04-04T11:06:30.871801Z",
+      "finished": "2026-04-05T09:17:09.187129Z",
+      "complete": true
+    },
+    {
+      "id": 41497,
+      "number": 53,
+      "competition": 36,
+      "started": "2026-04-03T16:13:31.936138Z",
+      "finished": "2026-04-07T01:30:43.683926Z",
+      "complete": true
+    },
+    {
+      "id": 41496,
+      "number": 52,
+      "competition": 36,
+      "started": "2026-04-03T01:51:47.282226Z",
+      "finished": "2026-04-04T11:06:04.771313Z",
+      "complete": true
+    },
+    {
+      "id": 41495,
+      "number": 51,
+      "competition": 36,
+      "started": "2026-04-02T00:17:20.622748Z",
+      "finished": "2026-04-03T01:51:09.092603Z",
+      "complete": true
+    },
+    {
+      "id": 41494,
+      "number": 50,
+      "competition": 36,
+      "started": "2026-04-01T00:30:08.680630Z",
+      "finished": "2026-04-02T00:16:39.623474Z",
+      "complete": true
+    },
+    {
+      "id": 41493,
+      "number": 49,
+      "competition": 36,
+      "started": "2026-03-30T20:22:42.601092Z",
+      "finished": "2026-04-01T00:30:00.225561Z",
+      "complete": true
+    },
+    {
+      "id": 41492,
+      "number": 48,
+      "competition": 36,
+      "started": "2026-03-30T05:36:52.374555Z",
+      "finished": "2026-04-03T04:00:00.162728Z",
+      "complete": true
+    },
+    {
+      "id": 41491,
+      "number": 47,
+      "competition": 36,
+      "started": "2026-03-29T15:19:29.599987Z",
+      "finished": "2026-03-30T17:18:44.629469Z",
+      "complete": true
+    },
+    {
+      "id": 41490,
+      "number": 46,
+      "competition": 36,
+      "started": "2026-03-29T01:36:30.260054Z",
+      "finished": "2026-03-30T00:12:00.096281Z",
+      "complete": true
+    },
+    {
+      "id": 41489,
+      "number": 45,
+      "competition": 36,
+      "started": "2026-03-28T08:10:37.778301Z",
+      "finished": "2026-03-29T01:35:42.039448Z",
+      "complete": true
+    },
+    {
+      "id": 41488,
+      "number": 44,
+      "competition": 36,
+      "started": "2026-03-27T17:28:52.468637Z",
+      "finished": "2026-03-29T03:05:51.650487Z",
+      "complete": true
+    },
+    {
+      "id": 41487,
+      "number": 43,
+      "competition": 36,
+      "started": "2026-03-26T20:31:57.730496Z",
+      "finished": "2026-03-28T08:09:54.105526Z",
+      "complete": true
+    },
+    {
+      "id": 41486,
+      "number": 42,
+      "competition": 36,
+      "started": "2026-03-25T21:51:25.832486Z",
+      "finished": "2026-03-26T20:31:07.675528Z",
+      "complete": true
+    },
+    {
+      "id": 41485,
+      "number": 41,
+      "competition": 36,
+      "started": "2026-03-25T04:47:21.329878Z",
+      "finished": "2026-03-25T21:51:23.761618Z",
+      "complete": true
+    },
+    {
+      "id": 41484,
+      "number": 40,
+      "competition": 36,
+      "started": "2026-03-24T16:37:48.486080Z",
+      "finished": "2026-03-27T17:28:26.967275Z",
+      "complete": true
+    },
+    {
+      "id": 41483,
+      "number": 39,
+      "competition": 36,
+      "started": "2026-03-23T23:18:35.992559Z",
+      "finished": "2026-03-24T16:37:41.452244Z",
+      "complete": true
+    },
+    {
+      "id": 41482,
+      "number": 38,
+      "competition": 36,
+      "started": "2026-03-23T08:49:44.692434Z",
+      "finished": "2026-03-24T19:58:45.165742Z",
+      "complete": true
+    },
+    {
+      "id": 41481,
+      "number": 37,
+      "competition": 36,
+      "started": "2026-03-22T17:44:25.132999Z",
+      "finished": "2026-03-23T11:51:27.253718Z",
+      "complete": true
+    },
+    {
+      "id": 41480,
+      "number": 36,
+      "competition": 36,
+      "started": "2026-03-22T02:08:39.470578Z",
+      "finished": "2026-03-22T17:44:24.982789Z",
+      "complete": true
+    },
+    {
+      "id": 41479,
+      "number": 35,
+      "competition": 36,
+      "started": "2026-03-21T12:14:11.931805Z",
+      "finished": "2026-03-23T08:48:57.341587Z",
+      "complete": true
+    },
+    {
+      "id": 41478,
+      "number": 34,
+      "competition": 36,
+      "started": "2026-03-20T23:39:41.276494Z",
+      "finished": "2026-03-21T15:35:37.723637Z",
+      "complete": true
+    },
+    {
+      "id": 41477,
+      "number": 33,
+      "competition": 36,
+      "started": "2026-03-20T11:19:58.547288Z",
+      "finished": "2026-03-21T02:22:52.118033Z",
+      "complete": true
+    },
+    {
+      "id": 41476,
+      "number": 32,
+      "competition": 36,
+      "started": "2026-03-19T20:28:54.182466Z",
+      "finished": "2026-03-20T11:19:14.999575Z",
+      "complete": true
+    },
+    {
+      "id": 41475,
+      "number": 31,
+      "competition": 36,
+      "started": "2026-03-19T08:39:25.170212Z",
+      "finished": "2026-03-20T11:35:09.501203Z",
+      "complete": true
+    },
+    {
+      "id": 41474,
+      "number": 30,
+      "competition": 36,
+      "started": "2026-03-18T20:10:28.512564Z",
+      "finished": "2026-03-19T10:38:32.737236Z",
+      "complete": true
+    },
+    {
+      "id": 41473,
+      "number": 29,
+      "competition": 36,
+      "started": "2026-03-18T05:18:08.798991Z",
+      "finished": "2026-03-18T20:10:28.376312Z",
+      "complete": true
+    },
+    {
+      "id": 41472,
+      "number": 28,
+      "competition": 36,
+      "started": "2026-03-17T17:52:29.364028Z",
+      "finished": "2026-03-18T20:24:25.246064Z",
+      "complete": true
+    },
+    {
+      "id": 41471,
+      "number": 27,
+      "competition": 36,
+      "started": "2026-03-17T04:48:15.775105Z",
+      "finished": "2026-03-17T17:51:38.562985Z",
+      "complete": true
+    },
+    {
+      "id": 41468,
+      "number": 26,
+      "competition": 36,
+      "started": "2026-03-16T13:43:00.435308Z",
+      "finished": "2026-03-17T19:30:00.181938Z",
+      "complete": true
+    },
+    {
+      "id": 41465,
+      "number": 25,
+      "competition": 36,
+      "started": "2026-03-15T20:52:41.952939Z",
+      "finished": "2026-03-16T13:42:44.177246Z",
+      "complete": true
+    },
+    {
+      "id": 41463,
+      "number": 24,
+      "competition": 36,
+      "started": "2026-03-15T06:59:14.901561Z",
+      "finished": "2026-03-16T14:12:49.168571Z",
+      "complete": true
+    },
+    {
+      "id": 41460,
+      "number": 23,
+      "competition": 36,
+      "started": "2026-03-14T11:38:18.395523Z",
+      "finished": "2026-03-15T06:58:25.654259Z",
+      "complete": true
+    },
+    {
+      "id": 41457,
+      "number": 22,
+      "competition": 36,
+      "started": "2026-03-13T20:33:35.246694Z",
+      "finished": "2026-03-15T07:15:41.705751Z",
+      "complete": true
+    },
+    {
+      "id": 41454,
+      "number": 21,
+      "competition": 36,
+      "started": "2026-03-13T01:52:09.486498Z",
+      "finished": "2026-03-13T20:32:49.806068Z",
+      "complete": true
+    },
+    {
+      "id": 41451,
+      "number": 20,
+      "competition": 36,
+      "started": "2026-03-12T06:47:51.470071Z",
+      "finished": "2026-03-13T22:05:41.196962Z",
+      "complete": true
+    },
+    {
+      "id": 41447,
+      "number": 19,
+      "competition": 36,
+      "started": "2026-03-11T10:32:29.128157Z",
+      "finished": "2026-03-12T06:47:46.552321Z",
+      "complete": true
+    },
+    {
+      "id": 41444,
+      "number": 18,
+      "competition": 36,
+      "started": "2026-03-10T15:25:05.500145Z",
+      "finished": "2026-03-11T10:31:34.576972Z",
+      "complete": true
+    },
+    {
+      "id": 41441,
+      "number": 17,
+      "competition": 36,
+      "started": "2026-03-10T01:41:10.252148Z",
+      "finished": "2026-03-10T15:24:50.848334Z",
+      "complete": true
+    },
+    {
+      "id": 41438,
+      "number": 16,
+      "competition": 36,
+      "started": "2026-03-09T12:24:46.919669Z",
+      "finished": "2026-03-10T01:40:16.872196Z",
+      "complete": true
+    },
+    {
+      "id": 41436,
+      "number": 15,
+      "competition": 36,
+      "started": "2026-03-09T02:52:48.529319Z",
+      "finished": "2026-03-12T08:37:14.998150Z",
+      "complete": true
+    },
+    {
+      "id": 41433,
+      "number": 14,
+      "competition": 36,
+      "started": "2026-03-08T15:15:10.210764Z",
+      "finished": "2026-03-09T02:52:26.765800Z",
+      "complete": true
+    },
+    {
+      "id": 41431,
+      "number": 13,
+      "competition": 36,
+      "started": "2026-03-08T06:34:11.099081Z",
+      "finished": "2026-03-09T03:45:12.608693Z",
+      "complete": true
+    },
+    {
+      "id": 41429,
+      "number": 12,
+      "competition": 36,
+      "started": "2026-03-07T23:05:39.581658Z",
+      "finished": "2026-03-08T09:40:57.045993Z",
+      "complete": true
+    },
+    {
+      "id": 41426,
+      "number": 11,
+      "competition": 36,
+      "started": "2026-03-07T13:49:13.218222Z",
+      "finished": "2026-03-07T23:05:05.344203Z",
+      "complete": true
+    },
+    {
+      "id": 41424,
+      "number": 10,
+      "competition": 36,
+      "started": "2026-03-07T06:22:40.421618Z",
+      "finished": "2026-03-07T23:08:39.008907Z",
+      "complete": true
+    },
+    {
+      "id": 41423,
+      "number": 9,
+      "competition": 36,
+      "started": "2026-03-07T00:39:08.425123Z",
+      "finished": "2026-03-07T09:06:33.939932Z",
+      "complete": true
+    },
+    {
+      "id": 41420,
+      "number": 8,
+      "competition": 36,
+      "started": "2026-03-06T14:01:09.023707Z",
+      "finished": "2026-03-07T00:38:23.825399Z",
+      "complete": true
+    },
+    {
+      "id": 41418,
+      "number": 7,
+      "competition": 36,
+      "started": "2026-03-06T07:14:40.730624Z",
+      "finished": "2026-03-07T00:49:49.462679Z",
+      "complete": true
+    },
+    {
+      "id": 41416,
+      "number": 6,
+      "competition": 36,
+      "started": "2026-03-06T00:38:19.214386Z",
+      "finished": "2026-03-06T07:24:30.230798Z",
+      "complete": true
+    },
+    {
+      "id": 41414,
+      "number": 5,
+      "competition": 36,
+      "started": "2026-03-05T18:49:18.577957Z",
+      "finished": "2026-03-06T07:14:16.130872Z",
+      "complete": true
+    },
+    {
+      "id": 41412,
+      "number": 4,
+      "competition": 36,
+      "started": "2026-03-05T12:22:55.304945Z",
+      "finished": "2026-03-05T19:55:41.178860Z",
+      "complete": true
+    },
+    {
+      "id": 41410,
+      "number": 3,
+      "competition": 36,
+      "started": "2026-03-05T04:00:21.342225Z",
+      "finished": "2026-03-05T12:22:25.025360Z",
+      "complete": true
+    },
+    {
+      "id": 41408,
+      "number": 2,
+      "competition": 36,
+      "started": "2026-03-04T20:34:23.739347Z",
+      "finished": "2026-03-05T04:00:21.190972Z",
+      "complete": true
+    },
+    {
+      "id": 41407,
+      "number": 1,
+      "competition": 36,
+      "started": "2026-03-04T16:16:43.832172Z",
+      "finished": "2026-03-05T18:49:18.383341Z",
+      "complete": true
+    }
+  ]
+}

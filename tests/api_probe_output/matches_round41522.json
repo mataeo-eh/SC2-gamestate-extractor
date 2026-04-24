@@ -1,0 +1,4374 @@
+{
+  "count": 1190,
+  "next": "https://aiarena.net/api/matches/?limit=100&offset=100&round=41522",
+  "previous": null,
+  "results": [
+    {
+      "id": 4745788,
+      "map": 156,
+      "created": "2026-04-22T14:23:49.689609Z",
+      "started": "2026-04-22T14:25:11.252250Z",
+      "assigned_to": 6,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846901,
+        "match": 4745788,
+        "winner": 961,
+        "type": "Player1Win",
+        "created": "2026-04-22T14:33:06.711285Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745788_AvocaDOS_MechaShark_MagannathaAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235055Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=5f8a80f7898a461202ca66080d3eae8ae65ba281101f0bb6ebca3916dc5d4384",
+        "game_steps": 12387,
+        "submitted_by": 6,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745788_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235055Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=31d888f44a69ccb429900da034ee94fa353821cdab343fa702264d2b834b04f9",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "MechaShark"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_magannatha aie"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_proxymarinerush"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_tvtbattlemech"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-02-25__23-40-22"
+        }
+      ]
+    },
+    {
+      "id": 4745811,
+      "map": 149,
+      "created": "2026-04-22T14:23:49.974598Z",
+      "started": "2026-04-22T14:24:55.470878Z",
+      "assigned_to": 8,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846911,
+        "match": 4745811,
+        "winner": 517,
+        "type": "Player2Win",
+        "created": "2026-04-22T14:41:48.749800Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745811_sharkbot_VeTerran-revived_IncorporealAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235055Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a987f90e9773c9183384fb7c7859367e229ecfc46b57c42574bd13965fa858e6",
+        "game_steps": 23167,
+        "submitted_by": 8,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745811_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235055Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=16e0e8e0cb4c6cf6df0d96f37a94ad684abdbdbce63e10eea9aa904c334df1e3",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "VeTerran-revived"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_roboterrantransition"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 186,
+          "tag_name": "ml_build_choice"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_gatewayexpandterran"
+        },
+        {
+          "user": 133,
+          "tag_name": " strategy_default"
+        }
+      ]
+    },
+    {
+      "id": 4745786,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.674171Z",
+      "started": "2026-04-22T14:42:46.815956Z",
+      "assigned_to": 498,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846922,
+        "match": 4745786,
+        "winner": 517,
+        "type": "Player2Win",
+        "created": "2026-04-22T14:49:52.741317Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745786_AvocaDOS_VeTerran-revived_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235055Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=0d10ac0d9454f40ad2701d064dbae8ab145064a59b6ec395b92faf7dae151caf",
+        "game_steps": 15321,
+        "submitted_by": 498,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745786_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235055Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=9aa4c5502d80999866184f0958359ec612c97df309964d3dfbf1243bb419a3dc",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "VeTerran-revived"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_ultralove aie"
+        },
+        {
+          "user": 133,
+          "tag_name": " strategy_default"
+        }
+      ]
+    },
+    {
+      "id": 4745808,
+      "map": 150,
+      "created": "2026-04-22T14:23:49.952453Z",
+      "started": "2026-04-22T14:42:39.122710Z",
+      "assigned_to": 8,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846927,
+        "match": 4745808,
+        "winner": 496,
+        "type": "Player2Win",
+        "created": "2026-04-22T14:55:26.315379Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745808_sharkbot_Zozo_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=e166556f573481ecf3dd0e0715339e50e34cd574fa59a85f3abe3608bd18d577",
+        "game_steps": 14564,
+        "submitted_by": 8,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745808_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=69bc4b8da56827dbe0fbc94157873195bbd742fb6f61861ef03c7613c5e5be3a",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "Zozo"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 186,
+          "tag_name": "tag:exception"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_threegaterobofollowup"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_roboterrantransition"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_defensivecannonopening"
+        },
+        {
+          "user": 888,
+          "tag_name": " door_block_with_battery 05:11"
+        },
+        {
+          "user": 888,
+          "tag_name": " mileral line status 12     00:4"
+        },
+        {
+          "user": 888,
+          "tag_name": " tempest 08:23"
+        },
+        {
+          "user": 888,
+          "tag_name": " forge 01:00"
+        },
+        {
+          "user": 888,
+          "tag_name": " check_natural_squad 01:00"
+        },
+        {
+          "user": 888,
+          "tag_name": " phoenix 09:36"
+        },
+        {
+          "user": 888,
+          "tag_name": " save_for_door_block 05:08"
+        },
+        {
+          "user": 888,
+          "tag_name": " door_block_squad 05:08"
+        },
+        {
+          "user": 888,
+          "tag_name": " delay_expand 01:00"
+        }
+      ]
+    },
+    {
+      "id": 4745783,
+      "map": 149,
+      "created": "2026-04-22T14:23:49.651160Z",
+      "started": "2026-04-22T15:00:54.718728Z",
+      "assigned_to": 8,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846949,
+        "match": 4745783,
+        "winner": 496,
+        "type": "Player2Win",
+        "created": "2026-04-22T15:10:40.599998Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745783_AvocaDOS_Zozo_IncorporealAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=99b9493d35578e9ef9a4240b94b297994d1bcf0ceca7c8ca4f3c6dac3fe09b6f",
+        "game_steps": 15664,
+        "submitted_by": 8,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745783_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=1b898cc630c5fe92457837236c491ca3da09b06b4eda610916b59cf1c0438ba4",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "Zozo"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "map_incorporeal aie"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "build_cc_first"
+        },
+        {
+          "user": 888,
+          "tag_name": " tempest 05:37"
+        },
+        {
+          "user": 888,
+          "tag_name": " check_natural_squad 01:25"
+        },
+        {
+          "user": 888,
+          "tag_name": " mileral line status 15     00:4"
+        },
+        {
+          "user": 888,
+          "tag_name": " phoenix 08:39"
+        }
+      ]
+    },
+    {
+      "id": 4745801,
+      "map": 149,
+      "created": "2026-04-22T14:23:49.861004Z",
+      "started": "2026-04-22T15:15:50.010836Z",
+      "assigned_to": 208,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846969,
+        "match": 4745801,
+        "winner": 115,
+        "type": "Player2Win",
+        "created": "2026-04-22T15:24:48.158101Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745801_AvocaDOS_BenBotBC_IncorporealAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=ee57bcc962c3931d841c34797ff9759fc549f4e5f34677ca6f8aaf9ad36efafb",
+        "game_steps": 17199,
+        "submitted_by": 208,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745801_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=e7e5df355362ad1073828a3c7944edd3627124b2ed3dd4e96989fa62b43c959c",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "BenBotBC"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "map_incorporeal aie"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "build_cc_first"
+        },
+        {
+          "user": 2819,
+          "tag_name": "01:55_proxybunker"
+        },
+        {
+          "user": 2819,
+          "tag_name": "02:49_rushmarauder"
+        },
+        {
+          "user": 109,
+          "tag_name": "barrack_35"
+        },
+        {
+          "user": 109,
+          "tag_name": "attack_with_tanks"
+        },
+        {
+          "user": 109,
+          "tag_name": "marauder_rush"
+        },
+        {
+          "user": 109,
+          "tag_name": "tank_334"
+        },
+        {
+          "user": 109,
+          "tag_name": "attack_with_mines"
+        },
+        {
+          "user": 109,
+          "tag_name": "build_supply_fail"
+        },
+        {
+          "user": 109,
+          "tag_name": "bunker_rush_retry"
+        },
+        {
+          "user": 109,
+          "tag_name": "botbmd"
+        },
+        {
+          "user": 109,
+          "tag_name": "bunker_rush"
+        }
+      ]
+    },
+    {
+      "id": 4745813,
+      "map": 156,
+      "created": "2026-04-22T14:23:49.989447Z",
+      "started": "2026-04-22T15:19:20.090423Z",
+      "assigned_to": 206,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846978,
+        "match": 4745813,
+        "winner": 168,
+        "type": "Player1Win",
+        "created": "2026-04-22T15:30:35.749280Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745813_sharkbot_MechaShark_MagannathaAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=092ac1ebd774f2987a02aab3304ebb2a3eb7959f42f6cff41b4f85aeb7e97692",
+        "game_steps": 15852,
+        "submitted_by": 206,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745813_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a1bd8ec880522ab4540bc508ff410a9ac5bf70ae1eb06ebc41ef562864276a2c",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "MechaShark"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_tvpbattlemech"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-02-25__23-40-22"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_gatewayexpandterran"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_massstalkerprismaggressive"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_hellionmarauderrush"
+        },
+        {
+          "user": 186,
+          "tag_name": "prismdeathballsupport"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_roboterrantransition"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        }
+      ]
+    },
+    {
+      "id": 4745800,
+      "map": 154,
+      "created": "2026-04-22T14:23:49.853661Z",
+      "started": "2026-04-22T15:31:54.801266Z",
+      "assigned_to": 498,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846990,
+        "match": 4745800,
+        "winner": 961,
+        "type": "Player1Win",
+        "created": "2026-04-22T15:40:35.563838Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745800_AvocaDOS_ArgoBot_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=1f8713bdb5fdf5923fd1dc7dc6dc0188b8b3d026ae0c7fd7dacfed7447e5ac9e",
+        "game_steps": 14516,
+        "submitted_by": 498,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745800_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a4eb92fa413f52e049ef7f047ea010ee0022f27c8708ad9d5e7b2abd93c6ecd1",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "ArgoBot"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "map_ley lines aie"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "build_cc_first"
+        },
+        {
+          "user": 2878,
+          "tag_name": "v_2026-04-19__16-27-42"
+        },
+        {
+          "user": 2878,
+          "tag_name": "b_blinkstalkerrush_00_00"
+        }
+      ]
+    },
+    {
+      "id": 4745797,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.830980Z",
+      "started": "2026-04-22T15:51:32.397972Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847014,
+        "match": 4745797,
+        "winner": 961,
+        "type": "Player1Win",
+        "created": "2026-04-22T16:02:09.129690Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745797_AvocaDOS_Eris_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2935a3a7a2a97d380e91ddf02c1663330bb6f3969551b383c56bd2e7ef55ba8b",
+        "game_steps": 16708,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745797_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=84835f02d0be85d46c1753dd2fc156750d6d0f1be40f9f1acc2ee42e3803d068",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "Eris"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_ultralove aie"
+        },
+        {
+          "user": 606,
+          "tag_name": "enemy_expand_outside_nat_09:49"
+        },
+        {
+          "user": 606,
+          "tag_name": "vs_bio_tank_06:40"
+        },
+        {
+          "user": 606,
+          "tag_name": " zerg"
+        },
+        {
+          "user": 606,
+          "tag_name": "vs_marine_02:51"
+        }
+      ]
+    },
+    {
+      "id": 4745799,
+      "map": 149,
+      "created": "2026-04-22T14:23:49.846252Z",
+      "started": "2026-04-22T16:08:23.334084Z",
+      "assigned_to": 4,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847035,
+        "match": 4745799,
+        "winner": 961,
+        "type": "Player1Win",
+        "created": "2026-04-22T16:18:02.062479Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745799_AvocaDOS_Sharkling_IncorporealAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=fd6062914fcc4f2959ea61fe891c34590e86722c8b483810a0cd6779d627076e",
+        "game_steps": 13867,
+        "submitted_by": 4,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745799_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2358a36745b820c7e0b0eb816b6c434696dc10d5d6b52fa26e1520eec554ae06",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "Sharkling"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "map_incorporeal aie"
+        },
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_mutaliskrush"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        }
+      ]
+    },
+    {
+      "id": 4745825,
+      "map": 152,
+      "created": "2026-04-22T14:23:50.146979Z",
+      "started": "2026-04-22T16:09:37.671016Z",
+      "assigned_to": 142,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847038,
+        "match": 4745825,
+        "winner": 966,
+        "type": "Player2Win",
+        "created": "2026-04-22T16:21:11.392301Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745825_sharkbot_ArgoBot_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=7f876cc49fae0071791d62aa666ef87d2efbf23be0baeed65a4bf0550a19931c",
+        "game_steps": 15390,
+        "submitted_by": 142,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745825_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=1c826f515f18ea5c2708dda3b941303f086f47ffa2bdf2f5a6abbbad1d2c1481",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "ArgoBot"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_threegaterobofollowup"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_roboterrantransition"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_defensivecannonopening"
+        },
+        {
+          "user": 2878,
+          "tag_name": "bv_hb_0"
+        },
+        {
+          "user": 2878,
+          "tag_name": "v_2026-04-19__16-27-42"
+        },
+        {
+          "user": 2878,
+          "tag_name": "bv_eo_1"
+        },
+        {
+          "user": 2878,
+          "tag_name": "bv_tmc_1"
+        },
+        {
+          "user": 2878,
+          "tag_name": "bv_nciml_3"
+        },
+        {
+          "user": 2878,
+          "tag_name": "b_mothershiprush_00_00"
+        }
+      ]
+    },
+    {
+      "id": 4745796,
+      "map": 154,
+      "created": "2026-04-22T14:23:49.789751Z",
+      "started": "2026-04-22T16:22:04.100451Z",
+      "assigned_to": 142,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847051,
+        "match": 4745796,
+        "winner": 446,
+        "type": "Player2Win",
+        "created": "2026-04-22T16:32:23.686988Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745796_AvocaDOS_Xena_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=27e80c895e597df176af052a182f95b77c5a36264390f4363a3424efb45f4677",
+        "game_steps": 13151,
+        "submitted_by": 142,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745796_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=66ed82368cc7d4f8a4fe9c4a960ec5ad5dc3fbe469c787c0d6711ef4ee1d4d70",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "Xena"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "map_ley lines aie"
+        },
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 1029,
+          "tag_name": "vs_terran"
+        },
+        {
+          "user": 1029,
+          "tag_name": "zergbuild_burrowroach"
+        },
+        {
+          "user": 1029,
+          "tag_name": "v2_8_19_3"
+        },
+        {
+          "user": 1029,
+          "tag_name": "leylinesaie"
+        },
+        {
+          "user": 1029,
+          "tag_name": "zerg"
+        }
+      ]
+    },
+    {
+      "id": 4745798,
+      "map": 152,
+      "created": "2026-04-22T14:23:49.838880Z",
+      "started": "2026-04-22T16:55:26.311354Z",
+      "assigned_to": 4,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847095,
+        "match": 4745798,
+        "winner": 961,
+        "type": "Player1Win",
+        "created": "2026-04-22T17:03:17.377971Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745798_AvocaDOS_WaterLeak_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=e8060f41f4418fd8076aab2cd3d31a373b114b7ce399cda466915a0210a79ba1",
+        "game_steps": 12452,
+        "submitted_by": 4,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745798_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=379ce226a6e366d77e916be6b2ae1bfa3f32482f6fba7530bcb4e28d81962c6c",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "WaterLeak"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_torches aie"
+        }
+      ]
+    },
+    {
+      "id": 4745778,
+      "map": 156,
+      "created": "2026-04-22T14:23:49.587008Z",
+      "started": "2026-04-22T17:08:48.919452Z",
+      "assigned_to": 8,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847111,
+        "match": 4745778,
+        "winner": 961,
+        "type": "Player1Win",
+        "created": "2026-04-22T17:13:11.936398Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745778_AvocaDOS_who_MagannathaAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=bf93298e8f92d6f5646d61ffcaad242ac820a88e955d36b886b9448c3cb9ab98",
+        "game_steps": 8684,
+        "submitted_by": 8,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745778_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=4b85d69be455e6ddf0bbf61ca04ce076e4ed8ea770bec71bd5c726cbc721ac3f",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "who"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_magannatha aie"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 134,
+          "tag_name": " onebasemuta"
+        },
+        {
+          "user": 134,
+          "tag_name": " zerg"
+        }
+      ]
+    },
+    {
+      "id": 4745821,
+      "map": 154,
+      "created": "2026-04-22T14:23:50.081978Z",
+      "started": "2026-04-22T16:41:14.033205Z",
+      "assigned_to": 5,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847116,
+        "match": 4745821,
+        "winner": 168,
+        "type": "Player2TimeOut",
+        "created": "2026-04-22T17:19:55.348529Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745821_sharkbot_Xena_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=5c3a2bd8a9ab75106af29a2dcdef30674d8ad394a2feb98a953c19df0e96f48c",
+        "game_steps": 22696,
+        "submitted_by": 5,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745821_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=643dd44ebff1cb43d36b7840fdfb8b5968ab369c75f187093ac113ce92863cc2",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "Xena"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_massstalkerprismaggressive"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_roboterrantransition"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_gategasrandomopening"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_gatewayexpandterran"
+        },
+        {
+          "user": 186,
+          "tag_name": "enemyrandomrace_terran"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 1029,
+          "tag_name": "terran"
+        },
+        {
+          "user": 1029,
+          "tag_name": "vs_protoss"
+        },
+        {
+          "user": 1029,
+          "tag_name": "v2_8_19_3"
+        },
+        {
+          "user": 1029,
+          "tag_name": "leylinesaie"
+        },
+        {
+          "user": 1029,
+          "tag_name": "terranbuild_macro"
+        },
+        {
+          "user": 1029,
+          "tag_name": "enemy_chargeupgrade_08_18"
+        }
+      ]
+    },
+    {
+      "id": 4745803,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.880271Z",
+      "started": "2026-04-22T17:42:07.397175Z",
+      "assigned_to": 498,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847150,
+        "match": 4745803,
+        "winner": 168,
+        "type": "Player1Win",
+        "created": "2026-04-22T17:45:52.345712Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745803_sharkbot_who_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=048d48ab708a6e8e087bc6bfe37a5f53b39376f3e0499e4328719d5ae7549e88",
+        "game_steps": 6476,
+        "submitted_by": 498,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745803_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=c8904b4c0c1225b25599416c958abd092433938a2733020b7232a0eaa0009916",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "who"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_threegaterobofollowup"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 186,
+          "tag_name": "enemyrandomrace_terran"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_defensivecannonopening"
+        },
+        {
+          "user": 134,
+          "tag_name": " proxymarine"
+        },
+        {
+          "user": 134,
+          "tag_name": " terran"
+        }
+      ]
+    },
+    {
+      "id": 4745780,
+      "map": 156,
+      "created": "2026-04-22T14:23:49.602337Z",
+      "started": "2026-04-22T17:37:05.958891Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847153,
+        "match": 4745780,
+        "winner": 730,
+        "type": "Player2Win",
+        "created": "2026-04-22T17:48:13.132220Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745780_AvocaDOS_Deimos_MagannathaAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=630b43849e62da3ed4c0a698ca4d2fe241fda807d6f085ae94cb0295fe05954b",
+        "game_steps": 16700,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745780_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=7a5a830a887c80d284cac9ef2277be84361ce2b0c96dddbb8b4f4fac5206cc1b",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "Deimos"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "map_magannatha aie"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "build_cc_first"
+        },
+        {
+          "user": 606,
+          "tag_name": " phoenixcolossus"
+        },
+        {
+          "user": 606,
+          "tag_name": " protoss"
+        }
+      ]
+    },
+    {
+      "id": 4745823,
+      "map": 154,
+      "created": "2026-04-22T14:23:50.130989Z",
+      "started": "2026-04-22T17:54:41.885674Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847168,
+        "match": 4745823,
+        "winner": 168,
+        "type": "Player1Win",
+        "created": "2026-04-22T18:01:40.251997Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745823_sharkbot_WaterLeak_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=b7b294b4eb442ccda204952df35547654a39d76b1d69d4ff76f79e36a5e74cbc",
+        "game_steps": 12542,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745823_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=25e9337fd38c95f52b508fa97186b2335c0c53e90c19f508889a16d887bf6993",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "WaterLeak"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_threegaterobofollowup"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_roboterrantransition"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_defensivecannonopening"
+        }
+      ]
+    },
+    {
+      "id": 4745782,
+      "map": 151,
+      "created": "2026-04-22T14:23:49.643839Z",
+      "started": "2026-04-22T18:03:18.718145Z",
+      "assigned_to": 8,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847183,
+        "match": 4745782,
+        "winner": 262,
+        "type": "Player2Win",
+        "created": "2026-04-22T18:09:57.775170Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745782_AvocaDOS_whalemean_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=c80d2c1b65e8d130552862d1ff8f69f6e6e9a624b947d5635ac428c4d7a1a852",
+        "game_steps": 12379,
+        "submitted_by": 8,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745782_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2afc2dd7eb86887a43e88a3defda2753bf2035e1ae04c8579a1e9e5df0b668af",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "whalemean"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_pylon aie"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_botfourgate"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_threegaterobo"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_adeptsandtempests"
+        },
+        {
+          "user": 186,
+          "tag_name": "selfrandomrace_protoss"
+        }
+      ]
+    },
+    {
+      "id": 4745791,
+      "map": 149,
+      "created": "2026-04-22T14:23:49.750907Z",
+      "started": "2026-04-22T18:13:40.649471Z",
+      "assigned_to": 498,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847204,
+        "match": 4745791,
+        "winner": 510,
+        "type": "Player2Win",
+        "created": "2026-04-22T18:24:23.244979Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745791_AvocaDOS_PhantomBot_IncorporealAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=cf30899a2480ab8b688d8ee5cf8fcf20221405da106b06c47dd3d5de1dfd1bbe",
+        "game_steps": 15172,
+        "submitted_by": 498,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745791_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=bd9153a9f47491ec50d22c5b61e8a5bf4f960af3878e6bdf06264baab861a87f",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "PhantomBot"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "map_incorporeal aie"
+        },
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 526,
+          "tag_name": "version_c1e7f2cc4f763bddba60fab1"
+        }
+      ]
+    },
+    {
+      "id": 4745781,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.636364Z",
+      "started": "2026-04-22T18:25:00.647400Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847225,
+        "match": 4745781,
+        "winner": 961,
+        "type": "Player1Win",
+        "created": "2026-04-22T18:40:34.561932Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745781_AvocaDOS_SharpenedEdge_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=89ac126dcf7f439dba2fd52ef7e27cb650c9837502fb236857986742bbaf5695",
+        "game_steps": 19064,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745781_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=c962b721be67d843519c2a0c691aaef5e4601da386e7af03c3eb8cc69e983e38",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "SharpenedEdge"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_ultralove aie"
+        },
+        {
+          "user": 34,
+          "tag_name": "build_roboallin"
+        },
+        {
+          "user": 34,
+          "tag_name": "rush_onebaserax"
+        }
+      ]
+    },
+    {
+      "id": 4745748,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.234636Z",
+      "started": "2026-04-22T18:37:16.172323Z",
+      "assigned_to": 6,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847228,
+        "match": 4745748,
+        "winner": 938,
+        "type": "Player2Win",
+        "created": "2026-04-22T18:41:10.345234Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745748_SharkGull_Cyne_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d498f1640ba366907d7dbfc9f09ee653f9df891a937a15132521a2806ba63d60",
+        "game_steps": 8692,
+        "submitted_by": 6,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745748_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=7751324b4f14978a8a47bda9d2e3de70c383e6a66d5050ec05a7b8198910d733",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "Cyne"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        },
+        {
+          "user": 2703,
+          "tag_name": " opening stalkerpush"
+        }
+      ]
+    },
+    {
+      "id": 4745817,
+      "map": 151,
+      "created": "2026-04-22T14:23:50.051483Z",
+      "started": "2026-04-22T18:28:18.095958Z",
+      "assigned_to": 142,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847241,
+        "match": 4745817,
+        "winner": 168,
+        "type": "Player1Win",
+        "created": "2026-04-22T18:54:23.243507Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745817_sharkbot_TyrT_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=e19b5c300b22199a822d5792e197ca2735e47f87f07bbd24a42a7604739c892e",
+        "game_steps": 30735,
+        "submitted_by": 142,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745817_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=f3b6dc105073fccd1f7334a04de55fcbd5414e89227f529a8677c6aed2c83f80",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "TyrT"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_gatewayexpandterran"
+        },
+        {
+          "user": 186,
+          "tag_name": "prismdeathballsupport"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_twilightterrantransition"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_massstalkerprismpassive"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_goldenarmada"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 98,
+          "tag_name": "tvpdefensive"
+        }
+      ]
+    },
+    {
+      "id": 4745779,
+      "map": 152,
+      "created": "2026-04-22T14:23:49.594582Z",
+      "started": "2026-04-22T18:49:16.423890Z",
+      "assigned_to": 4,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847246,
+        "match": 4745779,
+        "winner": 611,
+        "type": "Player2Win",
+        "created": "2026-04-22T18:57:55.742867Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745779_AvocaDOS_Phobos_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2d9051ece96a07e4ac25a5fbd3ffe252fb498ae377207b7c2904ac497b3609d8",
+        "game_steps": 19977,
+        "submitted_by": 4,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745779_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=ac858fde543e4e426a99309f6b8fbed0303703b030f68b4ea9f2a475fcc3bfa1",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "Phobos"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_torches aie"
+        },
+        {
+          "user": 606,
+          "tag_name": " oneoneonecyclone"
+        },
+        {
+          "user": 606,
+          "tag_name": " terran"
+        }
+      ]
+    },
+    {
+      "id": 4745794,
+      "map": 151,
+      "created": "2026-04-22T14:23:49.774796Z",
+      "started": "2026-04-22T19:01:19.806948Z",
+      "assigned_to": 207,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847256,
+        "match": 4745794,
+        "winner": 732,
+        "type": "Player2Win",
+        "created": "2026-04-22T19:06:16.548521Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745794_AvocaDOS_GPT_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d579f86c3f1aca03ebfccba15ba48cb6c8f09ddea4f31f2dfb32031aae98eaae",
+        "game_steps": 11404,
+        "submitted_by": 207,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745794_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=5e3fee8f266e5bb1225f8cc270cb4e5f66f2263f614eaee5a9d1e9d8235e4b3e",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "GPT"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_cc_first"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_pylon aie"
+        },
+        {
+          "user": 1969,
+          "tag_name": "one-base-push"
+        }
+      ]
+    },
+    {
+      "id": 4745816,
+      "map": 156,
+      "created": "2026-04-22T14:23:50.044048Z",
+      "started": "2026-04-22T19:00:37.481805Z",
+      "assigned_to": 141,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847259,
+        "match": 4745816,
+        "winner": 168,
+        "type": "Player1Win",
+        "created": "2026-04-22T19:11:04.368614Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745816_sharkbot_PhantomBot_MagannathaAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=940b20953bb4d2d4086acfc5d188cfa491b2ba950a6bd266b3386d2a7bd4aadf",
+        "game_steps": 13080,
+        "submitted_by": 141,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745816_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=e5aede6dbf6ed007cd64ecc46655e22e2b454c0e6209471cbb7c9285c58ef71b",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "PhantomBot"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_threegaterobofollowup"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_roboterrantransition"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_defensivecannonopening"
+        },
+        {
+          "user": 526,
+          "tag_name": "version_c1e7f2cc4f763bddba60fab1"
+        }
+      ]
+    },
+    {
+      "id": 4745818,
+      "map": 149,
+      "created": "2026-04-22T14:23:50.058880Z",
+      "started": "2026-04-22T19:11:56.801127Z",
+      "assigned_to": 141,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847266,
+        "match": 4745818,
+        "winner": 168,
+        "type": "Player1Win",
+        "created": "2026-04-22T19:17:30.548304Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745818_sharkbot_tito_IncorporealAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=0bbb60efb3152a1f07d9a6d86d6a01d85ed17df7ad13af9300f544217ce75320",
+        "game_steps": 9586,
+        "submitted_by": 141,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745818_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=df88f24d3d102f00c2ac2ff9e2ed95849b7069325a4bef71f3ad30339e401f81",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "tito"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_aggressiveexpandprismstalkerop"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_botfourgate"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_massstalkerprism"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 41,
+          "tag_name": " timeoutfail 5_30"
+        },
+        {
+          "user": 41,
+          "tag_name": " tossonebasetiming 2_30"
+        },
+        {
+          "user": 41,
+          "tag_name": " two base roach muta"
+        }
+      ]
+    },
+    {
+      "id": 4745819,
+      "map": 149,
+      "created": "2026-04-22T14:23:50.066607Z",
+      "started": "2026-04-22T19:18:18.843052Z",
+      "assigned_to": 141,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847273,
+        "match": 4745819,
+        "winner": 732,
+        "type": "Player2Win",
+        "created": "2026-04-22T19:26:08.553468Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745819_sharkbot_GPT_IncorporealAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=6c96a5e9a438b66ced25ab8be00349376a4a9dd098ddd16d1bcfd41b2f8b8262",
+        "game_steps": 13523,
+        "submitted_by": 141,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745819_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2958712eaeb63073cacb7ad703e95b99bfd84f14e763d3dcd325367e2290a153",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "GPT"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_threegaterobofollowup"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_roboterrantransition"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_defensivecannonopening"
+        },
+        {
+          "user": 1969,
+          "tag_name": "one-base-push"
+        },
+        {
+          "user": 1969,
+          "tag_name": "build-issue-26-resolved"
+        },
+        {
+          "user": 1969,
+          "tag_name": "build-issue-9"
+        },
+        {
+          "user": 1969,
+          "tag_name": "build-issue-9-resolved"
+        },
+        {
+          "user": 1969,
+          "tag_name": "resource-leak"
+        },
+        {
+          "user": 1969,
+          "tag_name": "build-issue-26"
+        }
+      ]
+    },
+    {
+      "id": 4745792,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.759024Z",
+      "started": "2026-04-22T19:31:47.222576Z",
+      "assigned_to": 206,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847291,
+        "match": 4745792,
+        "winner": 167,
+        "type": "Player2Win",
+        "created": "2026-04-22T19:44:40.651631Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745792_AvocaDOS_TyrT_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=5ee0b8aff19c2b9971d1ac1931d3cb2911185135a59df2ae891ee6f7417de547",
+        "game_steps": 21046,
+        "submitted_by": 206,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745792_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=631ee2b5b5716ccf215069e29528b767835c950c113d45786821d38647ea4a9f",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "TyrT"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_ultralove aie"
+        },
+        {
+          "user": 98,
+          "tag_name": "tvtbiotank"
+        }
+      ]
+    },
+    {
+      "id": 4745744,
+      "map": 150,
+      "created": "2026-04-22T14:23:49.177747Z",
+      "started": "2026-04-22T20:02:47.714433Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847309,
+        "match": 4745744,
+        "winner": 1032,
+        "type": "Player2Win",
+        "created": "2026-04-22T20:04:36.229630Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745744_JimmyBotT_WaterLeak_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2c7907127c8a5f6d75bf5ae899238bb27ea797f144fd3ab71aa5d550731bbb0a",
+        "game_steps": 6158,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745744_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=6259c18063a8a52283efad5710aa76ada135b309d478c766e1563835f42c3107",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "WaterLeak"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745820,
+      "map": 150,
+      "created": "2026-04-22T14:23:50.074397Z",
+      "started": "2026-04-22T19:52:06.098062Z",
+      "assigned_to": 142,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847310,
+        "match": 4745820,
+        "winner": 223,
+        "type": "Player2Win",
+        "created": "2026-04-22T20:05:27.257156Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745820_sharkbot_DominionDog_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=0053f4ae166ced5a455f975508480ff28a36cfe5d093dd7e4dc25e45f7506b40",
+        "game_steps": 18448,
+        "submitted_by": 142,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745820_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=9c9118b521a73da72522452408e63456a0fb2288a1fd52fda84327e7c2022f44",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "DominionDog"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_roboterrantransition"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_gatewayexpandterran"
+        },
+        {
+          "user": 465,
+          "tag_name": "00:55_protoss"
+        },
+        {
+          "user": 465,
+          "tag_name": "00:55_protossbeginscout"
+        },
+        {
+          "user": 465,
+          "tag_name": "02:04_protossearlyair"
+        },
+        {
+          "user": 465,
+          "tag_name": "06:31_protosslateair"
+        },
+        {
+          "user": 465,
+          "tag_name": "02:04_scoutingnormal"
+        },
+        {
+          "user": 465,
+          "tag_name": "00:00_genericbeginscout"
+        }
+      ]
+    },
+    {
+      "id": 4745822,
+      "map": 155,
+      "created": "2026-04-22T14:23:50.089420Z",
+      "started": "2026-04-22T20:30:02.894358Z",
+      "assigned_to": 8,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847364,
+        "match": 4745822,
+        "winner": 248,
+        "type": "Player2Win",
+        "created": "2026-04-22T20:48:16.732378Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745822_sharkbot_Eris_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=3dc88087ac327640eeaadfe85b8c1c303b352fb10b5bf40d8941c7faab48cb6c",
+        "game_steps": 19726,
+        "submitted_by": 8,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745822_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=14ff680480aca443b16ff308828c76c83ca11c833c2a4e0f05e88e78338b718c",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "Eris"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_massstalkerprism"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_onebasecarriers"
+        },
+        {
+          "user": 606,
+          "tag_name": "spore_forest_10:45"
+        },
+        {
+          "user": 606,
+          "tag_name": "add_map_control_lings_06:01"
+        },
+        {
+          "user": 606,
+          "tag_name": "viper_food_10:21"
+        },
+        {
+          "user": 606,
+          "tag_name": " zerg"
+        },
+        {
+          "user": 606,
+          "tag_name": "overseer_sweep_10:00"
+        },
+        {
+          "user": 606,
+          "tag_name": "creep_dropperlord_10:05"
+        }
+      ]
+    },
+    {
+      "id": 4745721,
+      "map": 151,
+      "created": "2026-04-22T14:23:48.849885Z",
+      "started": "2026-04-22T20:30:28.095202Z",
+      "assigned_to": 206,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847369,
+        "match": 4745721,
+        "winner": 961,
+        "type": "Player2Win",
+        "created": "2026-04-22T20:51:04.809901Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745721_JimmyBotT_AvocaDOS_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=f4a691d151a42a4a2080d75282442c91e54bcefa16bceb063a2e8a5bac872380",
+        "game_steps": 25002,
+        "submitted_by": 206,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745721_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=3b651b3f9aac39ce6458d41413c50852f84dcb47d7809c74ed5d6a088f35d5d9",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "AvocaDOS"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_pylon aie"
+        }
+      ]
+    },
+    {
+      "id": 4745722,
+      "map": 154,
+      "created": "2026-04-22T14:23:48.868776Z",
+      "started": "2026-04-22T20:56:27.677019Z",
+      "assigned_to": 498,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847386,
+        "match": 4745722,
+        "winner": 168,
+        "type": "Player2Win",
+        "created": "2026-04-22T21:01:54.520245Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745722_JimmyBotT_sharkbot_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d8acc0ed24871bf61c0b628ae26413f3b59228c92d13dd4d1d96ab6b1a8e1858",
+        "game_steps": 8752,
+        "submitted_by": 498,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745722_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=ab569ef10409c9d82cd575e78e75fd9acd14276d2c5b4b46d9cbab964a50f42e",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "sharkbot"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_threegaterobofollowup"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_defensivecannonopening"
+        }
+      ]
+    },
+    {
+      "id": 4745777,
+      "map": 149,
+      "created": "2026-04-22T14:23:49.579430Z",
+      "started": "2026-04-22T20:58:29.750334Z",
+      "assigned_to": 142,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847399,
+        "match": 4745777,
+        "winner": 961,
+        "type": "Player1Win",
+        "created": "2026-04-22T21:12:11.996707Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745777_AvocaDOS_Caninana_IncorporealAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=b884d6bc33ed306304c469a734aa8a0f43a9cd5d35437d4a4f9d3151831bb422",
+        "game_steps": 15908,
+        "submitted_by": 142,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745777_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=386ea27b746b6893d0375e260c15bf2a401f2eae7526a8dc546c8141c713d215",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "Caninana"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "map_incorporeal aie"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "build_cc_first"
+        },
+        {
+          "user": 860,
+          "tag_name": "e_exp:129"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_zergling:84"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_zergling:84"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_roach:198"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_marauder:320"
+        },
+        {
+          "user": 860,
+          "tag_name": "caninanav2_7_26"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_medivac:388"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_roach:242"
+        },
+        {
+          "user": 860,
+          "tag_name": "e_scannersweep"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_marine:148"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_infestor:482"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_hydralisk:557"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_mule:149"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_hydralisk:528"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_infestor:446"
+        }
+      ]
+    },
+    {
+      "id": 4745724,
+      "map": 150,
+      "created": "2026-04-22T14:23:48.940528Z",
+      "started": "2026-04-22T21:20:14.143416Z",
+      "assigned_to": 498,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847413,
+        "match": 4745724,
+        "winner": 1079,
+        "type": "Player1Win",
+        "created": "2026-04-22T21:22:32.892457Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745724_JimmyBotT_who_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=bd1102462dcdb235a93b18d646c4f7dcc9dddf036db059472f7d94edb9aa1c34",
+        "game_steps": 9372,
+        "submitted_by": 498,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745724_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=db8f84e0d0a463b12eab2243d9f48ccfc5cee81130a2b57a1382f5394555f24b",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "who"
+      },
+      "tags": [
+        {
+          "user": 134,
+          "tag_name": " proxynexus"
+        },
+        {
+          "user": 134,
+          "tag_name": " protoss"
+        }
+      ]
+    },
+    {
+      "id": 4745784,
+      "map": 150,
+      "created": "2026-04-22T14:23:49.658964Z",
+      "started": "2026-04-22T21:21:56.570737Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847421,
+        "match": 4745784,
+        "winner": 961,
+        "type": "Player1Win",
+        "created": "2026-04-22T21:27:24.719553Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745784_AvocaDOS_ZeratulsRevengeTest_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=b55424ae323b8f25fb4e15309325e39a06863e68a3200a19ac96cb2e6f7eef85",
+        "game_steps": 10562,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745784_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=c4c570e473d2b59354e183736d16ba6e14aa54c8d6dec7db21ce91c8f289391a",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "ZeratulsRevengeTest"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "map_persephone aie"
+        },
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        }
+      ]
+    },
+    {
+      "id": 4745752,
+      "map": 150,
+      "created": "2026-04-22T14:23:49.273949Z",
+      "started": "2026-04-22T21:15:40.815499Z",
+      "assigned_to": 5,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847427,
+        "match": 4745752,
+        "winner": 827,
+        "type": "Player2Win",
+        "created": "2026-04-22T21:31:23.339404Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745752_SharkGull_smokinggunbot_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d8ac95a3ad055e284895868b7cca14a4c6a8f81af286cb829b16776ff0885fe2",
+        "game_steps": 21196,
+        "submitted_by": 5,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745752_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=c455cc709321463b8840fb174898a63c473ec2f35c94c188ba56ed4f5db0fa31",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "smokinggunbot"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        }
+      ]
+    },
+    {
+      "id": 4745727,
+      "map": 152,
+      "created": "2026-04-22T14:23:48.972974Z",
+      "started": "2026-04-22T21:42:35.621744Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847450,
+        "match": 4745727,
+        "winner": 40,
+        "type": "Player2Win",
+        "created": "2026-04-22T21:49:07.499885Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745727_JimmyBotT_SharpenedEdge_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=04eb6780601388de9906b23c2a431e1e48fc359f19ff81cbeeaff284b84d9de3",
+        "game_steps": 6894,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745727_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2b46978a55113162f4023e22b35e153f7d5b80d1bdcb16c0904639322a8f96f6",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "SharpenedEdge"
+      },
+      "tags": [
+        {
+          "user": 34,
+          "tag_name": "build_worker_defense"
+        },
+        {
+          "user": 34,
+          "tag_name": "rush_workerrush"
+        }
+      ]
+    },
+    {
+      "id": 4745785,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.666805Z",
+      "started": "2026-04-22T21:45:43.593084Z",
+      "assigned_to": 142,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847463,
+        "match": 4745785,
+        "winner": 797,
+        "type": "Player2Win",
+        "created": "2026-04-22T21:55:58.925842Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745785_AvocaDOS_WickedBot_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=8678ade85896a8ee78e897bf8985c4fb53f1e076f64d4f9e361d54ab93a201c3",
+        "game_steps": 16881,
+        "submitted_by": 142,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745785_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=dc92abba22d0a1fcbf3c339988b6b973c8446fc966c737879d47e908eea60c75",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "WickedBot"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_cc_first"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_ultralove aie"
+        },
+        {
+          "user": 2196,
+          "tag_name": "detection"
+        },
+        {
+          "user": 2196,
+          "tag_name": "tvt"
+        }
+      ]
+    },
+    {
+      "id": 4745725,
+      "map": 152,
+      "created": "2026-04-22T14:23:48.951153Z",
+      "started": "2026-04-22T22:05:02.144793Z",
+      "assigned_to": 209,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847480,
+        "match": 4745725,
+        "winner": 611,
+        "type": "Player2Win",
+        "created": "2026-04-22T22:07:56.243108Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745725_JimmyBotT_Phobos_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=58ee8d55fb4a092781f3821cd07bbbb0495967cc7dc9f2affabcdca4fbe1d397",
+        "game_steps": 10074,
+        "submitted_by": 209,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745725_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=822c0c378899c56bc445c25484bf187207d196614a00ceb080f6506784fa12f2",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "Phobos"
+      },
+      "tags": [
+        {
+          "user": 606,
+          "tag_name": " oneoneonecyclone"
+        },
+        {
+          "user": 606,
+          "tag_name": " terran"
+        }
+      ]
+    },
+    {
+      "id": 4745810,
+      "map": 154,
+      "created": "2026-04-22T14:23:49.966967Z",
+      "started": "2026-04-22T22:07:51.986430Z",
+      "assigned_to": 7,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847486,
+        "match": 4745810,
+        "winner": 168,
+        "type": "Player1Win",
+        "created": "2026-04-22T22:11:24.025771Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745810_sharkbot_WickedBot_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=f32738725269938afb0281e161ac4a0f89fa8858132633fe81c6d71701c41e4a",
+        "game_steps": 5576,
+        "submitted_by": 7,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745810_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=cf32a93494ac793c1658b5f5a1bdc47a2b67ad0994402f13cb919c6fcc8af1bb",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "WickedBot"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_proxygatewayswithgassteal"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 2196,
+          "tag_name": "tvp"
+        }
+      ]
+    },
+    {
+      "id": 4745790,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.742982Z",
+      "started": "2026-04-22T22:09:45.446019Z",
+      "assigned_to": 142,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847492,
+        "match": 4745790,
+        "winner": 961,
+        "type": "Player1Win",
+        "created": "2026-04-22T22:15:08.099064Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745790_AvocaDOS_chito_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=152d4a3b408ba8ccc771f0b784d020d1e9278afd20d3066e60fde775b74c663c",
+        "game_steps": 10748,
+        "submitted_by": 142,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745790_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=3c566f03149c4fbfa122e887c2f26ccc29cb52df2d8cd4bbc0139c3045218756",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "AvocaDOS",
+        "bot2_name": "chito"
+      },
+      "tags": [
+        {
+          "user": 2819,
+          "tag_name": "build_plus_one_timing"
+        },
+        {
+          "user": 2819,
+          "tag_name": "version_1-1-5"
+        },
+        {
+          "user": 2819,
+          "tag_name": "map_ultralove aie"
+        },
+        {
+          "user": 41,
+          "tag_name": " supplyblocked 7_03"
+        },
+        {
+          "user": 41,
+          "tag_name": " twelve pool"
+        }
+      ]
+    },
+    {
+      "id": 4745815,
+      "map": 156,
+      "created": "2026-04-22T14:23:50.036489Z",
+      "started": "2026-04-22T22:29:52.423493Z",
+      "assigned_to": 8,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847517,
+        "match": 4745815,
+        "winner": 1091,
+        "type": "Player2Win",
+        "created": "2026-04-22T22:33:41.150577Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745815_sharkbot_chito_MagannathaAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a35ca3224ba2ab567cad64185ee21256368508753690613c1e08c62ac42d2988",
+        "game_steps": 5728,
+        "submitted_by": 8,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745815_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=ba7170075f665c731f6e9b894ea3a8bf36bbe59dc9dcc8e248d728cd54d8a677",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "sharkbot",
+        "bot2_name": "chito"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "b_aggressiveexpandstargatetwobas"
+        },
+        {
+          "user": 186,
+          "tag_name": "v_2026-03-03__07-59-56"
+        },
+        {
+          "user": 41,
+          "tag_name": " twelve pool"
+        }
+      ]
+    },
+    {
+      "id": 4745759,
+      "map": 154,
+      "created": "2026-04-22T14:23:49.358171Z",
+      "started": "2026-04-22T22:32:11.147265Z",
+      "assigned_to": 7,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847526,
+        "match": 4745759,
+        "winner": 970,
+        "type": "Player2Win",
+        "created": "2026-04-22T22:39:02.650411Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745759_SharkGull_TheLAW_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=dc46dc9d7a577e03ec65dc677e44242581901648b9829c5b6cff4a027ef9bef7",
+        "game_steps": 11458,
+        "submitted_by": 7,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745759_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=9665dc9ccd766b02a716607e9836c15d813038406728b52690888e57f80a12ee",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "TheLAW"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        },
+        {
+          "user": 2820,
+          "tag_name": "warp_enemy_base"
+        },
+        {
+          "user": 2820,
+          "tag_name": "boost_marauders"
+        }
+      ]
+    },
+    {
+      "id": 4745726,
+      "map": 150,
+      "created": "2026-04-22T14:23:48.963001Z",
+      "started": "2026-04-22T22:24:44.534501Z",
+      "assigned_to": 207,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847532,
+        "match": 4745726,
+        "winner": 730,
+        "type": "Player2Win",
+        "created": "2026-04-22T22:45:15.297638Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745726_JimmyBotT_Deimos_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=38c388244640f47bb327cbfe6258be82416a2fc12873565c414413bd01d7e062",
+        "game_steps": 38714,
+        "submitted_by": 207,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745726_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=fa7233d97acc8a4311aaab4e5f60e3f4ec9f63622fe3d520aaae6d9638e508d5",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "Deimos"
+      },
+      "tags": [
+        {
+          "user": 606,
+          "tag_name": " phoenixcolossus"
+        },
+        {
+          "user": 606,
+          "tag_name": " protoss"
+        }
+      ]
+    },
+    {
+      "id": 4745771,
+      "map": 150,
+      "created": "2026-04-22T14:23:49.496949Z",
+      "started": "2026-04-22T22:57:25.896503Z",
+      "assigned_to": 207,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847564,
+        "match": 4745771,
+        "winner": 1007,
+        "type": "Player1Win",
+        "created": "2026-04-22T23:10:52.838975Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745771_SharkGull_27turtles_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=706846828c3e59e7255105516613db3ef95a7622458bd5ff95929c095c776474",
+        "game_steps": 18272,
+        "submitted_by": 207,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745771_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=aeb0514d2c870ab88ff3b1bd028e99c24787497daaab2e9b1e8f84aaac508dc1",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "27turtles"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        },
+        {
+          "user": 1206,
+          "tag_name": "persephone aie"
+        },
+        {
+          "user": 1206,
+          "tag_name": "tanksalot 60 confidence rating"
+        }
+      ]
+    },
+    {
+      "id": 4745738,
+      "map": 152,
+      "created": "2026-04-22T14:23:49.100451Z",
+      "started": "2026-04-22T23:10:00.581451Z",
+      "assigned_to": 6,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847568,
+        "match": 4745738,
+        "winner": 167,
+        "type": "Player2Win",
+        "created": "2026-04-22T23:11:36.593962Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745738_JimmyBotT_TyrT_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=5ea57bdcd36110fbfbc193038a81d25533d11a2e3c3ce3b2d69b0f6d2162e1f2",
+        "game_steps": 6130,
+        "submitted_by": 6,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745738_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=8753007b22fd21733438248e2fda357f941bedf6d0d75be354e0adb5a97d4ff4",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "TyrT"
+      },
+      "tags": [
+        {
+          "user": 98,
+          "tag_name": "proxymarinerush"
+        }
+      ]
+    },
+    {
+      "id": 4745735,
+      "map": 149,
+      "created": "2026-04-22T14:23:49.071760Z",
+      "started": "2026-04-22T23:26:14.892804Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847598,
+        "match": 4745735,
+        "winner": 49,
+        "type": "Player2Win",
+        "created": "2026-04-22T23:31:39.345254Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745735_JimmyBotT_MicroMachine_IncorporealAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=df99c6494a0eb12e1c7c92a94cd6e1ae0822e87f05b4e344068c6dbfb2f96480",
+        "game_steps": 11697,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745735_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=6b883134731781123984d7a1d5fb955befdd8a35ddb4e4be5eb07db117ff1261",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "MicroMachine"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745765,
+      "map": 150,
+      "created": "2026-04-22T14:23:49.439497Z",
+      "started": "2026-04-22T23:40:32.079583Z",
+      "assigned_to": 141,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847609,
+        "match": 4745765,
+        "winner": 1081,
+        "type": "Player2Win",
+        "created": "2026-04-22T23:43:10.247266Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745765_SharkGull_ArtZerg_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=fcbe48bed89b759dd68dccb08c799b60aa32bfcc9d5dc1374876829bf8bec36d",
+        "game_steps": 5152,
+        "submitted_by": 141,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745765_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=71c9d549453424a512bd8b1880b74f8f4e162c47ca3f85072fcf0d59c4130147",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "ArtZerg"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        }
+      ]
+    },
+    {
+      "id": 4745767,
+      "map": 154,
+      "created": "2026-04-22T14:23:49.457807Z",
+      "started": "2026-04-23T00:13:03.567697Z",
+      "assigned_to": 7,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847643,
+        "match": 4745767,
+        "winner": 357,
+        "type": "Player2Win",
+        "created": "2026-04-23T00:15:49.538743Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745767_SharkGull_12PoolBot_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=301d975c3c3edaefc3977b56fb9df5a46a1c5b0a5e4b972186369374c03be8d3",
+        "game_steps": 5942,
+        "submitted_by": 7,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745767_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=ec164e5436f2f6d16b6c8ee95cab7a387ae474bf07cd47fbfab96f9f18013cc1",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "12PoolBot"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        }
+      ]
+    },
+    {
+      "id": 4745729,
+      "map": 150,
+      "created": "2026-04-22T14:23:48.993012Z",
+      "started": "2026-04-23T00:18:20.313259Z",
+      "assigned_to": 207,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847653,
+        "match": 4745729,
+        "winner": 496,
+        "type": "Player2Win",
+        "created": "2026-04-23T00:22:02.119615Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745729_JimmyBotT_Zozo_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d514e3fd69aed9720e1333c808886529ad03b235c8da66630efade5fa849b9f6",
+        "game_steps": 12210,
+        "submitted_by": 207,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745729_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=3c01b36fcc2d4f43bd14755825c4e9f00b015ef1342f583fbd9b3fc4af0ce262",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "Zozo"
+      },
+      "tags": [
+        {
+          "user": 888,
+          "tag_name": " check_natural_squad 01:25"
+        },
+        {
+          "user": 888,
+          "tag_name": " 3_rax 01:55"
+        },
+        {
+          "user": 888,
+          "tag_name": " mothership 08:48"
+        },
+        {
+          "user": 888,
+          "tag_name": " tempest 05:45"
+        },
+        {
+          "user": 888,
+          "tag_name": " mileral line status 13     00:4"
+        }
+      ]
+    },
+    {
+      "id": 4745828,
+      "map": 152,
+      "created": "2026-04-22T14:23:50.176672Z",
+      "started": "2026-04-23T00:38:57.092966Z",
+      "assigned_to": 141,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847677,
+        "match": 4745828,
+        "winner": 555,
+        "type": "Player2Win",
+        "created": "2026-04-23T00:46:28.834257Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745828_OBODT_Visenya_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a80937e717709214f1c4f5b8854ebc1d3ac595406db6cfc369160567680dcf14",
+        "game_steps": 12329,
+        "submitted_by": 141,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745828_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=bfdf16f419779a583becdd3da297e0676bcd1269138a31bc980ebcce0b870774",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "OBODT",
+        "bot2_name": "Visenya"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745739,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.109692Z",
+      "started": "2026-04-23T00:42:55.064171Z",
+      "assigned_to": 207,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847682,
+        "match": 4745739,
+        "winner": 1045,
+        "type": "Player2Win",
+        "created": "2026-04-23T00:47:16.938866Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745739_JimmyBotT_tito_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=31fda3806e04864955c3fa656744a8791c2dcbaf9b953b879112a04836e6cf60",
+        "game_steps": 16433,
+        "submitted_by": 207,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745739_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=5dcfafb7d0d1c8a5106c50fed748c54783d6b6d00c9b3e9834fe6499f00335ec",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "tito"
+      },
+      "tags": [
+        {
+          "user": 41,
+          "tag_name": " macro roach"
+        },
+        {
+          "user": 41,
+          "tag_name": " late 17 seconds"
+        },
+        {
+          "user": 41,
+          "tag_name": " onebaseallin 2_30"
+        }
+      ]
+    },
+    {
+      "id": 4745740,
+      "map": 151,
+      "created": "2026-04-22T14:23:49.137027Z",
+      "started": "2026-04-23T01:19:10.067939Z",
+      "assigned_to": 208,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847729,
+        "match": 4745740,
+        "winner": 732,
+        "type": "Player2Win",
+        "created": "2026-04-23T01:23:34.340639Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745740_JimmyBotT_GPT_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=cc33b81174b72d6e79f2f6e13b7ef93844c8ae7c1457d841dff03b564adc0880",
+        "game_steps": 17145,
+        "submitted_by": 208,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745740_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=f09f747b71785a74be5f7ae3505bdd1ef5df5012d7b93aaadb5d86b56a0a2b32",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "GPT"
+      },
+      "tags": [
+        {
+          "user": 1969,
+          "tag_name": "build-issue-328"
+        },
+        {
+          "user": 1969,
+          "tag_name": "build-issue-344"
+        },
+        {
+          "user": 1969,
+          "tag_name": "multi-base-push"
+        }
+      ]
+    },
+    {
+      "id": 4745734,
+      "map": 149,
+      "created": "2026-04-22T14:23:49.061477Z",
+      "started": "2026-04-23T01:33:30.975843Z",
+      "assigned_to": 208,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847751,
+        "match": 4745734,
+        "winner": 340,
+        "type": "Player2Win",
+        "created": "2026-04-23T01:39:28.223660Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745734_JimmyBotT_MechaShark_IncorporealAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=058162255754fe8c616e1a6a81f8897f7777c44c0d8bc919e5ae8c1c07b3298f",
+        "game_steps": 13467,
+        "submitted_by": 208,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745734_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a6ebf700bba41432bab8ffaeb5e47465cd786576e99591567f00b20374e516a3",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "MechaShark"
+      },
+      "tags": [
+        {
+          "user": 186,
+          "tag_name": "v_2026-02-25__23-40-22"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_tvtbattlemech"
+        },
+        {
+          "user": 186,
+          "tag_name": "b_bansheerush"
+        }
+      ]
+    },
+    {
+      "id": 4745742,
+      "map": 154,
+      "created": "2026-04-22T14:23:49.158821Z",
+      "started": "2026-04-23T02:09:52.070419Z",
+      "assigned_to": 141,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847771,
+        "match": 4745742,
+        "winner": 446,
+        "type": "Player2Win",
+        "created": "2026-04-23T02:16:02.455171Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745742_JimmyBotT_Xena_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=7569df363517bfe8c62d9c1a993fb48eac8f0acd696121e42deb6c4ddf91e69b",
+        "game_steps": 10102,
+        "submitted_by": 141,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745742_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=e16db9de6594c4f170b51faf762162a662a12b1af330fcada7eb7c36a2d0114e",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "Xena"
+      },
+      "tags": [
+        {
+          "user": 1029,
+          "tag_name": "vs_terran"
+        },
+        {
+          "user": 1029,
+          "tag_name": "protoss"
+        },
+        {
+          "user": 1029,
+          "tag_name": "v2_8_19_3"
+        },
+        {
+          "user": 1029,
+          "tag_name": "leylinesaie"
+        },
+        {
+          "user": 1029,
+          "tag_name": "protossbuild_proxyvoid"
+        }
+      ]
+    },
+    {
+      "id": 4745737,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.090511Z",
+      "started": "2026-04-23T02:27:15.600575Z",
+      "assigned_to": 209,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847781,
+        "match": 4745737,
+        "winner": 1079,
+        "type": "Player1Win",
+        "created": "2026-04-23T02:29:04.302416Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745737_JimmyBotT_PhantomBot_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=f3ac26497c167d8113b67fb53f80e9ba5fe459a3207e9f939103114dd728a5ff",
+        "game_steps": 5372,
+        "submitted_by": 209,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745737_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=e4e81cb18da6c54d1a85a8849d3593290b2ce251a684e04bcd524783aa5eb868",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "PhantomBot"
+      },
+      "tags": [
+        {
+          "user": 526,
+          "tag_name": "version_854c0496edef3501be8ebc99"
+        }
+      ]
+    },
+    {
+      "id": 4745743,
+      "map": 151,
+      "created": "2026-04-22T14:23:49.169217Z",
+      "started": "2026-04-23T02:46:18.572434Z",
+      "assigned_to": 207,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847814,
+        "match": 4745743,
+        "winner": 248,
+        "type": "Player2Win",
+        "created": "2026-04-23T03:00:45.435429Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745743_JimmyBotT_Eris_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a180b9790c9e5f9b49dc9b5e99d7d6342c5ff8d0202f868f396822880d5192f4",
+        "game_steps": 18105,
+        "submitted_by": 207,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745743_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=df9902eabf46884cac2e24b57f81884b35166ee09930b543c51526e096185b9c",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "Eris"
+      },
+      "tags": [
+        {
+          "user": 606,
+          "tag_name": "creep_dropperlord_07:22"
+        },
+        {
+          "user": 606,
+          "tag_name": "ling_harass_03:57"
+        },
+        {
+          "user": 606,
+          "tag_name": "spore_forest_11:44"
+        },
+        {
+          "user": 606,
+          "tag_name": "vs_bio_tank_08:21"
+        },
+        {
+          "user": 606,
+          "tag_name": "viper_food_09:43"
+        },
+        {
+          "user": 606,
+          "tag_name": "vs_floating_structures_11:30"
+        },
+        {
+          "user": 606,
+          "tag_name": " zerg"
+        },
+        {
+          "user": 606,
+          "tag_name": "overseer_sweep_10:00"
+        },
+        {
+          "user": 606,
+          "tag_name": "enemy_expand_outside_nat_02:54"
+        },
+        {
+          "user": 606,
+          "tag_name": "add_mutas_06:34"
+        },
+        {
+          "user": 606,
+          "tag_name": "vs_marine_04:16"
+        }
+      ]
+    },
+    {
+      "id": 4745756,
+      "map": 150,
+      "created": "2026-04-22T14:23:49.330936Z",
+      "started": "2026-04-23T03:09:56.636435Z",
+      "assigned_to": 208,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847830,
+        "match": 4745756,
+        "winner": 1007,
+        "type": "Player1Win",
+        "created": "2026-04-23T03:16:52.713609Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745756_SharkGull_BobbyBotV6_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=f01f75d9fbae834b5fbbb86b3218876f2df5c00c225dcde1d1da24c632866b61",
+        "game_steps": 10704,
+        "submitted_by": 208,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745756_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=7e43890e170d133a5232b64fddcffdb45f28d52c0ca07b9b7639964918cca3fd",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "BobbyBotV6"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        },
+        {
+          "user": 1779,
+          "tag_name": "enemyrandomrace_zerg_01_51"
+        }
+      ]
+    },
+    {
+      "id": 4745827,
+      "map": 154,
+      "created": "2026-04-22T14:23:50.167514Z",
+      "started": "2026-04-23T03:21:28.881533Z",
+      "assigned_to": 5,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847838,
+        "match": 4745827,
+        "winner": 1094,
+        "type": "Player1Win",
+        "created": "2026-04-23T03:22:58.399852Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745827_OBODT_DasyBot_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=0ea1c8055dc2eb63c98b1beab60cd3cfb57981e6606e5a0a2a2c25f3aa9c7744",
+        "game_steps": 11224,
+        "submitted_by": 5,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745827_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=61b322d7f36ff23f67e2bae727133e4f36aac972f8c7ad5678123a8dcd70a854",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "OBODT",
+        "bot2_name": "DasyBot"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745773,
+      "map": 156,
+      "created": "2026-04-22T14:23:49.538811Z",
+      "started": "2026-04-23T03:29:57.067210Z",
+      "assigned_to": 141,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847851,
+        "match": 4745773,
+        "winner": 1007,
+        "type": "Player1Win",
+        "created": "2026-04-23T03:37:25.325695Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745773_SharkGull_muravev_MagannathaAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=49312527fa8c1f7f1e7d68cc3c5e46f67afcce03e88ff107391e4300796a8344",
+        "game_steps": 12500,
+        "submitted_by": 141,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745773_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=78814ee560878262f830b7322b9e331c02e6fbbfd416ef62e4bc4c14980b9d7b",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "muravev"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        },
+        {
+          "user": 2302,
+          "tag_name": "enemy_rushnomacro"
+        }
+      ]
+    },
+    {
+      "id": 4745747,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.204047Z",
+      "started": "2026-04-23T03:38:39.390131Z",
+      "assigned_to": 206,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847858,
+        "match": 4745747,
+        "winner": 115,
+        "type": "Player2Win",
+        "created": "2026-04-23T03:43:23.744364Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745747_JimmyBotT_BenBotBC_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=8b4d6bb278eb96047c4a352fcf54d13d6730f41366e8743961c40a0b30caef32",
+        "game_steps": 16133,
+        "submitted_by": 206,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745747_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2345a892514b1b43a212ac7dbc6a076e2125be86a953ed84af68cd64e7824470",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "BenBotBC"
+      },
+      "tags": [
+        {
+          "user": 109,
+          "tag_name": "barrack_35"
+        },
+        {
+          "user": 109,
+          "tag_name": "botbe"
+        },
+        {
+          "user": 109,
+          "tag_name": "attack_with_tanks"
+        },
+        {
+          "user": 109,
+          "tag_name": "stuck_scv"
+        },
+        {
+          "user": 109,
+          "tag_name": "attack_with_mines"
+        },
+        {
+          "user": 109,
+          "tag_name": "enemy_contain_start"
+        },
+        {
+          "user": 109,
+          "tag_name": "enemy_contain_end"
+        },
+        {
+          "user": 109,
+          "tag_name": "jump_enemy_base"
+        },
+        {
+          "user": 109,
+          "tag_name": "build_supply_fail"
+        },
+        {
+          "user": 109,
+          "tag_name": "bunker_rush"
+        },
+        {
+          "user": 109,
+          "tag_name": "tank_190"
+        }
+      ]
+    },
+    {
+      "id": 4745723,
+      "map": 149,
+      "created": "2026-04-22T14:23:48.879075Z",
+      "started": "2026-04-23T04:02:16.240076Z",
+      "assigned_to": 8,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847892,
+        "match": 4745723,
+        "winner": 390,
+        "type": "Player2Win",
+        "created": "2026-04-23T04:07:21.534281Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745723_JimmyBotT_Caninana_IncorporealAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a2a3553cf4c76d88611c7ab8b5994176e744e359fffec0112fa50bf0c2cf8623",
+        "game_steps": 11833,
+        "submitted_by": 8,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745723_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=f0da6f5e72928a92be9bdfdce3eb10ce01d056ef1ad04d8646210c409ca85d4f",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "Caninana"
+      },
+      "tags": [
+        {
+          "user": 860,
+          "tag_name": "p_roach:271"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_zergling:84"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_zergling:84"
+        },
+        {
+          "user": 860,
+          "tag_name": "caninanav2_7_26"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_corruptor:478"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_infestor:450"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_infestor:492"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_roach:227"
+        }
+      ]
+    },
+    {
+      "id": 4745758,
+      "map": 156,
+      "created": "2026-04-22T14:23:49.348588Z",
+      "started": "2026-04-23T04:03:25.672868Z",
+      "assigned_to": 142,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847899,
+        "match": 4745758,
+        "winner": 1007,
+        "type": "Player1Win",
+        "created": "2026-04-23T04:09:50.436929Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745758_SharkGull_norman_MagannathaAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=b46d8b46785bd36079828ca36ed161ea78adb7b875fcd3cc88ad7e441306d7c8",
+        "game_steps": 10151,
+        "submitted_by": 142,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745758_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=6e1a80e25dfbdc173e36248710b2398873118d59e258cce9f644112407ec65c4",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "norman"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        },
+        {
+          "user": 1207,
+          "tag_name": "2025-06-08 15:41"
+        }
+      ]
+    },
+    {
+      "id": 4745766,
+      "map": 150,
+      "created": "2026-04-22T14:23:49.448664Z",
+      "started": "2026-04-23T04:14:57.442466Z",
+      "assigned_to": 206,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847916,
+        "match": 4745766,
+        "winner": 1007,
+        "type": "Player1Win",
+        "created": "2026-04-23T04:24:17.617807Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745766_SharkGull_Lissy_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=b3dd36039bec2aa45d884017d752ec15ba440cfc88d0b16fa43ac4433fd284af",
+        "game_steps": 14412,
+        "submitted_by": 206,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745766_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=87ef9594f1f3655f061572fdddbec90a2cc1d20df5c5a2b8475e6e70fbc6614a",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "Lissy"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        }
+      ]
+    },
+    {
+      "id": 4745730,
+      "map": 151,
+      "created": "2026-04-22T14:23:49.003354Z",
+      "started": "2026-04-23T04:25:40.322063Z",
+      "assigned_to": 498,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847922,
+        "match": 4745730,
+        "winner": 1079,
+        "type": "Player1Win",
+        "created": "2026-04-23T04:30:02.067923Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745730_JimmyBotT_ZeratulsRevengeTest_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a9fe9d33f46339073b812e857ecb5b3a0176a5337b999808c96982c58a7624cc",
+        "game_steps": 15226,
+        "submitted_by": 498,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745730_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=87a68f2d603de94c758294da12fd118c6e6c97376281e3524be9fd29d7ed42f0",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "JimmyBotT",
+        "bot2_name": "ZeratulsRevengeTest"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745751,
+      "map": 151,
+      "created": "2026-04-22T14:23:49.264752Z",
+      "started": "2026-04-23T04:32:26.733385Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847928,
+        "match": 4745751,
+        "winner": 1058,
+        "type": "Player2Win",
+        "created": "2026-04-23T04:36:54.835216Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745751_SharkGull_JimmyBotP_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2e7ef84e9414887b77423e2414840e45e44021f1190fbd385f408790b7a3de91",
+        "game_steps": 9016,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745751_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=211c114883135959c7d2efcf0c54520167fd9c2a6059d12b94a964051fb44c61",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "JimmyBotP"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        }
+      ]
+    },
+    {
+      "id": 4745770,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.487866Z",
+      "started": "2026-04-23T04:41:55.297387Z",
+      "assigned_to": 208,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847948,
+        "match": 4745770,
+        "winner": 1007,
+        "type": "Player1Win",
+        "created": "2026-04-23T04:46:08.512326Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745770_SharkGull_Princess-Mika-Test_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=8df1d28fe8b67fa0399872fb225cc6e49ec694b4642dd7839a6307a2bccd6be0",
+        "game_steps": 8244,
+        "submitted_by": 208,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745770_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=319201d8807d10236604f27b2ee917af94222bd9e562f607b7c6e7446905916b",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "Princess-Mika-Test"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        },
+        {
+          "user": 1837,
+          "tag_name": " mewmoded-7r2_t"
+        },
+        {
+          "user": 1837,
+          "tag_name": " mewopening_ling_bane_aggro_z:wt"
+        },
+        {
+          "user": 1837,
+          "tag_name": " mew_comp_roa_rav_hyd_lur_t"
+        },
+        {
+          "user": 1837,
+          "tag_name": " mewbuilt:1m13s_spawningpool_t"
+        },
+        {
+          "user": 1837,
+          "tag_name": " opp_sharkgull_randomzerg"
+        },
+        {
+          "user": 1837,
+          "tag_name": " mew_match_sharkgull_0_core_t"
+        },
+        {
+          "user": 1837,
+          "tag_name": " own_princess-mika_zerg"
+        },
+        {
+          "user": 1837,
+          "tag_name": " mikafriendreport:1m36s_we:rush_"
+        },
+        {
+          "user": 1837,
+          "tag_name": " mewprincessmikabot_v04232026_04"
+        },
+        {
+          "user": 1837,
+          "tag_name": " mewbuilt:3m16s_roachwarren_t"
+        }
+      ]
+    },
+    {
+      "id": 4745829,
+      "map": 156,
+      "created": "2026-04-22T14:23:50.186911Z",
+      "started": "2026-04-23T05:00:28.062671Z",
+      "assigned_to": 7,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847973,
+        "match": 4745829,
+        "winner": 1008,
+        "type": "Player2Win",
+        "created": "2026-04-23T05:02:30.539521Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745829_OBODT_Creepy_canon_MagannathaAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=21c31a2c7fc4fdf5176abe0717bcb47b5c59b38e423f0a987a1f4455f346414f",
+        "game_steps": 4968,
+        "submitted_by": 7,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745829_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=0496fea4fb4c7cd14e404b14acd95bd457cfdf2ca5acb9426f703c977d472492",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "OBODT",
+        "bot2_name": "Creepy_canon"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745768,
+      "map": 150,
+      "created": "2026-04-22T14:23:49.467662Z",
+      "started": "2026-04-23T04:58:54.948425Z",
+      "assigned_to": 141,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847978,
+        "match": 4745768,
+        "winner": 605,
+        "type": "Player2Win",
+        "created": "2026-04-23T05:10:40.416322Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745768_SharkGull_nida_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=7d85a3e0201a821cd6f8e625dd751e02e529d41404b1f5c9d312595a57e0e3cf",
+        "game_steps": 17264,
+        "submitted_by": 141,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745768_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d6ba41bcee33c76d21b9c5bf9d69c2fa966eeef611ec3e6e2858ad4c33747096",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "nida"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        },
+        {
+          "user": 1207,
+          "tag_name": "2026-03-12 11:36"
+        }
+      ]
+    },
+    {
+      "id": 4745754,
+      "map": 152,
+      "created": "2026-04-22T14:23:49.293430Z",
+      "started": "2026-04-23T05:26:15.620383Z",
+      "assigned_to": 207,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4848000,
+        "match": 4745754,
+        "winner": 1054,
+        "type": "Player2Win",
+        "created": "2026-04-23T05:29:13.185167Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745754_SharkGull_JimmyBotZ_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=23fbab7ccb5abb5a01eb82cd1b303caadacdf642bff8a332c1ac4c4449e0f430",
+        "game_steps": 6288,
+        "submitted_by": 207,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745754_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=6a2458b381a067b759f3365c65a75ebecec9e0eabd1faead5ebf491416f19188",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "JimmyBotZ"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        }
+      ]
+    },
+    {
+      "id": 4745762,
+      "map": 154,
+      "created": "2026-04-22T14:23:49.387238Z",
+      "started": "2026-04-23T05:41:22.366007Z",
+      "assigned_to": 8,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4848018,
+        "match": 4745762,
+        "winner": 759,
+        "type": "Player2Win",
+        "created": "2026-04-23T05:51:51.239205Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745762_SharkGull_BotTato_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d10f417a0ce0bdaf981a9271e268ed11312a9800cb9d9f54c710b803d25f0fd3",
+        "game_steps": 15788,
+        "submitted_by": 8,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745762_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=f4656b724ada207e2c83878721cf685e72aa788e0901650ffc292ff79aea821b",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "BotTato"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        }
+      ]
+    },
+    {
+      "id": 4745772,
+      "map": 155,
+      "created": "2026-04-22T14:23:49.505801Z",
+      "started": "2026-04-23T06:01:41.435377Z",
+      "assigned_to": 4,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4848035,
+        "match": 4745772,
+        "winner": 1007,
+        "type": "Player1Win",
+        "created": "2026-04-23T06:07:51.754509Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745772_SharkGull_72Tortoises_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=1027e722e02568529c9b7961a03fa630d01056177e9dd0bc245bd559ae870eb3",
+        "game_steps": 10436,
+        "submitted_by": 4,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745772_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=70710de8d45fbef1e5c3693d0901597eb1f0bf7f766d245c9175a2bb22487999",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "72Tortoises"
+      },
+      "tags": [
+        {
+          "user": 1779,
+          "tag_name": "b_zergbase_00_00"
+        },
+        {
+          "user": 1779,
+          "tag_name": "v_2026-01-23__15-51-06"
+        },
+        {
+          "user": 1206,
+          "tag_name": "9 roach"
+        },
+        {
+          "user": 1206,
+          "tag_name": "ultralove aie"
+        }
+      ]
+    },
+    {
+      "id": 4745769,
+      "map": 150,
+      "created": "2026-04-22T14:23:49.477086Z",
+      "started": "2026-04-23T06:16:59.614416Z",
+      "assigned_to": 207,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4848067,
+        "match": 4745769,
+        "winner": null,
+        "type": "InitializationError",
+        "created": "2026-04-23T06:45:18.000239Z",
+        "replay_file": null,
+        "game_steps": 0,
+        "submitted_by": 207,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745769_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=06f14a67708499405d84a39ec005421439278c65f15f11b39b7afadd760dd89b",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "SharkGull",
+        "bot2_name": "oberon"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745940,
+      "map": 154,
+      "created": "2026-04-22T14:23:51.533765Z",
+      "started": "2026-04-22T14:44:58.517578Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846919,
+        "match": 4745940,
+        "winner": 960,
+        "type": "Player2Win",
+        "created": "2026-04-22T14:48:16.497478Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745940_BobbyBotV7_BigDaddy_LeyLinesAIE_v3.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=23e9a5d52c7e740d5249d85850e9a2d93670ebfe9f1fc18eab7b67b796bbef66",
+        "game_steps": 7312,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745940_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=ebfd30de68e9decec665b08485898f128de151fb9ce8ee5fb6b516bbcfb52b4a",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "BobbyBotV7",
+        "bot2_name": "BigDaddy"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745916,
+      "map": 151,
+      "created": "2026-04-22T14:23:51.241513Z",
+      "started": "2026-04-22T14:45:48.738907Z",
+      "assigned_to": 4,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846923,
+        "match": 4745916,
+        "winner": 938,
+        "type": "Player1Win",
+        "created": "2026-04-22T14:50:00.509875Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745916_Cyne_TheLAW_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=65b420d73a1b8a7ace77d6d21874846b45ffb48eab46436b0fa047407283c482",
+        "game_steps": 7898,
+        "submitted_by": 4,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745916_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=9f86d11baf8fee8b59b7e5face82f6e564801c2df5761c876680891f98ca69c1",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "Cyne",
+        "bot2_name": "TheLAW"
+      },
+      "tags": [
+        {
+          "user": 2703,
+          "tag_name": " opening stalkerpush"
+        },
+        {
+          "user": 2820,
+          "tag_name": "boost_marauders"
+        }
+      ]
+    },
+    {
+      "id": 4745931,
+      "map": 150,
+      "created": "2026-04-22T14:23:51.393546Z",
+      "started": "2026-04-22T15:16:21.245815Z",
+      "assigned_to": 4,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846963,
+        "match": 4745931,
+        "winner": 938,
+        "type": "Player1Win",
+        "created": "2026-04-22T15:19:54.284771Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745931_Cyne_Mulebot_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=1a0d816229d0df789869916347213e8561cf869885a71198615f3bfebade68f4",
+        "game_steps": 11670,
+        "submitted_by": 4,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745931_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d769c6f04fb5cd9eda8b97cd6d38443d701e0899072fe9aa406c0a26f55f1aa6",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "Cyne",
+        "bot2_name": "Mulebot"
+      },
+      "tags": [
+        {
+          "user": 2703,
+          "tag_name": "st_sw stalkerpush to clearmap_07"
+        },
+        {
+          "user": 2703,
+          "tag_name": " opening stalkerpush"
+        },
+        {
+          "user": 546,
+          "tag_name": "threapers"
+        },
+        {
+          "user": 546,
+          "tag_name": "m20260414"
+        }
+      ]
+    },
+    {
+      "id": 4745947,
+      "map": 151,
+      "created": "2026-04-22T14:23:51.585787Z",
+      "started": "2026-04-22T15:16:11.984236Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4846965,
+        "match": 4745947,
+        "winner": 526,
+        "type": "Player2Win",
+        "created": "2026-04-22T15:20:55.547719Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745947_BobbyBotV7_Apidae_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=b7d6496735bd637e3e3d128ae13e4e0838d6476df6e13aee9ac55d06da9c139e",
+        "game_steps": 12845,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745947_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=da860bad27ccc30647c44bb98e3113bc09c5fcceaf06b89c3873a00ed57909fb",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "BobbyBotV7",
+        "bot2_name": "Apidae"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745935,
+      "map": 156,
+      "created": "2026-04-22T14:23:51.460696Z",
+      "started": "2026-04-22T15:33:56.899143Z",
+      "assigned_to": 209,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847007,
+        "match": 4745935,
+        "winner": 827,
+        "type": "Player2Win",
+        "created": "2026-04-22T15:56:19.649704Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745935_BobbyBotV7_smokinggunbot_MagannathaAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=5e7a824e9f054bdc400f8ae0f7d7c7a9327bc2f1f6bbd5e036e1eac55fcd0ad4",
+        "game_steps": 29226,
+        "submitted_by": 209,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745935_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=59d3e936fcea6cc5da847f3ebb97ffac4603d51cf2f350448ea79cd265f4a7bc",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "BobbyBotV7",
+        "bot2_name": "smokinggunbot"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745938,
+      "map": 155,
+      "created": "2026-04-22T14:23:51.485088Z",
+      "started": "2026-04-22T16:01:35.780869Z",
+      "assigned_to": 142,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847017,
+        "match": 4745938,
+        "winner": 1060,
+        "type": "Player2Win",
+        "created": "2026-04-22T16:05:42.317426Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745938_BobbyBotV7_WildFire_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=3854b4c1cb6c10a9e7aee0d3aeacea400b760871be4414363d37635e79471c3f",
+        "game_steps": 10709,
+        "submitted_by": 142,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745938_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a28886a65247148797ee2b7569e6fdc1321e53d93225b7e40f54950c91be41a1",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "BobbyBotV7",
+        "bot2_name": "WildFire"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745924,
+      "map": 150,
+      "created": "2026-04-22T14:23:51.338802Z",
+      "started": "2026-04-22T16:12:57.782372Z",
+      "assigned_to": 7,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847042,
+        "match": 4745924,
+        "winner": 938,
+        "type": "Player1Win",
+        "created": "2026-04-22T16:25:25.270957Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745924_Cyne_12PoolBot_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=aaf6dc802a260d1a5200f6690c6bfa9a68d4d8c3d26b1d37e4b4f0d86437c9ab",
+        "game_steps": 21088,
+        "submitted_by": 7,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745924_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=4b2560e5dbf744620da682904b8d94b22d03c3c4b20d1258d36e54ecc5058dfe",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "Cyne",
+        "bot2_name": "12PoolBot"
+      },
+      "tags": [
+        {
+          "user": 2703,
+          "tag_name": " opening stalkerpush"
+        },
+        {
+          "user": 2703,
+          "tag_name": "st_sw stalkerpush to clearmap_13"
+        }
+      ]
+    },
+    {
+      "id": 4745933,
+      "map": 152,
+      "created": "2026-04-22T14:23:51.445624Z",
+      "started": "2026-04-22T16:22:23.464027Z",
+      "assigned_to": 4,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847075,
+        "match": 4745933,
+        "winner": 1101,
+        "type": "Player1Win",
+        "created": "2026-04-22T16:50:30.934601Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745933_BobbyBotV7_MindMatrix_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=e86d7f11efa348f33cc4c3812f23e0be350eec5923bdb099140e819903c566c4",
+        "game_steps": 53762,
+        "submitted_by": 4,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745933_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=93783dc18a8e0aed110137a806f93d2f1223765766fedfa81ae8e37bd56e2aa1",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "BobbyBotV7",
+        "bot2_name": "MindMatrix"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745906,
+      "map": 151,
+      "created": "2026-04-22T14:23:51.131000Z",
+      "started": "2026-04-22T16:51:15.644580Z",
+      "assigned_to": 4,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847081,
+        "match": 4745906,
+        "winner": 938,
+        "type": "Player1Win",
+        "created": "2026-04-22T16:54:43.228456Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745906_Cyne_BobbyBotV7_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=b81d59fceacc12c58a3443bab6fc34817e8f22302d2ba2e8cf57750943b77980",
+        "game_steps": 10034,
+        "submitted_by": 4,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745906_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=2036a1f8a4a7496ea1c39db9c85ce8116bda07d46625345a6c14e6d568ceed4f",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "Cyne",
+        "bot2_name": "BobbyBotV7"
+      },
+      "tags": [
+        {
+          "user": 2703,
+          "tag_name": " opening stalkerpush"
+        }
+      ]
+    },
+    {
+      "id": 4745912,
+      "map": 152,
+      "created": "2026-04-22T14:23:51.177289Z",
+      "started": "2026-04-22T17:24:18.947483Z",
+      "assigned_to": 141,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847133,
+        "match": 4745912,
+        "winner": 938,
+        "type": "Player1Win",
+        "created": "2026-04-22T17:31:29.567693Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745912_Cyne_WildFire_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=9baa6e3f155e8fd85a4feb042d3e5e42f5457cdd287985b46cf7f984fc68e19b",
+        "game_steps": 16438,
+        "submitted_by": 141,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745912_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=82ffae104de3e5e28f48cabd74ffba05b109beefee2bd0c7be02d8d7bc7bc4e2",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "Cyne",
+        "bot2_name": "WildFire"
+      },
+      "tags": [
+        {
+          "user": 2703,
+          "tag_name": " opening stalkerpush"
+        }
+      ]
+    },
+    {
+      "id": 4745946,
+      "map": 152,
+      "created": "2026-04-22T14:23:51.578227Z",
+      "started": "2026-04-22T17:09:33.032370Z",
+      "assigned_to": 209,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847145,
+        "match": 4745946,
+        "winner": null,
+        "type": "Tie",
+        "created": "2026-04-22T17:43:21.241390Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745946_BobbyBotV7_PiG_Bot_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=370cdfda8e5cdae106b0dbae226cc5b3b1a6d715551244f4b3d9f8c120f904ca",
+        "game_steps": 80644,
+        "submitted_by": 209,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745946_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=dc1eda33eb6a4d2bf33ff9b3cf25ab926277f12d4cabd8577bf809515f7bc632",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "BobbyBotV7",
+        "bot2_name": "PiG_Bot"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745942,
+      "map": 156,
+      "created": "2026-04-22T14:23:51.548639Z",
+      "started": "2026-04-22T18:16:33.790204Z",
+      "assigned_to": 4,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847196,
+        "match": 4745942,
+        "winner": 970,
+        "type": "Player2Win",
+        "created": "2026-04-22T18:19:51.949396Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745942_BobbyBotV7_TheLAW_MagannathaAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=07a90ba93d58349bc97c02a5eee2d598d2355a9facd4b523c992313a941a66ce",
+        "game_steps": 7521,
+        "submitted_by": 4,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745942_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d71918b29c271c9ea6446b9b0466768f42ff51bb7cc03f8fab73a8870e71c277",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "BobbyBotV7",
+        "bot2_name": "TheLAW"
+      },
+      "tags": [
+        {
+          "user": 2820,
+          "tag_name": "warp_enemy_base"
+        }
+      ]
+    },
+    {
+      "id": 4745948,
+      "map": 150,
+      "created": "2026-04-22T14:23:51.593375Z",
+      "started": "2026-04-22T18:27:01.952278Z",
+      "assigned_to": 6,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847210,
+        "match": 4745948,
+        "winner": 1081,
+        "type": "Player2Win",
+        "created": "2026-04-22T18:28:15.557414Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745948_BobbyBotV7_ArtZerg_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=aac157907b26b355ed682bfaadca943797c046e80feffc879cacb7e98deba7e3",
+        "game_steps": 5016,
+        "submitted_by": 6,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745948_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=40e413eb077ee88f0519e99af7fe61f6f270bbac83a28ac4ad5ec16512ebcfe3",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "BobbyBotV7",
+        "bot2_name": "ArtZerg"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745863,
+      "map": 151,
+      "created": "2026-04-22T14:23:50.636387Z",
+      "started": "2026-04-22T19:27:13.314345Z",
+      "assigned_to": 6,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847280,
+        "match": 4745863,
+        "winner": 876,
+        "type": "Player2Win",
+        "created": "2026-04-22T19:33:00.563408Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745863_DasyBot_GenesisLotus_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=0feed12c6b8599693bf124f26244c2c414e2dd8ad96876bcf32b9f1257f146a7",
+        "game_steps": 11254,
+        "submitted_by": 6,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745863_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=bf8fcfc2477dccc84663587275e2b328ba09b2a9fa0f2f262eec04fad4988c19",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "DasyBot",
+        "bot2_name": "GenesisLotus"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745929,
+      "map": 155,
+      "created": "2026-04-22T14:23:51.378099Z",
+      "started": "2026-04-22T19:58:13.776932Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847307,
+        "match": 4745929,
+        "winner": 938,
+        "type": "Player1Win",
+        "created": "2026-04-22T20:02:06.050049Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745929_Cyne_72Tortoises_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=adae8e04adc50e269c36f756a1694f9da131e759713d022ab987b83fa581e0d2",
+        "game_steps": 8728,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745929_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d787deb66c6928f7f4bc9981532fba452319502749c149f028201572bdcdb8b6",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "Cyne",
+        "bot2_name": "72Tortoises"
+      },
+      "tags": [
+        {
+          "user": 2703,
+          "tag_name": " opening stalkerpush"
+        },
+        {
+          "user": 1206,
+          "tag_name": "9 roach"
+        },
+        {
+          "user": 1206,
+          "tag_name": "ultralove aie"
+        }
+      ]
+    },
+    {
+      "id": 4745898,
+      "map": 155,
+      "created": "2026-04-22T14:23:51.029586Z",
+      "started": "2026-04-22T20:05:18.880845Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847325,
+        "match": 4745898,
+        "winner": 732,
+        "type": "Player2Win",
+        "created": "2026-04-22T20:16:38.750598Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745898_Caninana_GPT_UltraloveAIE_v2.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=61c0ef0bb4038d6d8e11245e81f1a87b0b8960478b524509966b39ab651a6ae7",
+        "game_steps": 17840,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745898_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=bc1e42fc59ec225169645f32a5805ef27161747bb9c9fc12ac25be97abcb3856",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "Caninana",
+        "bot2_name": "GPT"
+      },
+      "tags": [
+        {
+          "user": 860,
+          "tag_name": "u_zergling:84"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_zergling:84"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_siegetanksieged:243"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_medivac:350"
+        },
+        {
+          "user": 860,
+          "tag_name": "caninanav2_7_26"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_mule:762"
+        },
+        {
+          "user": 860,
+          "tag_name": "e_scannersweep"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_swarmhostmp:449"
+        },
+        {
+          "user": 860,
+          "tag_name": "e_exp:114"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_swarmhostmp:412"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_roach:200"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_marine:131"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_roach:243"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_raven:350"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_siegetank:384"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_infestor:425"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_infestor:449"
+        },
+        {
+          "user": 1969,
+          "tag_name": "build-issue-171"
+        },
+        {
+          "user": 1969,
+          "tag_name": "build-issue-171-resolved"
+        },
+        {
+          "user": 1969,
+          "tag_name": "multi-base-push"
+        }
+      ]
+    },
+    {
+      "id": 4745879,
+      "map": 152,
+      "created": "2026-04-22T14:23:50.786591Z",
+      "started": "2026-04-22T20:18:55.163107Z",
+      "assigned_to": 209,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847332,
+        "match": 4745879,
+        "winner": 1026,
+        "type": "Player2Win",
+        "created": "2026-04-22T20:21:37.832817Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745879_DasyBot_WildLupo_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=a0f0cb18dbe7dbad095d412d887832d0d5dedd85a782379175cf4f7f10e7a60e",
+        "game_steps": 17073,
+        "submitted_by": 209,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745879_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=d9a252ada03d7b909bbf2f2a8602451d2a0810669d0edc4211fec497a5ab7b4f",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "DasyBot",
+        "bot2_name": "WildLupo"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745884,
+      "map": 150,
+      "created": "2026-04-22T14:23:50.861748Z",
+      "started": "2026-04-22T20:32:45.766204Z",
+      "assigned_to": 142,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847360,
+        "match": 4745884,
+        "winner": 730,
+        "type": "Player2Win",
+        "created": "2026-04-22T20:46:20.099026Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745884_Caninana_Deimos_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=ea603f3987110200fc1a730da6baa734e6473f5ab8589406c240192231c88805",
+        "game_steps": 17302,
+        "submitted_by": 142,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745884_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=6ad4681e4fb399d24fb9a36dce7c8bf3e42d562e900a997386a11196ad49cba3",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "Caninana",
+        "bot2_name": "Deimos"
+      },
+      "tags": [
+        {
+          "user": 860,
+          "tag_name": "e_lurkermp"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_zergling:83"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_zergling:84"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_colossus:612"
+        },
+        {
+          "user": 860,
+          "tag_name": "caninanav2_7_26"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_phoenix:196"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_stalker:286"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_lurkermp:573"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_ravager:653"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_ravager:653"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_immortal:403"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_hydralisk:559"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_roach:183"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_lurkermp:653"
+        },
+        {
+          "user": 860,
+          "tag_name": "e_exp:113"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_roach:139"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_swarmhostmp:661"
+        },
+        {
+          "user": 860,
+          "tag_name": "p_swarmhostmp:661"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_observer:415"
+        },
+        {
+          "user": 860,
+          "tag_name": "e_thermallancesforward"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_adeptphaseshift:139"
+        },
+        {
+          "user": 860,
+          "tag_name": "s_adept:139"
+        },
+        {
+          "user": 860,
+          "tag_name": "u_hydralisk:510"
+        },
+        {
+          "user": 606,
+          "tag_name": " doublestargatephoenix"
+        },
+        {
+          "user": 606,
+          "tag_name": " protoss"
+        }
+      ]
+    },
+    {
+      "id": 4745926,
+      "map": 151,
+      "created": "2026-04-22T14:23:51.355822Z",
+      "started": "2026-04-22T20:50:17.116071Z",
+      "assigned_to": 142,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847373,
+        "match": 4745926,
+        "winner": 938,
+        "type": "Player1Win",
+        "created": "2026-04-22T20:54:09.646102Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745926_Cyne_oberon_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=b06c2a347173407c89e7283544f553666748368b9f149c405b53f06a3743cf5e",
+        "game_steps": 9846,
+        "submitted_by": 142,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745926_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=3e335d7ca140fc78682d93675fc64aa2b08bea6acc2a6b97c0b4730ca907a5e6",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "Cyne",
+        "bot2_name": "oberon"
+      },
+      "tags": [
+        {
+          "user": 2703,
+          "tag_name": " opening stalkerpush"
+        }
+      ]
+    },
+    {
+      "id": 4745849,
+      "map": 149,
+      "created": "2026-04-22T14:23:50.463099Z",
+      "started": "2026-04-22T21:09:53.503874Z",
+      "assigned_to": 7,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847397,
+        "match": 4745849,
+        "winner": null,
+        "type": "InitializationError",
+        "created": "2026-04-22T21:10:01.991014Z",
+        "replay_file": null,
+        "game_steps": 0,
+        "submitted_by": 7,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745849_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=5992ce1eb7f25db343195cc79ddd5da75c8a2b54f4f9a732eb681c663e0064b7",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "OBODT",
+        "bot2_name": "SiriusBot"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745837,
+      "map": 150,
+      "created": "2026-04-22T14:23:50.337216Z",
+      "started": "2026-04-22T20:45:50.046651Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847407,
+        "match": 4745837,
+        "winner": 1094,
+        "type": "Player1Win",
+        "created": "2026-04-22T21:17:01.712389Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745837_OBODT_LoremIpsum_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=958a9d941bbe210d17e5eb0cc9ed8953cf17f6b45f867443c16842623c6b7d64",
+        "game_steps": 80050,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745837_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=62f1e72eb393f2f6106a7801bc7c76fffb94e5482e46dee97de2bb024f6e0296",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "OBODT",
+        "bot2_name": "LoremIpsum"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745945,
+      "map": 152,
+      "created": "2026-04-22T14:23:51.570628Z",
+      "started": "2026-04-22T21:10:46.334862Z",
+      "assigned_to": 7,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847410,
+        "match": 4745945,
+        "winner": 759,
+        "type": "Player2Win",
+        "created": "2026-04-22T21:19:36.314013Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745945_BobbyBotV7_BotTato_TorchesAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=727131d333d2047bd5e0ac54499caad1d129ab1be4ee5a918a02597ec519ec78",
+        "game_steps": 14416,
+        "submitted_by": 7,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745945_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=c4555443aa5fb3aa2a1600872779c3c31eb41b3b01017da156a05b01b94a61b4",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "BobbyBotV7",
+        "bot2_name": "BotTato"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745859,
+      "map": 150,
+      "created": "2026-04-22T14:23:50.574114Z",
+      "started": "2026-04-22T21:19:37.028777Z",
+      "assigned_to": 207,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847415,
+        "match": 4745859,
+        "winner": 1089,
+        "type": "Player2Win",
+        "created": "2026-04-22T21:23:48.334989Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745859_DasyBot_WorkingAsIntended_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=acc612e61fad9ad7f35fce93eaefb57cefc5394e214d209d94b63f3688913eee",
+        "game_steps": 10932,
+        "submitted_by": 207,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745859_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=6de3014ea1f80c2623f807ad40c58e9c0e308dc0c08079828ca18d9081f425b4",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "DasyBot",
+        "bot2_name": "WorkingAsIntended"
+      },
+      "tags": [
+        {
+          "user": 2714,
+          "tag_name": "build_reaper_harass_bio_medivac_"
+        },
+        {
+          "user": 2714,
+          "tag_name": "race_terran"
+        }
+      ]
+    },
+    {
+      "id": 4745944,
+      "map": 151,
+      "created": "2026-04-22T14:23:51.563145Z",
+      "started": "2026-04-22T21:32:47.421014Z",
+      "assigned_to": 205,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847434,
+        "match": 4745944,
+        "winner": 998,
+        "type": "Player2Win",
+        "created": "2026-04-22T21:36:36.852194Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745944_BobbyBotV7_LordSuperKing_PylonAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=e0729194ceeb7dd3b723adb217a2734222e6b86254593859f29f00d41bed9422",
+        "game_steps": 12360,
+        "submitted_by": 205,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745944_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=9672c2ec0257bdb7596b0b421acd0854adfed10148815f8294898779802e1c36",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "BobbyBotV7",
+        "bot2_name": "LordSuperKing"
+      },
+      "tags": []
+    },
+    {
+      "id": 4745852,
+      "map": 150,
+      "created": "2026-04-22T14:23:50.487203Z",
+      "started": "2026-04-22T21:39:12.191083Z",
+      "assigned_to": 498,
+      "round": 41522,
+      "requested_by": null,
+      "require_trusted_arenaclient": true,
+      "result": {
+        "id": 4847439,
+        "match": 4745852,
+        "winner": 1094,
+        "type": "Player1Win",
+        "created": "2026-04-22T21:40:42.720818Z",
+        "replay_file": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/replays/4745852_OBODT_WildLupo_PersephoneAIE_v4.SC2Replay?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=852b78bab274df7b6625ea631daef8ffe9f548ce01be74384d2d3f4ee1fccf89",
+        "game_steps": 12408,
+        "submitted_by": 498,
+        "arenaclient_log": "https://aiarena-mediaproductionbucket-rrwubgechzmq.s3.eu-central-1.amazonaws.com/media/arenaclient-logs/4745852_arenaclientlog.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAUS5QUPDJUOWXPEJV%2F20260423%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20260423T235056Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=cfb587efcbfbd00ab25d08111fb1708d1e868e68b614e4a5baa89bba6a3f482e",
+        "replay_file_has_been_cleaned": false,
+        "arenaclient_log_has_been_cleaned": false,
+        "bot1_name": "OBODT",
+        "bot2_name": "WildLupo"
+      },
+      "tags": []
+    }
+  ]
+}
