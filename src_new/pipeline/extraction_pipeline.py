@@ -39,8 +39,9 @@ class ReplayExtractionPipeline:
     5. Flush rows to part files in batches; stitch parts into final parquet
     6. Post-process the final parquet: read replay tracker events and append
        economy columns (forward-filled from SPlayerStatsEvent) and upgrade
-       columns (p1_upgrades / p2_upgrades, comma-separated names at completion
-       game_loop, NaN otherwise)
+       columns (p1_upgrades / p2_upgrades, cumulative chronological list of
+       upgrade names completed at or before each game_loop; NaN before the
+       first completion)
     7. Write metadata JSON
 
     Economy and upgrades are deliberately excluded from the hot extraction
@@ -491,10 +492,12 @@ class ReplayExtractionPipeline:
         equivalents) are forward-filled from SPlayerStatsEvent snapshots using
         pandas merge_asof. Rows before the first snapshot receive 0.
 
-        Upgrade columns (p1_upgrades, p2_upgrades) contain a comma-separated
-        string of upgrade names completed at that exact game_loop, NaN where no
-        upgrade completed. Multiple upgrades at the same loop are alphabetically
-        sorted before joining. This mirrors the Messages column convention.
+        Upgrade columns (p1_upgrades, p2_upgrades) contain the cumulative,
+        chronological list of upgrade names completed at or before each row's
+        game_loop. Cells before the first completion event are None (NaN);
+        every cell from the first completion onward is a list[str]. Within a
+        single completion game_loop, names are alphabetically sorted so the
+        per-loop ordering is deterministic and matches the migration script.
 
         Args:
             parquet_path: Path to the reconciled parquet file. Read and
@@ -568,33 +571,61 @@ class ReplayExtractionPipeline:
             )
 
         # -----------------------------------------------------------------
-        # Upgrade columns — one event string per completion game_loop
+        # Upgrade columns — cumulative chronological list per row
         # -----------------------------------------------------------------
+        # For each row's game_loop, the cell holds the list of every upgrade
+        # the player has completed at or before that loop. The first cells
+        # (before any completion event) are None (NaN); every cell after the
+        # first event is a list[str] that grows monotonically.
+        from bisect import bisect_right
+
         upgrade_snapshots = load_upgrade_snapshots(str(replay_path))
 
         for player_id in [1, 2]:
             col = f'p{player_id}_upgrades'
 
-            # Group upgrades by the game_loop they completed on.
+            # Group completions by game_loop, then sort each per-loop batch
+            # alphabetically so the within-loop ordering is deterministic.
+            # This matches the migration script, which only has the legacy
+            # alphabetical encoding to recover from.
             per_loop: Dict[int, list] = defaultdict(list)
             for gl, name in upgrade_snapshots.get(player_id, []):
                 per_loop[gl].append(name)
 
-            # Build a {game_loop: "Name1,Name2"} lookup. Names within the same
-            # loop are alphabetically sorted so the output is deterministic.
-            upgrade_map = {
-                gl: ','.join(sorted(names))
-                for gl, names in per_loop.items()
-            }
+            # Build two parallel arrays for binary-search lookup:
+            #   completion_loops[i] = the i-th distinct completion game_loop
+            #   cumulative_at[i]    = the cumulative list of upgrade names
+            #                         completed at or before completion_loops[i]
+            # Each cumulative_at entry is a fresh list so that mapping the
+            # same list object to many rows is safe (pandas will not mutate
+            # them, but a fresh list per step keeps the contract obvious).
+            completion_loops: List[int] = sorted(per_loop.keys())
+            cumulative_at: List[List[str]] = []
+            running: List[str] = []
+            for gl in completion_loops:
+                running = running + sorted(per_loop[gl])
+                cumulative_at.append(list(running))
 
-            # Map onto the DataFrame: NaN for loops with no completion event,
-            # matching the convention used by the Messages column.
-            df[col] = df['game_loop'].map(upgrade_map)
+            def _lookup(game_loop: int) -> Any:
+                """Cumulative list as of game_loop, or None before any event."""
+                idx = bisect_right(completion_loops, game_loop)
+                if idx == 0:
+                    return None
+                return list(cumulative_at[idx - 1])
+
+            if completion_loops:
+                df[col] = df['game_loop'].map(_lookup)
+            else:
+                # No completions for this player — write an all-None object
+                # column so the schema stays present and downstream code can
+                # rely on the column existing.
+                df[col] = pd.Series([None] * len(df), dtype=object)
 
             completed_count = sum(len(v) for v in per_loop.values())
             logger.info(
                 f"Upgrade column {col} added "
-                f"({completed_count} completion event(s))"
+                f"({completed_count} completion event(s), "
+                f"{len(completion_loops)} distinct loop(s))"
             )
 
         # Write the augmented DataFrame back to the same parquet path.

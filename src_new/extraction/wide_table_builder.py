@@ -158,7 +158,8 @@ class WideTableBuilder:
         # They are appended to the final parquet in a single post-processing
         # pass by extraction_pipeline._add_tracker_columns() after all batches
         # are stitched. See that method for the economy (forward-filled from
-        # SPlayerStatsEvent) and upgrade (p1_upgrades / p2_upgrades event strings)
+        # SPlayerStatsEvent) and upgrade (p1_upgrades / p2_upgrades — cumulative
+        # chronological list of upgrade names per row, NaN before first completion)
         # column definitions.
 
         # Add unit counts
